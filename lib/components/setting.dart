@@ -9,9 +9,6 @@ class SettingPage extends GetResponsiveView<SettingsController> {
   Widget? builder() {
     const sizedBoxSpace = SizedBox(height: 24);
     return Scaffold(
-      appBar: AppBar(
-        title: Text('settings'.tr),
-      ),
       body: GetX<SettingsController>(builder: (controller) {
         return ListView(
           padding: const EdgeInsets.only(left: 20.0, right: 20.0),
@@ -47,7 +44,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
               color: Colors.grey,
               height: 10,
               thickness: 1,
-              indent: 20,
+              indent: 0,
               endIndent: 0,
             ),
             sizedBoxSpace,
@@ -60,42 +57,43 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                 ),
                 const SizedBox(width: 30),
                 Expanded(
-                    child:SizedBox(
-                      height: 50.0,
-                      width: 200.0,
-                      child: DropdownButtonFormField(
-                        // padding: EdgeInsets.only(left: 116),
-                        value: controller.llm.value,
-                        decoration: InputDecoration(
-                          // labelText: 'llmHint'.tr,
-                          // hintText: 'llmHint'.tr,
-                          labelStyle: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(Get.context!).colorScheme.primary),
-                          floatingLabelBehavior: FloatingLabelBehavior.auto,
-                          contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(5),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
+                  child: SizedBox(
+                    height: 50.0,
+                    width: 200.0,
+                    child: DropdownButtonFormField(
+                      // padding: EdgeInsets.only(left: 116),
+                      value: controller.llm.value,
+                      decoration: InputDecoration(
+                        // labelText: 'llmHint'.tr,
+                        // hintText: 'llmHint'.tr,
+                        labelStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                Theme.of(screen.context!).colorScheme.primary),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5),
+                          borderSide: BorderSide.none,
                         ),
-                        items: <String>['OpenAI', 'ChatGlm', 'IF']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(
-                              value,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          if (newValue == null) return;
-                          controller.setLlm(newValue);
-                        },
+                        filled: true,
                       ),
+                      items: <String>['OpenAI', 'ChatGlm', 'IF']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue == null) return;
+                        controller.setLlm(newValue);
+                      },
                     ),
+                  ),
                 ),
               ],
             ),
@@ -109,7 +107,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                 ),
                 const SizedBox(width: 30),
                 Expanded(
-                  child:SizedBox(
+                  child: SizedBox(
                     height: 50.0,
                     width: 200.0,
                     child: DropdownButtonFormField(
@@ -118,7 +116,9 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                         decoration: InputDecoration(
                           labelStyle: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(Get.context!).colorScheme.primary),
+                              color: Theme.of(screen.context!)
+                                  .colorScheme
+                                  .primary),
                           floatingLabelBehavior: FloatingLabelBehavior.auto,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
@@ -159,41 +159,40 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                 ),
                 const SizedBox(width: 30),
                 Expanded(
-                  child:SizedBox(
-                    height: 50.0,
-                    width: 200.0,
-                    child: TextFormField(
-                      initialValue: controller.openAiKey.value,
-                      decoration: InputDecoration(
-                        floatingLabelBehavior: FloatingLabelBehavior.auto,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(5),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            Icons.remove_red_eye,
-                            color: controller.isObscure.value
-                                ? Colors.grey
-                                : Colors.blue,
+                  child: SizedBox(
+                      height: 50.0,
+                      width: 200.0,
+                      child: TextFormField(
+                        initialValue: controller.openAiKey.value,
+                        decoration: InputDecoration(
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
                           ),
-                          onPressed: () {
-                            controller.isObscure.value =
-                            !controller.isObscure.value;
-                          },
+                          filled: true,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              Icons.remove_red_eye,
+                              color: controller.isObscure.value
+                                  ? Colors.grey
+                                  : Colors.blue,
+                            ),
+                            onPressed: () {
+                              controller.isObscure.value =
+                                  !controller.isObscure.value;
+                            },
+                          ),
                         ),
-                      ),
-                      autovalidateMode: AutovalidateMode.always,
-                      maxLines: 1,
-                      onFieldSubmitted: (value) {
-                        controller.setOpenAiKey(value);
-                      },
-                      obscureText: controller.isObscure.value,
-                    )
-                  ),
+                        autovalidateMode: AutovalidateMode.always,
+                        maxLines: 1,
+                        onFieldSubmitted: (value) {
+                          controller.setOpenAiKey(value);
+                        },
+                        obscureText: controller.isObscure.value,
+                      )),
                 ),
               ],
             ),
@@ -218,7 +217,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
               color: Colors.grey,
               height: 10,
               thickness: 1,
-              indent: 20,
+              indent: 0,
               endIndent: 0,
             ),
             sizedBoxSpace,
@@ -227,10 +226,11 @@ class SettingPage extends GetResponsiveView<SettingsController> {
               child: TextFormField(
                 // initialValue: controller.glmBaseUrl.value,
                 decoration: InputDecoration(
-                  hintText: "mysql --connect-timeout 15 -u xxx.root' -h xxx -P xxx -D test",
+                  hintText:
+                      "mysql --connect-timeout 15 -u xxx.root' -h xxx -P xxx -D test",
                   floatingLabelBehavior: FloatingLabelBehavior.auto,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(5),
                     borderSide: BorderSide.none,
@@ -246,7 +246,6 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                 },
               ),
             )
-
           ],
         );
       }),

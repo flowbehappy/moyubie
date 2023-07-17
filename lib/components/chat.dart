@@ -154,11 +154,13 @@ class _ChatWindowState extends State<ChatWindow> {
   Widget _buildMessageCard(Message message) {
     if (message.role == Role.user) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           const Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
+              SizedBox(
+                width: 10,
+              ),
               FaIcon(FontAwesomeIcons.person),
               SizedBox(
                 width: 5,
@@ -170,12 +172,13 @@ class _ChatWindowState extends State<ChatWindow> {
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  margin: const EdgeInsets.all(8),
+                  // padding: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.only(
+                      left: 8, top: 8, right: 8, bottom: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                   ),

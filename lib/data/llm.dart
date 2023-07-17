@@ -21,6 +21,7 @@ class ChatGpt extends LLM {
     List<OpenAIChatCompletionChoiceMessageModel> openAIMessages = [];
     //将messages反转
     messages = messages.reversed.toList();
+
     // 将messages里面的每条消息的内容取出来拼接在一起
     String content = "";
     String currentModel = SettingsController.to.gptModel.value;
