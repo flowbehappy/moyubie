@@ -9,8 +9,8 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 void main() async {
   await GetStorage.init();
@@ -18,7 +18,7 @@ void main() async {
   if (kIsWeb) {
     // Change default factory on the web
     databaseFactory = databaseFactoryFfiWeb;
-  } else {
+  } else if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
