@@ -7,269 +7,246 @@ class SettingPage extends GetResponsiveView<SettingsController> {
 
   @override
   Widget? builder() {
+    const sizedBoxSpace = SizedBox(height: 24);
     return Scaffold(
       appBar: AppBar(
         title: Text('settings'.tr),
       ),
       body: GetX<SettingsController>(builder: (controller) {
         return ListView(
+          padding: const EdgeInsets.only(left: 20.0, right: 20.0),
           children: [
-            const Divider(),
-            ListTile(
-              dense: true,
-              title: Text('theme'.tr,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            RadioListTile(
-              title: const Text('跟随系统'),
-              value: ThemeMode.system,
-              groupValue: controller.themeMode.value,
-              onChanged: (value) {
-                controller.setThemeMode(ThemeMode.system);
-              },
-            ),
-            RadioListTile(
-              title: const Text('暗黑模式'),
-              value: ThemeMode.dark,
-              groupValue: controller.themeMode.value,
-              onChanged: (value) {
-                controller.setThemeMode(ThemeMode.dark);
-              },
-            ),
-            RadioListTile(
-              title: const Text('白色模式'),
-              value: ThemeMode.light,
-              groupValue: controller.themeMode.value,
-              onChanged: (value) {
-                controller.setThemeMode(ThemeMode.light);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              dense: true,
-              title: Text('language'.tr,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            RadioListTile(
-              title: const Text('中文'),
-              value: 'zh',
-              groupValue: controller.locale.value.languageCode,
-              onChanged: (value) {
-                controller.setLocale(const Locale('zh'));
-              },
-            ),
-            RadioListTile(
-              title: const Text('英文'),
-              value: 'en',
-              groupValue: controller.locale.value.languageCode,
-              onChanged: (value) {
-                controller.setLocale(const Locale('en'));
-              },
-            ),
-            const Divider(),
-            SwitchListTile(
-                title: Text(
-                  "useStreamApi".tr,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.bold),
+            sizedBoxSpace,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Save"),
                 ),
-                value: controller.useStream.value,
-                onChanged: (value) {
-                  controller.setUseStream(value);
-                }),
-            const Divider(),
-            SwitchListTile(
-                title: Text(
-                  "useWebSearch".tr,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                value: controller.useWebSearch.value,
-                onChanged: (value) {
-                  controller.setUseWebSearch(value);
-                }),
-            const Divider(),
-            DropdownButtonFormField(
-              value: controller.llm.value,
-              decoration: InputDecoration(
-                labelText: 'llmHint'.tr,
-                hintText: 'llmHint'.tr,
-                labelStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(Get.context!).colorScheme.primary),
-                floatingLabelBehavior: FloatingLabelBehavior.auto,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-              ),
-              items: <String>['OpenAI', 'ChatGlm', 'IF']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value,
+              ],
+            ),
+            sizedBoxSpace,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Text("AGI"),
+                Tooltip(
+                  message: "description for AGI",
+                  child: IconButton(
+                    iconSize: 10.0,
+                    splashRadius: 10,
+                    color: Theme.of(screen.context).colorScheme.primary,
+                    onPressed: () {},
+                    icon: const Icon(Icons.question_mark),
                   ),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue == null) return;
-                controller.setLlm(newValue);
-              },
+                ),
+              ],
             ),
-            const Divider(),
-            controller.llm.value == "ChatGlm"
-                ? TextFormField(
-                    initialValue: controller.glmBaseUrl.value,
-                    decoration: InputDecoration(
-                      labelText: 'gmlBaseUrl'.tr,
-                      hintText: 'gmlBaseUrl'.tr,
-                      labelStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(Get.context!).colorScheme.primary),
-                      floatingLabelBehavior: FloatingLabelBehavior.auto,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                    ),
-                    autovalidateMode: AutovalidateMode.always,
-                    maxLines: 1,
-                    onEditingComplete: () {},
-                    onFieldSubmitted: (value) {
-                      controller.setGlmBaseUrl(value);
-                    },
-                  )
-                : const SizedBox(),
-            controller.llm.value == "OpenAI"
-                ? TextFormField(
-                    initialValue: controller.openAiKey.value,
-                    decoration: InputDecoration(
-                      labelText: 'enterKey'.tr,
-                      hintText: 'enterKey'.tr,
-                      labelStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(Get.context!).colorScheme.primary),
-                      floatingLabelBehavior: FloatingLabelBehavior.auto,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          Icons.remove_red_eye,
-                          color: controller.isObscure.value
-                              ? Colors.grey
-                              : Colors.blue,
+            const Divider(
+              color: Colors.grey,
+              height: 10,
+              thickness: 1,
+              indent: 20,
+              endIndent: 0,
+            ),
+            sizedBoxSpace,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 50,
+                  child: Text("Service"),
+                ),
+                const SizedBox(width: 30),
+                Expanded(
+                    child:SizedBox(
+                      height: 50.0,
+                      width: 200.0,
+                      child: DropdownButtonFormField(
+                        // padding: EdgeInsets.only(left: 116),
+                        value: controller.llm.value,
+                        decoration: InputDecoration(
+                          // labelText: 'llmHint'.tr,
+                          // hintText: 'llmHint'.tr,
+                          labelStyle: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(Get.context!).colorScheme.primary),
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
                         ),
-                        onPressed: () {
-                          controller.isObscure.value =
-                              !controller.isObscure.value;
+                        items: <String>['OpenAI', 'ChatGlm', 'IF']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue == null) return;
+                          controller.setLlm(newValue);
                         },
                       ),
                     ),
-                    autovalidateMode: AutovalidateMode.always,
-                    maxLines: 1,
-                    onFieldSubmitted: (value) {
-                      controller.setOpenAiKey(value);
-                    },
-                    obscureText: controller.isObscure.value,
-                  )
-                : const SizedBox(),
-            controller.llm.value == "OpenAI"
-                ? const SizedBox(
-                    height: 20,
-                  )
-                : const SizedBox(),
-            controller.llm.value == "OpenAI"
-                ? DropdownButtonFormField(
-                    value: controller.openAiBaseUrl.value,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'setProxyUrlTips'.tr,
-                      hintText: 'setProxyUrlTips'.tr,
-                      labelStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(Get.context!).colorScheme.primary),
-                      floatingLabelBehavior: FloatingLabelBehavior.auto,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                    ),
-                    items: <String>[
-                      'https://ai.fakeopen.com/',
-                      'https://api.openai-proxy.com',
-                      'https://api.openai.com'
-                    ].map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value, // 缩短显示文本
-                          overflow: TextOverflow.ellipsis, // 超出长度省略号显示
+                ),
+              ],
+            ),
+            sizedBoxSpace,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 50,
+                  child: Text("Model"),
+                ),
+                const SizedBox(width: 30),
+                Expanded(
+                  child:SizedBox(
+                    height: 50.0,
+                    width: 200.0,
+                    child: DropdownButtonFormField(
+                        value: controller.gptModel.value,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelStyle: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(Get.context!).colorScheme.primary),
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue == null) return;
-                      controller.setOpenAiBaseUrl(newValue);
-                    },
-                  )
-                : const SizedBox(),
-            controller.llm.value == "OpenAI"
-                ? const SizedBox(
-                    height: 20,
-                  )
-                : const SizedBox(),
-            controller.llm.value == "OpenAI"
-                ? DropdownButtonFormField(
-                    value: controller.gptModel.value,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'gptModel'.tr,
-                      hintText: 'gptModel'.tr,
-                      labelStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(Get.context!).colorScheme.primary),
-                      floatingLabelBehavior: FloatingLabelBehavior.auto,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide.none,
+                        items: <String>[
+                          'gpt-3.5-turbo',
+                          'gpt-3.5-turbo-16k',
+                          'gpt-4',
+                          'gpt-4-0613',
+                          'gpt-4-32k',
+                          'gpt-4-32k-0613'
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue == null) return;
+                          controller.setGptModel(newValue);
+                        }),
+                  ),
+                ),
+              ],
+            ),
+            sizedBoxSpace,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 50,
+                  child: Text("Token"),
+                ),
+                const SizedBox(width: 30),
+                Expanded(
+                  child:SizedBox(
+                    height: 50.0,
+                    width: 200.0,
+                    child: TextFormField(
+                      initialValue: controller.openAiKey.value,
+                      decoration: InputDecoration(
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(5),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            Icons.remove_red_eye,
+                            color: controller.isObscure.value
+                                ? Colors.grey
+                                : Colors.blue,
+                          ),
+                          onPressed: () {
+                            controller.isObscure.value =
+                            !controller.isObscure.value;
+                          },
+                        ),
                       ),
-                      filled: true,
-                    ),
-                    items: <String>[
-                      'gpt-3.5-turbo',
-                      'gpt-3.5-turbo-16k',
-                      'gpt-4',
-                      'gpt-4-0613',
-                      'gpt-4-32k',
-                      'gpt-4-32k-0613'
-                    ].map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue == null) return;
-                      controller.setGptModel(newValue);
-                    })
-                : const SizedBox(),
+                      autovalidateMode: AutovalidateMode.always,
+                      maxLines: 1,
+                      onFieldSubmitted: (value) {
+                        controller.setOpenAiKey(value);
+                      },
+                      obscureText: controller.isObscure.value,
+                    )
+                  ),
+                ),
+              ],
+            ),
+            sizedBoxSpace,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Text("TiDB Serverless"),
+                Tooltip(
+                  message: "description for TiDB Serverless",
+                  child: IconButton(
+                    iconSize: 10.0,
+                    splashRadius: 10,
+                    color: Theme.of(screen.context).colorScheme.primary,
+                    onPressed: () {},
+                    icon: const Icon(Icons.question_mark),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(
+              color: Colors.grey,
+              height: 10,
+              thickness: 1,
+              indent: 20,
+              endIndent: 0,
+            ),
+            sizedBoxSpace,
+            SizedBox(
+              height: 200,
+              child: TextFormField(
+                // initialValue: controller.glmBaseUrl.value,
+                decoration: InputDecoration(
+                  hintText: "mysql --connect-timeout 15 -u xxx.root' -h xxx -P xxx -D test",
+                  floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                ),
+                autovalidateMode: AutovalidateMode.always,
+                maxLines: null,
+                minLines: 10,
+                onEditingComplete: () {},
+                onFieldSubmitted: (value) {
+                  controller.setGlmBaseUrl(value);
+                },
+              ),
+            )
+
           ],
         );
       }),
