@@ -154,82 +154,59 @@ class _ChatWindowState extends State<ChatWindow> {
   }
 
   Widget _buildMessageCard(Message message) {
-    if (message.role == Role.user) {
-      return Column(
-        children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 10,
-              ),
-              FaIcon(FontAwesomeIcons.person),
-              SizedBox(
-                width: 5,
-              ),
-              Text("User"),
-              SizedBox(
-                width: 10,
-              )
-            ],
+    IconData icon = FontAwesomeIcons.question;
+    String name = "?";
+    Color? color;
+    Widget? text_box;
+    switch (message.role) {
+      case Role.user:
+        icon = FontAwesomeIcons.fish;
+        name = "User";
+        color = Colors.blue[100];
+        text_box = Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SelectableText(
+            message.text,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Flexible(
-                child: Container(
-                  // padding: const EdgeInsets.all(8),
-                  margin: const EdgeInsets.only(
-                      left: 8, top: 8, right: 8, bottom: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Card(
-                    color: Colors.blue[100],
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SelectableText(
-                        message.text,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    } else {
-      return Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(
-                width: 10,
-              ),
-              const FaIcon(FontAwesomeIcons.robot),
-              const SizedBox(
-                width: 5,
-              ),
-              Text(message.role == Role.system ? "System" : "assistant"),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Card(
-                  elevation: 8,
-                  margin: const EdgeInsets.all(8),
-                  child: Markdown(text: message.text),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
+        );
+        break;
+      case Role.assistant:
+      case Role.system:
+        icon = FontAwesomeIcons.robot;
+        name = message.role == Role.assistant ? "assistant" : "assistant";
+        text_box = Markdown(text: message.text);
+        break;
+      default:
     }
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(
+              width: 10,
+            ),
+            FaIcon(icon),
+            const SizedBox(
+              width: 5,
+            ),
+            Text(name),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Card(
+                color: color,
+                margin: const EdgeInsets.all(8),
+                child: text_box,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   void _handleKeyEvent(RawKeyEvent value) {

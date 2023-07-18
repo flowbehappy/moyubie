@@ -13,6 +13,7 @@ class Markdown extends StatelessWidget {
     final config =
         isDark ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
     codeWrapper(child, text) => CodeWrapperWidget(child: child, text: text);
+
     return SelectionArea(
       child: Padding(
         padding: const EdgeInsets.all(8.0),

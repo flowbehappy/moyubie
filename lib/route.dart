@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
+import 'package:moyubie/pages/home.dart';
 
-// final routes = [
-//   GetPage(name: '/', page: () => MyHomePage()),
-//   GetPage(name: '/second', page: () => const SecondPage()),
-//   GetPage(name: '/setting', page: () => SettingPage())
-// ];
+import 'components/setting.dart';
+
+final routes = [
+  GetPage(name: '/', page: () => MyHomePage()),
+  GetPage(name: '/setting', page: () => SettingPage())
+];

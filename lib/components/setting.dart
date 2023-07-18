@@ -9,6 +9,9 @@ class SettingPage extends GetResponsiveView<SettingsController> {
   Widget? builder() {
     const sizedBoxSpace = SizedBox(height: 24);
     return Scaffold(
+      appBar: AppBar(
+        title: Text('settings'.tr),
+      ),
       body: GetX<SettingsController>(builder: (controller) {
         return ListView(
           padding: const EdgeInsets.only(left: 20.0, right: 20.0),
