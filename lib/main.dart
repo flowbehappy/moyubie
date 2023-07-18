@@ -17,6 +17,8 @@ import 'package:moyubie/configs/translations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
+import 'components/room.dart';
+
 void main() async {
   await GetStorage.init();
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,6 +85,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var shortestSide = MediaQuery.of(context).size.shortestSide;
+    final ChatRoomType type = shortestSide < 600 ?
+      ChatRoomType.phone : ChatRoomType.tablet;
     Get.put(SettingsController());
     Get.put(ConversationController());
     Get.put(MessageController());
@@ -101,7 +106,7 @@ class MyApp extends StatelessWidget {
           bottomNavigationBar: menu(),
           body: TabBarView(
             children: [
-              Container(child: ChatWindow()),
+              Container(child: ChatRoom(restorationId: "chat_room", type: type)),
               Container(child: ChatWindow()),
               Container(child: SettingPage()),
             ],

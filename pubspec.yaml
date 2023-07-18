@@ -54,6 +54,7 @@ dependencies:
   vibration: ^1.8.1
   html: ^0.15.4
   sqflite_common_ffi_web: any
+  dual_screen: ^1.0.4
 
 dev_dependencies:
   flutter_test:
