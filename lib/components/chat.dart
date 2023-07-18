@@ -2,12 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_chatgpt/components/markdown.dart';
-import 'package:flutter_chatgpt/components/prompts.dart';
-import 'package:flutter_chatgpt/controller/conversation.dart';
-import 'package:flutter_chatgpt/controller/message.dart';
-import 'package:flutter_chatgpt/controller/prompt.dart';
-import 'package:flutter_chatgpt/repository/conversation.dart';
+import 'package:moyubie/components/markdown.dart';
+import 'package:moyubie/components/prompts.dart';
+import 'package:moyubie/controller/conversation.dart';
+import 'package:moyubie/controller/message.dart';
+import 'package:moyubie/controller/prompt.dart';
+import 'package:moyubie/repository/conversation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';

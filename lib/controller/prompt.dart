@@ -1,4 +1,4 @@
-import 'package:flutter_chatgpt/utils/prompt.dart';
+import 'package:moyubie/utils/prompt.dart';
 import 'package:get/get.dart';
 
 class PromptController extends GetxController {

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_chatgpt/data/llm.dart';
-import 'package:flutter_chatgpt/repository/conversation.dart';
+import 'package:moyubie/data/llm.dart';
+import 'package:moyubie/repository/conversation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;

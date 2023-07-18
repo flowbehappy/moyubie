@@ -1,10 +1,10 @@
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_chatgpt/controller/settings.dart';
-import 'package:flutter_chatgpt/data/glm.dart';
-import 'package:flutter_chatgpt/data/if.dart';
-import 'package:flutter_chatgpt/data/llm.dart';
-import 'package:flutter_chatgpt/repository/conversation.dart';
+import 'package:moyubie/controller/settings.dart';
+import 'package:moyubie/data/glm.dart';
+import 'package:moyubie/data/if.dart';
+import 'package:moyubie/data/llm.dart';
+import 'package:moyubie/repository/conversation.dart';
 import 'package:get_storage/get_storage.dart';
 
 class MessageRepository {

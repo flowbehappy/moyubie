@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_chatgpt/controller/prompt.dart';
+import 'package:moyubie/controller/prompt.dart';
 import 'package:get/get.dart';
 
 class PromptsView extends GetResponsiveView {

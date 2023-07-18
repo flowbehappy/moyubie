@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_chatgpt/components/code_wrapper.dart';
-import 'package:flutter_chatgpt/components/latex.dart';
+import 'package:moyubie/components/code_wrapper.dart';
+import 'package:moyubie/components/latex.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 
 class Markdown extends StatelessWidget {

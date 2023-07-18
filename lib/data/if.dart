@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_chatgpt/data/llm.dart';
-import 'package:flutter_chatgpt/repository/conversation.dart';
+import 'package:moyubie/data/llm.dart';
+import 'package:moyubie/repository/conversation.dart';
 
 class ChatIF extends LLM {
   @override

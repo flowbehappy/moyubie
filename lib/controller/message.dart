@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter_chatgpt/repository/conversation.dart';
-import 'package:flutter_chatgpt/repository/message.dart';
+import 'package:moyubie/repository/conversation.dart';
+import 'package:moyubie/repository/message.dart';
 import 'package:get/get.dart';
 
 class MessageController extends GetxController {

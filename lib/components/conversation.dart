@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_chatgpt/controller/conversation.dart';
-import 'package:flutter_chatgpt/controller/message.dart';
-import 'package:flutter_chatgpt/controller/settings.dart';
-import 'package:flutter_chatgpt/repository/conversation.dart';
+import 'package:moyubie/controller/conversation.dart';
+import 'package:moyubie/controller/message.dart';
+import 'package:moyubie/controller/settings.dart';
+import 'package:moyubie/repository/conversation.dart';
 import 'package:get/get.dart';
 
 class ConversationWindow extends StatelessWidget {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_chatgpt/controller/conversation.dart';
-import 'package:flutter_chatgpt/controller/message.dart';
-import 'package:flutter_chatgpt/controller/prompt.dart';
-import 'package:flutter_chatgpt/controller/settings.dart';
-import 'package:flutter_chatgpt/components/chat.dart';
-import 'package:flutter_chatgpt/components/setting.dart';
+import 'package:moyubie/controller/conversation.dart';
+import 'package:moyubie/controller/message.dart';
+import 'package:moyubie/controller/prompt.dart';
+import 'package:moyubie/controller/settings.dart';
+import 'package:moyubie/components/chat.dart';
+import 'package:moyubie/components/setting.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';

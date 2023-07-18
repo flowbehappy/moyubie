@@ -1,9 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.flutter_chatgpt">
+    package="com.moyuteam.moyubie">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE"/>
    <application
-        android:label="flutter_chatgpt"
+        android:label="moyubie"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
