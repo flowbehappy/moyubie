@@ -17,7 +17,7 @@ import 'package:moyubie/configs/translations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
-import 'components/room.dart';
+import 'components/chat_room.dart';
 
 void main() async {
   await GetStorage.init();

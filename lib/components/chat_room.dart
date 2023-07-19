@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui';
 import 'package:dual_screen/dual_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:moyubie/components/chat.dart';
@@ -93,6 +92,36 @@ class ListPane extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text("Chat Room"),
+        actions: [
+          PopupMenuButton<Text>(
+            padding: const EdgeInsets.only(right: 32),
+            icon: const Icon(Icons.add),
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem(
+                  child: ListTile(
+                    leading: Icon(Icons.add),
+                    title: Align(
+                      alignment: Alignment(-1.2, 0),
+                      child: Text("New Chat Room"),
+                    ),
+                  ),
+                ),
+                const PopupMenuItem(
+                  child: ListTile(
+                    // dense: true,
+                // minLeadingWidth: 0,
+                    leading: Icon(Icons.group_add),
+                    title: Align(
+                      alignment: Alignment(-1.2, 0),
+                      child: Text("Join Chat Room"),
+                    ),
+                  ),
+                ),
+              ];
+            },
+          )
+        ],
       ),
       body: Scrollbar(
         controller: _scrollController,
