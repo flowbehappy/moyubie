@@ -36,7 +36,3 @@ Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
 * Linux (TODO)
 * Web (TODO)
 
-## Thank list
-
-* This project's UI part is based on [flutter_chat_box](https://github.com/bravekingzhang/flutter_chat_box). 
-
