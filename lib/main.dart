@@ -18,7 +18,8 @@ import 'package:moyubie/configs/translations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
-import 'components/room.dart';
+import 'components/chat_room.dart';
+import 'controller/chat_room.dart';
 
 void main() async {
   await GetStorage.init();
@@ -93,6 +94,7 @@ class MyApp extends StatelessWidget {
     Get.put(ConversationController());
     Get.put(MessageController());
     Get.put(PromptController());
+    Get.put(ChatRoomController());
     return MaterialApp(
       theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),
       darkTheme: FlexThemeData.dark(scheme: FlexScheme.ebonyClay),

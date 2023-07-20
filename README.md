@@ -1,10 +1,38 @@
-Moyubie
-====
+# Moyubie
 
-Moyubie is a cross-platform AI chat APP which stores AI chat records on DBaaS so users can access them from any device. Moyubie uses users' AI chat records to analyze and make guesses about which information the user might like, then it fetches that information from the internet. Moyubie is powered by AI technology and stores data on serverless database, e.g. [TiDB Cloud Serverless](https://tidbcloud.com/free-trial). There is no backend server for Moyubie, so users have full control of their personal data.
+Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
 
+* It is a convenient and powerful AI chat client. Chat messages are synchronized between different devices.
+* Users can chat to anyone in a chat room in a private environment
+  * There is no server side required. Chat messages are secure and completely owned by users.
+* A news list powered by AI
+* Supported platforms
+  * iOS, Android, MacOS, Windows, Linux, Web
 
-Thank list
-====
-* This project's UI part is based on [flutter_chat_box](https://github.com/bravekingzhang/flutter_chat_box). 
+## Powered By
+
+* [TiDB Cloud Serverless](https://tidbcloud.com/free-trial)
+* AGI services. Currently supports
+  * ChatGPT
+
+## Development
+
+* You can learn how to prepare flutter development environment, compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
+* After all required tools are installed, you can compile and debug the app by
+  ```
+  
+  git clone git@github.com:flowbehappy/moyubie.git
+  cd moyubie
+  flutter doctor     # Make sure everything is fine
+  flutter devices    # See what devices or simulator you have
+  flutter run        # Run the app. You can also run the app in a specific device/simulator by: flutter run -d <device_id>
+  ```
+
+## Downloads
+* iOS (TODO)
+* Android (TODO)
+* MacOS (TODO)
+* Windows (TODO)
+* Linux (TODO)
+* Web (TODO)
 
