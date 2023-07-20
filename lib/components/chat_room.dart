@@ -167,7 +167,7 @@ class NewChatButton extends StatelessWidget {
               leading: Icon(Icons.group_add),
               title: Align(
                 alignment: Alignment(-1.2, 0),
-                child: Text("Join Chat Room"q),
+                child: Text("Join Chat Room"),
               ),
             ),
           ),
