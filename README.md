@@ -1,7 +1,20 @@
 Moyubie
 ====
 
-Moyubie is a cross-platform AI chat APP which stores AI chat records on DBaaS so users can access them from any device. Moyubie uses users' AI chat records to analyze and make guesses about which information the user might like, then it fetches that information from the internet. Moyubie is powered by AI technology and stores data on serverless database, e.g. [TiDB Cloud Serverless](https://tidbcloud.com/free-trial). There is no backend server for Moyubie, so users have full control of their personal data.
+Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
+
+* It is a convenient and powerful AI chat client. Chat messages are synchronized between different devices.
+* Users can chat to anyone in a chat room in a private environment
+  * There is no server side required. Chat messages are secure and completely owned by users.
+* A news list powered by AI
+* Supported platforms
+  * iOS, Android, MacOS, Windows, Linux, Web
+
+Powered By
+====
+* [TiDB Cloud Serverless](https://tidbcloud.com/free-trial)
+* AGI services. Currently supports
+  * ChatGPT
 
 
 Thank list
