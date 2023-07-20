@@ -17,7 +17,7 @@ class ChatRoom {
     return {
       'uuid': uuid,
       'name': name,
-      'create_time': createTime,
+      'create_time': createTime.toString(),
       'connection_token': connectionToken,
     };
   }
