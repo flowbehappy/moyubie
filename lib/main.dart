@@ -1,6 +1,7 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:moyubie/components/news.dart';
 import 'package:moyubie/controller/conversation.dart';
 import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/controller/prompt.dart';
@@ -107,7 +108,7 @@ class MyApp extends StatelessWidget {
           body: TabBarView(
             children: [
               Container(child: ChatRoom(restorationId: "chat_room", type: type)),
-              Container(child: ChatWindow()),
+              Container(child: const NewsWindow()),
               Container(child: SettingPage()),
             ],
           ),
