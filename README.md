@@ -28,6 +28,14 @@ Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
   flutter run        # Run the app. You can also run the app in a specific device/simulator by: flutter run -d <device_id>
   ```
 
+## Downloads
+* iOS (TODO)
+* Android (TODO)
+* MacOS (TODO)
+* Windows (TODO)
+* Linux (TODO)
+* Web (TODO)
+
 ## Thank list
 
 * This project's UI part is based on [flutter_chat_box](https://github.com/bravekingzhang/flutter_chat_box). 
