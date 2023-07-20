@@ -18,7 +18,7 @@ Powered By
 
 Compilation
 ====
-* You can learn how to compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
+* You can learn how to prepare flutter development environment, compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
 * After all required tools are installed. You can start
   ```
   
