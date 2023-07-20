@@ -1,5 +1,4 @@
-Moyubie
-====
+# Moyubie
 
 Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
 
@@ -10,14 +9,14 @@ Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
 * Supported platforms
   * iOS, Android, MacOS, Windows, Linux, Web
 
-Powered By
-====
+## Powered By
+
 * [TiDB Cloud Serverless](https://tidbcloud.com/free-trial)
 * AGI services. Currently supports
   * ChatGPT
 
-Development
-====
+## Development
+
 * You can learn how to prepare flutter development environment, compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
 * After all required tools are installed. You can start
   ```
@@ -29,7 +28,7 @@ Development
   flutter run        # Run the app. You can also run the app in a specific device/simulator by: flutter run -d <device_id>
   ```
 
-Thank list
-====
+## Thank list
+
 * This project's UI part is based on [flutter_chat_box](https://github.com/bravekingzhang/flutter_chat_box). 
 
