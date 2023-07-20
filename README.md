@@ -16,6 +16,18 @@ Powered By
 * AGI services. Currently supports
   * ChatGPT
 
+Compilation
+====
+* You can learn how to compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
+* After all required tools are installed. You can start
+  ```
+  
+  git clone git@github.com:flowbehappy/moyubie.git
+  cd moyubie
+  flutter doctor     # Make sure everything is fine
+  flutter devices    # See what devices or simulator you have
+  flutter run        # Run the app. You can also run the app in a specific device/simulator by: flutter run -d <device_id>
+  ```
 
 Thank list
 ====
