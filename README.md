@@ -18,7 +18,7 @@ Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
 ## Development
 
 * You can learn how to prepare flutter development environment, compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
-* After all required tools are installed. You can start
+* After all required tools are installed, you can compile and debug the app by
   ```
   
   git clone git@github.com:flowbehappy/moyubie.git
