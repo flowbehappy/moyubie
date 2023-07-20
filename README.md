@@ -16,7 +16,7 @@ Powered By
 * AGI services. Currently supports
   * ChatGPT
 
-Compilation
+Development
 ====
 * You can learn how to prepare flutter development environment, compile and test a [flutter](https://flutter.dev) app from [flutter.dev](https://flutter.dev/).
 * After all required tools are installed. You can start
