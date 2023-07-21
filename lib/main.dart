@@ -18,6 +18,7 @@ import 'package:moyubie/configs/translations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:io' show Platform;
+import 'package:path/path.dart';
 
 import 'components/chat_room.dart';
 import 'controller/chat_room.dart';
@@ -28,6 +29,9 @@ void main() async {
   if (kIsWeb) {
     // Change default factory on the web
     databaseFactory = databaseFactoryFfiWeb;
+    // TODO(tangenta): only used for debug, remove it later.
+    String path = join(await getDatabasesPath(), 'chatgpt.db');
+    await deleteDatabase(path);
   } else if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -92,7 +96,7 @@ class MyApp extends StatelessWidget {
     final ChatRoomType type = shortestSide < 600 ?
       ChatRoomType.phone : ChatRoomType.tablet;
     Get.put(SettingsController());
-    Get.put(ConversationController());
+    // Get.put(ConversationController());
     Get.put(MessageController());
     Get.put(PromptController());
     Get.put(ChatRoomController());

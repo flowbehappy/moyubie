@@ -85,11 +85,12 @@ class ChatRoomRepository {
       final String path = join(await getDatabasesPath(), 'chatgpt.db');
       _database = await openDatabase(path, version: 1,
           onCreate: (Database db, int version) async {
+        print("on create!");
         await db.execute('''
           CREATE TABLE $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
-            $_columnChatRoomName TEXT
-            $_columnChatRoomCreateTime TEXT
+            $_columnChatRoomName TEXT,
+            $_columnChatRoomCreateTime TEXT,
             $_columnChatRoomConnectionToken TEXT
           )
         ''');
@@ -119,11 +120,11 @@ class ChatRoomRepository {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     await db.execute('''
-        CREATE TABLE IF NOT EXISTS $chatRoom.uuid (
+        CREATE TABLE IF NOT EXISTS `${chatRoom.uuid}` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
-          $_columnMessageUserName TEXT
-          $_columnMessageCreateTime TEXT
-          $_columnMessageMessage TEXT
+          $_columnMessageUserName TEXT,
+          $_columnMessageCreateTime TEXT,
+          $_columnMessageMessage TEXT,
           $_columnMessageSource TEXT
         )
         ''');
@@ -148,7 +149,7 @@ class ChatRoomRepository {
         whereArgs: [uuid],
       );
     });
-    await db.execute('DROP TABLE IF EXISTS $uuid');
+    await db.execute('DROP TABLE IF EXISTS `$uuid`');
   }
 
   Future<List<Message>> getMessagesByChatRoomUUid(String uuid) async {

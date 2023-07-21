@@ -98,7 +98,7 @@ class _ChatWindowState extends State<ChatWindow> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        _sendMessage();
+                        // _sendMessage();
                       },
                       style: ElevatedButton.styleFrom(
                         shape: const RoundedRectangleBorder(

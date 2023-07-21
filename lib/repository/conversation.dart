@@ -73,12 +73,12 @@ class ConversationRepository {
   static Database? _database;
   static ConversationRepository? _instance;
 
-  ConversationRepository._internal();
+  // ConversationRepository._internal();
 
-  factory ConversationRepository() {
-    _instance ??= ConversationRepository._internal();
-    return _instance!;
-  }
+  // factory ConversationRepository() {
+  //   _instance ??= ConversationRepository._internal();
+  //   return _instance!;
+  // }
 
   Future<Database> _getDb() async {
     if (_database == null) {

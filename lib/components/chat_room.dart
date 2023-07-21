@@ -178,10 +178,10 @@ class NewChatButton extends StatelessWidget {
 
   _addNewChatRoom() {
     final comp.ChatRoomController chatRoomController = Get.find();
-    var uuid = const Uuid().toString();
+    const uuid = Uuid();
     var createTime = DateTime.now();
     repo.ChatRoom chatRoom = repo.ChatRoom(
-        uuid: uuid,
+        uuid: uuid.v4(),
         name: "New Chat Room",
         createTime: createTime,
         connectionToken: "");
