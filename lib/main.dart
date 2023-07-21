@@ -16,6 +16,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:moyubie/configs/translations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:io' show Platform;
 
 import 'components/chat_room.dart';
@@ -105,12 +106,14 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: DefaultTabController(
         length: 3,
+
         child: Scaffold(
           bottomNavigationBar: menu(),
           body: TabBarView(
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               Container(child: ChatRoom(restorationId: "chat_room", type: type)),
-              Container(child: const NewsWindow()),
+              Container(child: NewsWindow(ty: type)),
               Container(child: SettingPage()),
             ],
           ),

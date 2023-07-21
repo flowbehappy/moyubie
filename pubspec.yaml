@@ -55,6 +55,9 @@ dependencies:
   html: ^0.15.4
   sqflite_common_ffi_web: any
   dual_screen: ^1.0.4
+  webview_flutter: ^4.2.2
+  url_launcher: ^6.1.12
+  easy_refresh: ^3.3.2+1
 
 dev_dependencies:
   flutter_test:
