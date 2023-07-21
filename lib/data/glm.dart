@@ -1,27 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:moyubie/data/llm.dart';
-import 'package:moyubie/repository/conversation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
+
+import '../repository/chat_room.dart';
 
 class ChatGlM extends LLM {
+  final uuid = const Uuid();
   @override
   getResponse(
+      String chatRoomUuid,
+      String userName,
       List<Message> messages,
       ValueChanged<Message> onResponse,
       ValueChanged<Message> errorCallback,
       ValueChanged<Message> onSuccess) async {
     var messageToBeSend = messages.removeLast();
-    var prompt = messageToBeSend.text;
+    var prompt = messageToBeSend.message;
     var history = messages.length >= 2 ? collectHistory(messages) : [];
     var body = {'query': prompt, 'history': history.isEmpty ? [] : history};
     var glmBaseUrl = GetStorage().read("glmBaseUrl") ?? "";
     if (glmBaseUrl.isEmpty) {
       errorCallback(Message(
-        text: "glm baseUrl is empty,please set you glmBaseUrl first",
-        conversationId: messageToBeSend.conversationId,
-        role: Role.assistant,
+        uuid: uuid.v4(),
+        userName: userName,
+        createTime: DateTime.now(),
+        message: "glm baseUrl is empty,please set you glmBaseUrl first",
+        source: MessageSource.bot,
       ));
       return;
     }
@@ -45,21 +52,27 @@ class ChatGlM extends LLM {
         final jsonData = jsonDecode(data.split("data:")[1].trim());
         if (jsonData["finished"]) {
           onSuccess(Message(
-              conversationId: messageToBeSend.conversationId,
-              text: jsonData["response"],
-              role: Role.assistant));
+              uuid: uuid.v4(),
+              userName: userName,
+              createTime: DateTime.now(),
+              message: jsonData["response"],
+              source: MessageSource.bot));
         } else {
           onResponse(Message(
-              conversationId: messageToBeSend.conversationId,
-              text: jsonData["response"],
-              role: Role.assistant));
+              uuid: uuid.v4(),
+              userName: userName,
+              createTime: DateTime.now(),
+              message: jsonData["response"],
+              source: MessageSource.bot));
         }
       }
     } catch (e) {
       errorCallback(Message(
-        text: e.toString(),
-        conversationId: messageToBeSend.conversationId,
-        role: Role.assistant,
+        uuid: uuid.v4(),
+        userName: userName,
+        createTime: DateTime.now(),
+        message: e.toString(),
+        source: MessageSource.bot,
       ));
     }
   }
@@ -70,7 +83,7 @@ List<List<String>> collectHistory(List<Message> list) {
   for (int i = list.length - 1; i >= 0; i -= 2) {
     //只添加最近的会话
     if (i - 1 > 0) {
-      result.insert(0, [list[i - 1].text, list[i].text]);
+      result.insert(0, [list[i - 1].message, list[i].message]);
     }
     if (result.length > 3) {
       //放太多轮次也没啥意思

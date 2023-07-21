@@ -82,7 +82,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                         ),
                         filled: true,
                       ),
-                      items: <String>['OpenAI', 'ChatGlm', 'IF']
+                      items: <String>['OpenAI', 'ChatGlm', 'IF', 'Echo']
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,

@@ -2,10 +2,11 @@ import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/data/glm.dart';
-import 'package:moyubie/data/if.dart';
 import 'package:moyubie/data/llm.dart';
-import 'package:moyubie/repository/conversation.dart';
 import 'package:get_storage/get_storage.dart';
+
+import '../data/echo.dart';
+import 'chat_room.dart';
 
 class MessageRepository {
   static final MessageRepository _instance = MessageRepository._internal();
@@ -18,20 +19,23 @@ class MessageRepository {
     init();
   }
 
-  void postMessage(Message message, ValueChanged<Message> onResponse,
+  void postMessage(String chatRoomUuid, String userName,
+      Message message, ValueChanged<Message> onResponse,
       ValueChanged<Message> onError, ValueChanged<Message> onSuccess) async {
-    List<Message> messages = await ConversationRepository()
-        .getMessagesByConversationUUid(message.conversationId);
-    _getResponseFromGpt(messages, onResponse, onError, onSuccess);
+    List<Message> messages = await ChatRoomRepository()
+        .getMessagesByChatRoomUUid(chatRoomUuid);
+    _getResponseFromGpt(chatRoomUuid, userName, messages, onResponse, onError, onSuccess);
   }
 
   void init() {
-    OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
-    OpenAI.baseUrl =
+    // OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
+    // OpenAI.baseUrl =
         GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
   }
 
   void _getResponseFromGpt(
+      String chatRoomUuid,
+      String userName,
       List<Message> messages,
       ValueChanged<Message> onResponse,
       ValueChanged<Message> errorCallback,
@@ -40,20 +44,20 @@ class MessageRepository {
 
     switch (llm.toUpperCase()) {
       case "OPENAI":
-        ChatGpt().getResponse(messages, onResponse, errorCallback, onSuccess);
+        ChatGpt().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
         break;
       case "CHATGLM":
-        ChatGlM().getResponse(messages, onResponse, errorCallback, onSuccess);
+        ChatGlM().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
         break;
-      case "IF":
-        ChatIF().getResponse(messages, onResponse, errorCallback, onSuccess);
+      case "ECHO":
+        EchoGPT().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
         break;
       default:
-        ChatGpt().getResponse(messages, onResponse, errorCallback, onSuccess);
+        ChatGpt().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
     }
   }
 
-  deleteMessage(int messageId) {
-    ConversationRepository().deleteMessage(messageId);
+  deleteMessage(String chatRoomUuid, String messageUuid) {
+    ChatRoomRepository().deleteMessage(chatRoomUuid, messageUuid);
   }
 }

@@ -15,13 +15,11 @@ class ChatRoomController extends GetxController {
     super.onInit();
   }
 
-  void setCurrentChatRoomUuid(String uuid) async {
-    currentChatRoomUuid.value = uuid;
-    update();
-  }
-
-  void setCurrentRoomIndex(int index) async {
+  void setCurrentRoom(int index) async {
     currentRoomIndex.value = IntegerWrapper(index);
+    if (index > 0) {
+      currentChatRoomUuid.value = roomList[index].uuid;
+    }
     update();
   }
 
@@ -41,6 +39,8 @@ class ChatRoomController extends GetxController {
   void addChatRoom(ChatRoom chatRoom) async {
     await ChatRoomRepository().addChatRoom(chatRoom);
     roomList.value = await ChatRoomRepository().getChatRooms();
+    currentRoomIndex.value = IntegerWrapper(roomList.length - 1);
+    currentChatRoomUuid.value = chatRoom.uuid;
     update();
   }
 }
