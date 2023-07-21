@@ -4,13 +4,13 @@ import 'dart:io';
 import 'package:dual_screen/dual_screen.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/components/chat_room.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+
+import '../utils/ai_recommend.dart';
 
 enum _NewsSource { HackerNews }
 
@@ -22,6 +22,14 @@ class _News {
   String url;
 
   _News(this.source, this.id, this.url, this.title, this.content);
+
+  Map<String, dynamic> convertToJsonForRecommend() {
+    return {
+      "id": id,
+      "title": title,
+      "score_and_creator": content,
+    };
+  }
 }
 
 class _NewsService {
@@ -352,15 +360,15 @@ class _TestData {
       Icon(Icons.newspaper);
 
   static const simplePrompted = [
-    _Recommend(36799548,
+    Recommend(36799548,
         "Anytype是一个开源的、本地优先的、P2P的Notion替代品。它提供了类似Notion的功能，但是数据存储在本地，而不是云端。这样可以增加数据的安全性和隐私保护。对于关注数据安全和隐私的用户来说，Anytype是一个很好的选择。"),
-    _Recommend(36795173,
+    Recommend(36795173,
         "Kevin Mitnick是一位著名的黑客，据称他已经去世了。Kevin Mitnick以他的黑客技术和社会工程学见长，并因此被FBI通缉。他的离世无疑对黑客界产生了一定的影响，所以对关注黑客技术和网络安全的用户来说，这是一个可能感兴趣的新闻。"),
-    _Recommend(36791434,
+    Recommend(36791434,
         "Twenty.com是一个开源的CRM系统，它提供了一个集成的客户关系管理解决方案。对于需要管理客户关系的企业或个人来说，Twenty.com是一个很好的选择。它的开源性质还意味着用户可以根据自己的需求进行定制和扩展。"),
-    _Recommend(36790301,
+    Recommend(36790301,
         "斯坦福大学校长因操纵研究数据的行为辞职，并将撤销其发表的三篇论文。这件事引发了一场关于研究诚信和学术道德的讨论。对于关注科研诚信和学术道德的用户来说，这是一个可能感兴趣的新闻。"),
-    _Recommend(36794430,
+    Recommend(36794430,
         "LinkedIn采用了Google开源的协议缓冲区（Protocol Buffers），并将延迟降低了高达60%。这意味着用户可以更快地访问LinkedIn的服务。对于经常使用LinkedIn的用户来说，这是一个可能感兴趣的新闻。")
   ];
 
@@ -377,12 +385,7 @@ class _TestData {
   }
 }
 
-class _Recommend {
-  final int id;
-  final String reason;
 
-  const _Recommend(this.id, this.reason);
-}
 
 class _Promoted {
   _News news;
@@ -446,20 +449,20 @@ class _NewsWindowState extends State<NewsWindow> {
             children: [
               Container(
                   child: SearchBar(
-                shape: MaterialStatePropertyAll(RoundedRectangleBorder()),
+                shape: const MaterialStatePropertyAll(RoundedRectangleBorder()),
                 backgroundColor:
                     MaterialStatePropertyAll(Theme.of(context).primaryColor),
                 controller: _search,
-                padding: MaterialStatePropertyAll(
+                padding: const MaterialStatePropertyAll(
                     EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0)),
                 textStyle:
-                    MaterialStatePropertyAll(TextStyle(color: Colors.white)),
+                    const MaterialStatePropertyAll(TextStyle(color: Colors.white)),
                 trailing: [
                   IconButton(
                       onPressed: () {
                         fillSearchResult();
                       },
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.search,
                         color: Colors.white,
                       ))
@@ -499,10 +502,10 @@ class _NewsWindowState extends State<NewsWindow> {
   bool get useInlineWebView => _webctl != null;
 
   AppBar appbar({enableGoBack = false}) {
-    IconButton? goBack = null;
+    IconButton? goBack;
     if (enableGoBack) {
       goBack = IconButton(
-        icon: Icon(Icons.arrow_back),
+        icon: const Icon(Icons.arrow_back),
         onPressed: () {
           setState(() {
             _openedLink = null;
@@ -522,19 +525,19 @@ class _NewsWindowState extends State<NewsWindow> {
                           ),
                           mode: LaunchMode.externalApplication)
                     },
-                icon: Icon(Icons.open_in_browser))
+                icon: const Icon(Icons.open_in_browser))
           ]
         : <Widget>[];
     var progress = _web_load_progress > 0
         ? PreferredSize(
-            preferredSize: Size.fromHeight(4.0),
+            preferredSize: const Size.fromHeight(4.0),
             child: LinearProgressIndicator(
               value: _web_load_progress.toDouble() / 100.0,
             ))
         : null;
     return AppBar(
         leading: goBack,
-        title: Text("News"),
+        title: const Text("News"),
         actions: actions,
         bottom: progress);
   }
@@ -548,10 +551,10 @@ class _NewsWindowState extends State<NewsWindow> {
           child: Container(
               color: Colors.red,
               child: Text("Error: $_err",
-                  style: TextStyle(
+                  style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold))));
     }
-    return Center(child: Text("The URL will be open at external browser."));
+    return const Center(child: Text("The URL will be open at external browser."));
   }
 
   Future<void> openUrl(String link) async {
@@ -646,20 +649,20 @@ class _PromotedCard extends StatelessWidget {
         child: InkWell(
           onTap: () => {},
           child: Container(
-              padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               child: ListTile(
                 isThreeLine: true,
-                leading: Icon(
+                leading: const Icon(
                   Icons.star,
                   color: Colors.white,
                 ),
                 title: Text(
                   _promoted.news.title,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
                 subtitle: Text(
                   _promoted.reason,
-                  style: TextStyle(
+                  style: const TextStyle(
                       color: Colors.white, fontStyle: FontStyle.italic),
                 ),
               )),

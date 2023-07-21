@@ -1,16 +1,15 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:moyubie/components/markdown.dart';
 import 'package:moyubie/components/prompts.dart';
-import 'package:moyubie/controller/conversation.dart';
+import 'package:moyubie/controller/chat_room.dart';
 import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/controller/prompt.dart';
-import 'package:moyubie/repository/conversation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+
+import '../repository/chat_room.dart';
 
 var uuid = const Uuid();
 
@@ -23,7 +22,7 @@ class ChatWindow extends StatefulWidget {
 
 class _ChatWindowState extends State<ChatWindow> {
   final _controller = TextEditingController();
-  final _formKey = GlobalKey<FormState>(); // 定义一个 GlobalKey
+  final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
 
   @override
@@ -98,7 +97,7 @@ class _ChatWindowState extends State<ChatWindow> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        // _sendMessage();
+                        _sendMessage();
                       },
                       style: ElevatedButton.styleFrom(
                         shape: const RoundedRectangleBorder(
@@ -117,38 +116,20 @@ class _ChatWindowState extends State<ChatWindow> {
     );
   }
 
-  Conversation _newConversation(String name, String description) {
-    var conversation = Conversation(
-      name: name,
-      description: description,
-      uuid: uuid.v4(),
-    );
-    return conversation;
-  }
-
   void _sendMessage() {
     final message = _controller.text;
     final MessageController messageController = Get.find();
-    final ConversationController conversationController = Get.find();
+    final ChatRoomController chatRoomController = Get.find();
     if (message.isNotEmpty) {
-      var conversationUuid =
-          conversationController.currentConversationUuid.value;
-      if (conversationUuid.isEmpty) {
-        // new conversation
-        //message 的前10个字符，如果message不够10个字符，则全部
-        var conversation = _newConversation(
-            message.substring(0, message.length > 20 ? 20 : message.length),
-            message);
-        conversationUuid = conversation.uuid;
-        conversationController.setCurrentConversationUuid(conversationUuid);
-        conversationController.addConversation(conversation);
-      }
+      var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
       final newMessage = Message(
-        conversationId: conversationUuid,
-        role: Role.user,
-        text: message,
+        uuid: uuid.v4(),
+        userName: 'User',
+        createTime: DateTime.now(),
+        message: message,
+        source: MessageSource.user,
       );
-      messageController.addMessage(newMessage);
+      messageController.addMessage(chatRoomUuid, newMessage);
       _formKey.currentState!.reset();
     }
   }
@@ -158,23 +139,22 @@ class _ChatWindowState extends State<ChatWindow> {
     String name = "?";
     Color? color;
     Widget? text_box;
-    switch (message.role) {
-      case Role.user:
+    switch (message.source) {
+      case MessageSource.user:
         icon = FontAwesomeIcons.fish;
         name = "User";
         color = Colors.blue[100];
         text_box = Padding(
           padding: const EdgeInsets.all(8.0),
           child: SelectableText(
-            message.text,
+            message.message,
           ),
         );
         break;
-      case Role.assistant:
-      case Role.system:
+      case MessageSource.bot:
         icon = FontAwesomeIcons.robot;
-        name = message.role == Role.assistant ? "assistant" : "assistant";
-        text_box = Markdown(text: message.text);
+        name = "bot";
+        text_box = Markdown(text: message.message);
         break;
       default:
     }

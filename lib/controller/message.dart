@@ -1,34 +1,37 @@
 import 'dart:async';
 
-import 'package:moyubie/repository/conversation.dart';
+import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/repository/message.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 
 class MessageController extends GetxController {
   final messageList = <Message>[].obs;
+  final uuid = const Uuid();
 
-  void loadAllMessages(String conversationUUid) async {
-    messageList.value = await ConversationRepository()
-        .getMessagesByConversationUUid(conversationUUid);
+  void loadAllMessages(String chatRoomUuid) async {
+    messageList.value =
+        await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
   }
 
-  void addMessage(Message message) async {
-    await ConversationRepository().addMessage(message);
-    final messages = await ConversationRepository()
-        .getMessagesByConversationUUid(message.conversationId);
+  void addMessage(String chatRoomUuid, Message message) async {
+    await ChatRoomRepository().addMessage(chatRoomUuid, message);
+    final messages =
+        await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
     messageList.value = messages;
-    // wait for all the  state emit
+    // wait for all the state emit
     final completer = Completer();
     try {
-      MessageRepository().postMessage(message, (Message message) {
+      MessageRepository().postMessage(chatRoomUuid, "", message,
+          (Message message) {
         messageList.value = [...messages, message];
       }, (Message message) {
         messageList.value = [...messages, message];
       }, (Message message) async {
         // if streaming is done ,load all the message
-        ConversationRepository().addMessage(message);
-        final messages = await ConversationRepository()
-            .getMessagesByConversationUUid(message.conversationId);
+        ChatRoomRepository().addMessage(chatRoomUuid, message);
+        final messages =
+            await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
         messageList.value = messages;
         completer.complete();
       });
@@ -36,9 +39,11 @@ class MessageController extends GetxController {
       messageList.value = [
         ...messages,
         Message(
-            conversationId: message.conversationId,
-            text: e.toString(),
-            role: Role.assistant)
+            uuid: uuid.v4(),
+            message: e.toString(),
+            userName: "bot",
+            createTime: DateTime.now(),
+            source: MessageSource.bot)
       ];
       completer.complete();
     }

@@ -45,7 +45,7 @@ class Message {
     return {
       'uuid': uuid,
       'user_name': userName,
-      'create_time': createTime,
+      'create_time': createTime.toString(),
       'message': message,
       'source': source.name,
     };
@@ -154,7 +154,7 @@ class ChatRoomRepository {
 
   Future<List<Message>> getMessagesByChatRoomUUid(String uuid) async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query(uuid);
+    final List<Map<String, dynamic>> maps = await db.query('`$uuid`');
     return List.generate(maps.length, (i) {
       return Message(
         uuid: maps[i][_columnMessageUuid],
@@ -170,7 +170,7 @@ class ChatRoomRepository {
   Future<void> addMessage(String chatRoomUuid, Message message) async {
     final db = await _getDb();
     await db.insert(
-      chatRoomUuid,
+      '`$chatRoomUuid`',
       message.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -179,7 +179,7 @@ class ChatRoomRepository {
   Future<void> deleteMessage(String chatRoomUuid, String messageUuid) async {
     final db = await _getDb();
     await db.delete(
-      chatRoomUuid,
+      '`$chatRoomUuid`',
       where: '$_columnMessageUuid = ?',
       whereArgs: [messageUuid],
     );

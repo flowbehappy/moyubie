@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/components/chat.dart';
+import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/repository/chat_room.dart' as repo;
 import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
@@ -57,7 +58,13 @@ class _ChatRoomState extends State<ChatRoom> {
 
   void _selectRoom(int index) {
     final comp.ChatRoomController chatRoomController = Get.find();
-    chatRoomController.setCurrentRoomIndex(index);
+    chatRoomController.setCurrentRoom(index);
+    if (index >= 0) {
+      String roomUuid = chatRoomController.roomList[index].uuid;
+      chatRoomController.currentChatRoomUuid(roomUuid);
+      MessageController controllerMessage = Get.find();
+      controllerMessage.loadAllMessages(roomUuid);
+    }
   }
 }
 
@@ -74,42 +81,49 @@ class ListPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetX<comp.ChatRoomController>(builder: (controller) {
+    return GetX<comp.ChatRoomController>(builder: (roomCtrl) {
       return Scaffold(
-        appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text("Chat Room"),
-            actions: const [NewChatButton()]),
-        body: Scrollbar(
-          controller: _scrollController,
-          child: ListView(
+          appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text("Chat Room"),
+              actions: const [NewChatButton()]),
+          body: Scrollbar(
             controller: _scrollController,
-            restorationId: 'list_demo_list_view',
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: controller.roomList
-                .asMap()
-                .map((index, room) {
-                  return MapEntry(
-                      index,
-                      ListTile(
-                        onTap: () {
-                          onSelect(index);
-                        },
-                        selected: selectedIndex == index,
-                        leading: ExcludeSemantics(
-                          child: CircleAvatar(child: Text('$index')),
-                        ),
-                        title: Text(
-                          'chat room $index',
-                        ),
-                      ));
-                })
-                .values
-                .toList(),
-          ),
-        ),
-      );
+            child: ListView(
+              controller: _scrollController,
+              restorationId: 'list_demo_list_view',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: roomCtrl.roomList
+                  .asMap()
+                  .map((index, room) {
+                return MapEntry(
+                    index,
+                    ListTile(
+                      onTap: () {
+                        onSelect(index);
+                      },
+                      selected: selectedIndex == index,
+                      leading: ExcludeSemantics(
+                        child: CircleAvatar(child: Text('$index')),
+                      ),
+                      title: Text(
+                        'chat room $index',
+                      ),
+                    ));
+              })
+                  .values
+                  .toList(),
+            ),
+          ));
     });
+  }
+
+  __onTapChatRoom(index) {
+    comp.ChatRoomController controller = Get.find();
+    String roomUuid = controller.roomList[index].uuid;
+    controller.currentChatRoomUuid(roomUuid);
+    MessageController controllerMessage = Get.find();
+    controllerMessage.loadAllMessages(roomUuid);
   }
 }
 
@@ -159,7 +173,9 @@ class NewChatButton extends StatelessWidget {
                 alignment: Alignment(-1.2, 0),
                 child: Text("New Chat Room"),
               ),
-              onTap: _addNewChatRoom,
+              onTap: () {
+                _addNewChatRoom(context);
+              },
             ),
           ),
           const PopupMenuItem(
@@ -176,7 +192,7 @@ class NewChatButton extends StatelessWidget {
     );
   }
 
-  _addNewChatRoom() {
+  _addNewChatRoom(BuildContext context) {
     final comp.ChatRoomController chatRoomController = Get.find();
     const uuid = Uuid();
     var createTime = DateTime.now();
@@ -186,5 +202,8 @@ class NewChatButton extends StatelessWidget {
         createTime: createTime,
         connectionToken: "");
     chatRoomController.addChatRoom(chatRoom);
+    final MessageController messageController = Get.find();
+    messageController.messageList.value = [];
+    Navigator.pop(context);
   }
 }

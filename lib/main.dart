@@ -64,30 +64,35 @@ class MyApp extends StatelessWidget {
   // }
 
   Widget menu() {
-    return Container(
-      color: const Color.fromARGB(255, 159, 70, 70),
-      child: const TabBar(
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white70,
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicatorPadding: EdgeInsets.all(5.0),
-        indicatorColor: Color.fromARGB(255, 221, 80, 80),
-        tabs: [
-          Tab(
-            text: "Chat",
-            icon: Icon(Icons.chat),
-          ),
-          Tab(
-            text: "News",
-            icon: Icon(Icons.newspaper),
-          ),
-          Tab(
-            text: "Settings",
-            icon: Icon(Icons.settings),
-          ),
-        ],
-      ),
-    );
+    return GetX<ChatRoomController>(builder: (controller) {
+      if (controller.currentRoomIndex.value.value >= 0) {
+        return const SizedBox();
+      }
+      return Container(
+        color: const Color.fromARGB(255, 159, 70, 70),
+        child: const TabBar(
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding: EdgeInsets.all(5.0),
+          indicatorColor: Color.fromARGB(255, 221, 80, 80),
+          tabs: [
+            Tab(
+              text: "Chat",
+              icon: Icon(Icons.chat),
+            ),
+            Tab(
+              text: "News",
+              icon: Icon(Icons.newspaper),
+            ),
+            Tab(
+              text: "Settings",
+              icon: Icon(Icons.settings),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   @override
