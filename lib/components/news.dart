@@ -362,22 +362,34 @@ class NewsWindow extends StatefulWidget {
 }
 
 class _NewsWindowState extends State<NewsWindow> {
+  static bool webViewSupported() {
+    try {
+      return Platform.isAndroid || Platform.isIOS;
+    } catch (e) {
+      return false;
+    }
+  }
+
   String? _openedLink;
   String? _err;
   List<_News> _news = _TestData.hackerNews.toList();
   List<_Promoted> _promoted_news = [];
+  List<_Promoted> _all_promoted = [];
 
-  final WebViewController? _webc =
-      Platform.isAndroid || Platform.isIOS ? WebViewController() : null;
+  final WebViewController? _webctl =
+      webViewSupported() ? WebViewController() : null;
+  final EasyRefreshController _rfrctl = EasyRefreshController();
   int _web_load_progress = 0;
+
+  final TextEditingController _search = TextEditingController();
 
   @override
   void initState() {
-    _webc?.setNavigationDelegate(NavigationDelegate(
-      onProgress: (i) {
-        setState(() {_web_load_progress = i;});
-      }
-    ));
+    _webctl?.setNavigationDelegate(NavigationDelegate(onProgress: (i) {
+      setState(() {
+        _web_load_progress = i;
+      });
+    }));
     super.initState();
   }
 
@@ -386,8 +398,69 @@ class _NewsWindowState extends State<NewsWindow> {
     var panePriority = widget.ty == ChatRoomType.tablet
         ? TwoPanePriority.both
         : (_openedLink == null ? TwoPanePriority.start : TwoPanePriority.end);
+    return Scaffold(
+        appBar: appbar(enableGoBack: panePriority == TwoPanePriority.end),
+        body: TwoPane(
+          paneProportion: 0.3,
+          startPane: Column(
+            children: [
+              Container(
+                  child: SearchBar(
+                shape: MaterialStatePropertyAll(RoundedRectangleBorder()),
+                backgroundColor:
+                    MaterialStatePropertyAll(Theme.of(context).primaryColor),
+                controller: _search,
+                padding: MaterialStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0)),
+                textStyle:
+                    MaterialStatePropertyAll(TextStyle(color: Colors.white)),
+                trailing: [
+                  IconButton(
+                      onPressed: () {
+                        fillSearchResult();
+                      },
+                      icon: Icon(
+                        Icons.search,
+                        color: Colors.white,
+                      ))
+                ],
+              )),
+              Expanded(
+                child: EasyRefresh(
+                  controller: _rfrctl,
+                  header: ClassicHeader(
+                    triggerOffset: context.height / 5,
+                    dragText: "Drag down to ask AI pick some news for you!",
+                    armedText: "Release to let AI pick your favorite!",
+                    processingText: "AI is picking news for you...",
+                    readyText: "Here we go!",
+                    processedText: "Done!",
+                    failedText: "Oops...",
+                  ),
+                  onRefresh: () => promoteNews(_news),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                    children: [
+                      ...(_search.text.isEmpty ? _all_promoted : _promoted_news)
+                          .map((e) => _PromotedCard(e)),
+                      ..._news.map((e) =>
+                          _NewsCard(e, on_enter: (news) => {setUrl(news.url)}))
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          endPane: contentForWeb(),
+          panePriority: panePriority,
+        ));
+  }
+
+  bool get useInlineWebView => _webctl != null;
+
+  AppBar appbar({enableGoBack = false}) {
     IconButton? goBack = null;
-    if (panePriority == TwoPanePriority.end) {
+    if (enableGoBack) {
       goBack = IconButton(
         icon: Icon(Icons.arrow_back),
         onPressed: () {
@@ -395,51 +468,40 @@ class _NewsWindowState extends State<NewsWindow> {
             _openedLink = null;
             _err = null;
           });
-          _webc?.loadHtmlString("<html></html>");
+          _webctl?.loadHtmlString("<html></html>");
         },
       );
     }
-    return Scaffold(
-        appBar: AppBar(
-          leading: goBack,
-          title: Text("News"),
-          actions: useInlineWebView && _openedLink != null
-              ? [
-                  IconButton(
-                      onPressed: () => {
-                            launchUrl(
-                                Uri.parse(
-                                  _openedLink!,
-                                ),
-                                mode: LaunchMode.externalApplication)
-                          },
-                      icon: Icon(Icons.open_in_browser))
-                ]
-              : [],
-        ),
-        body: TwoPane(
-          paneProportion: 0.3,
-          startPane: EasyRefresh(
-            onRefresh: () => promoteNews(),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              children: [
-                ..._promoted_news.map((e) => _PromotedCard(e)),
-                ..._news.map(
-                    (e) => _NewsCard(e, on_enter: (news) => {setUrl(news.url)}))
-              ],
-            ),
-          ),
-          endPane: contentForWeb(),
-          panePriority: panePriority,
-        ));
+    var actions = useInlineWebView && _openedLink != null
+        ? [
+            IconButton(
+                onPressed: () => {
+                      launchUrl(
+                          Uri.parse(
+                            _openedLink!,
+                          ),
+                          mode: LaunchMode.externalApplication)
+                    },
+                icon: Icon(Icons.open_in_browser))
+          ]
+        : <Widget>[];
+    var progress = _web_load_progress > 0
+        ? PreferredSize(
+            preferredSize: Size.fromHeight(4.0),
+            child: LinearProgressIndicator(
+              value: _web_load_progress.toDouble() / 100.0,
+            ))
+        : null;
+    return AppBar(
+        leading: goBack,
+        title: Text("News"),
+        actions: actions,
+        bottom: progress);
   }
-
-  bool get useInlineWebView => _webc != null;
 
   Widget contentForWeb() {
     if (useInlineWebView) {
-      return WebViewWidget(controller: _webc!);
+      return WebViewWidget(controller: _webctl!);
     }
     if (_err != null) {
       return Center(
@@ -455,8 +517,8 @@ class _NewsWindowState extends State<NewsWindow> {
   Future<void> openUrl(String link) async {
     var url = Uri.parse(link);
     if (useInlineWebView) {
-      _webc!.setJavaScriptMode(JavaScriptMode.unrestricted);
-      await _webc!.loadRequest(url);
+      _webctl!.setJavaScriptMode(JavaScriptMode.unrestricted);
+      await _webctl!.loadRequest(url);
       return;
     }
     if (!await launchUrl(url)) {
@@ -477,21 +539,30 @@ class _NewsWindowState extends State<NewsWindow> {
     }
   }
 
-  promoteNews() async {
+  promoteNews(List<_News> cnd) async {
     await Future.delayed(Duration(seconds: 1));
     const promotedList = _TestData.simplePrompted;
-    var promotedFull = [];
-    _news.removeWhere((element) {
+    var promotedFull = <_Promoted>[];
+    var newNews = cnd.where((element) {
       var recommend =
           promotedList.firstWhereOrNull((rec) => rec.id == element.id);
       if (recommend != null) {
         promotedFull.add(_Promoted(element, recommend.reason));
       }
-      return recommend != null;
-    });
+      return recommend == null;
+    }).toList(growable: false);
     setState(() {
-      _promoted_news = [...promotedFull, ..._promoted_news];
-      _news = _news;
+      _all_promoted = [...promotedFull, ..._all_promoted];
+      _promoted_news = promotedFull;
+      _news = newNews;
+    });
+  }
+
+  fillSearchResult() async {
+    var newNews = _TestData.hackerNews.where((news) => news.title.contains(_search.text)).toList();
+    setState(() {
+      _promoted_news = [];
+      _news = newNews;
     });
   }
 }
@@ -545,7 +616,8 @@ class _PromotedCard extends StatelessWidget {
                 ),
                 subtitle: Text(
                   _promoted.reason,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(
+                      color: Colors.white, fontStyle: FontStyle.italic),
                 ),
               )),
         ));
