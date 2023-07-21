@@ -21,7 +21,7 @@ class SettingsController extends GetxController {
 
   final useWebSearch = false.obs;
 
-  final llm = "ECHO".obs;
+  final llm = "Echo".obs;
 
   final version = "1.0.0".obs;
 
