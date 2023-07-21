@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dual_screen/dual_screen.dart';
@@ -9,6 +10,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/components/chat_room.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 enum _NewsSource { HackerNews }
 
@@ -20,6 +22,43 @@ class _News {
   String url;
 
   _News(this.source, this.id, this.url, this.title, this.content);
+}
+
+class _NewsService {
+  static Future<List<_News>> getTopNews(int limit) async {
+    var topStories = 'https://hacker-news.firebaseio.com/v0/topstories.json';
+    var uri = Uri.parse(topStories);
+    var response = await http.get(
+      uri,
+      headers: {"Content-Type": "application/json"},
+    );
+    if (response.statusCode == 200) {
+      var topStoriesId = json.decode(response.body);
+      var news = <_News>[];
+      for (var id in topStoriesId) {
+        var url = 'https://hacker-news.firebaseio.com/v0/item/$id.json';
+        var uri = Uri.parse(url);
+        var response = await http.get(
+          uri,
+          headers: {"Content-Type": "application/json"},
+        );
+        if (response.statusCode == 200) {
+          var newsJson = json.decode(response.body);
+          if (newsJson['url'] == null) {
+            continue;
+          }
+          news.add(_News(_NewsSource.HackerNews, newsJson['id'],
+              newsJson['url'], newsJson['title'], newsJson['text'] ?? ""));
+          if (news.length >= limit) {
+            break;
+          }
+        }
+      }
+      return news;
+    } else {
+      throw Exception('Failed to load top news');
+    }
+  }
 }
 
 class _TestData {
@@ -372,7 +411,8 @@ class _NewsWindowState extends State<NewsWindow> {
 
   String? _openedLink;
   String? _err;
-  List<_News> _news = _TestData.hackerNews.toList();
+  // List<_News> _news = _TestData.hackerNews.toList();
+  List<_News> _news = [];
   List<_Promoted> _promoted_news = [];
   List<_Promoted> _all_promoted = [];
 
@@ -437,7 +477,7 @@ class _NewsWindowState extends State<NewsWindow> {
                     processedText: "Done!",
                     failedText: "Oops...",
                   ),
-                  onRefresh: () => promoteNews(_news),
+                  onRefresh: () => promoteNews(),
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                     children: [
@@ -539,11 +579,12 @@ class _NewsWindowState extends State<NewsWindow> {
     }
   }
 
-  promoteNews(List<_News> cnd) async {
-    await Future.delayed(Duration(seconds: 1));
+  promoteNews() async {
+    // await Future.delayed(Duration(seconds: 1));
+    _news = await _NewsService.getTopNews(20);
     const promotedList = _TestData.simplePrompted;
     var promotedFull = <_Promoted>[];
-    var newNews = cnd.where((element) {
+    var newNews = _news.where((element) {
       var recommend =
           promotedList.firstWhereOrNull((rec) => rec.id == element.id);
       if (recommend != null) {
@@ -559,7 +600,9 @@ class _NewsWindowState extends State<NewsWindow> {
   }
 
   fillSearchResult() async {
-    var newNews = _TestData.hackerNews.where((news) => news.title.contains(_search.text)).toList();
+    var topNews = await _NewsService.getTopNews(20);
+    var newNews =
+        topNews.where((news) => news.title.contains(_search.text)).toList();
     setState(() {
       _promoted_news = [];
       _news = newNews;
