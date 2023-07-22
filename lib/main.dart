@@ -69,13 +69,13 @@ class MyApp extends StatelessWidget {
         return const SizedBox();
       }
       return Container(
-        color: const Color.fromARGB(255, 159, 70, 70),
+        color: const Color.fromARGB(255, 250, 94, 83),
         child: const TabBar(
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorSize: TabBarIndicatorSize.tab,
           indicatorPadding: EdgeInsets.all(5.0),
-          indicatorColor: Color.fromARGB(255, 221, 80, 80),
+          indicatorColor: Color.fromARGB(255, 250, 94, 83),
           tabs: [
             Tab(
               text: "Chat",
@@ -98,8 +98,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
-    final ChatRoomType type = shortestSide < 600 ?
-      ChatRoomType.phone : ChatRoomType.tablet;
+    final ChatRoomType type =
+        shortestSide < 600 ? ChatRoomType.phone : ChatRoomType.tablet;
     Get.put(SettingsController());
     // Get.put(ConversationController());
     Get.put(MessageController());
@@ -115,13 +115,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: DefaultTabController(
         length: 3,
-
         child: Scaffold(
           bottomNavigationBar: menu(),
           body: TabBarView(
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              Container(child: ChatRoom(restorationId: "chat_room", type: type)),
+              Container(
+                  child: ChatRoom(restorationId: "chat_room", type: type)),
               Container(child: NewsWindow(ty: type)),
               Container(child: SettingPage()),
             ],

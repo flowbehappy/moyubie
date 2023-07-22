@@ -385,8 +385,6 @@ class _TestData {
   }
 }
 
-
-
 class _Promoted {
   _News news;
   String reason;
@@ -455,8 +453,8 @@ class _NewsWindowState extends State<NewsWindow> {
                 controller: _search,
                 padding: const MaterialStatePropertyAll(
                     EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0)),
-                textStyle:
-                    const MaterialStatePropertyAll(TextStyle(color: Colors.white)),
+                textStyle: const MaterialStatePropertyAll(
+                    TextStyle(color: Colors.white)),
                 trailing: [
                   IconButton(
                       onPressed: () {
@@ -538,6 +536,8 @@ class _NewsWindowState extends State<NewsWindow> {
     return AppBar(
         leading: goBack,
         title: const Text("News"),
+        foregroundColor: Colors.white,
+        backgroundColor: Color.fromARGB(255, 70, 70, 70),
         actions: actions,
         bottom: progress);
   }
@@ -554,7 +554,8 @@ class _NewsWindowState extends State<NewsWindow> {
                   style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold))));
     }
-    return const Center(child: Text("The URL will be open at external browser."));
+    return const Center(
+        child: Text("The URL will be open at external browser."));
   }
 
   Future<void> openUrl(String link) async {
@@ -649,7 +650,8 @@ class _PromotedCard extends StatelessWidget {
         child: InkWell(
           onTap: () => {},
           child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               child: ListTile(
                 isThreeLine: true,
                 leading: const Icon(

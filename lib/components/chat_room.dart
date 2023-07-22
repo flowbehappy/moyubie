@@ -84,6 +84,8 @@ class ListPane extends StatelessWidget {
     return GetX<comp.ChatRoomController>(builder: (roomCtrl) {
       return Scaffold(
           appBar: AppBar(
+              foregroundColor: Colors.white,
+              backgroundColor: Color.fromARGB(255, 70, 70, 70),
               automaticallyImplyLeading: false,
               title: const Text("Chat Room"),
               actions: const [NewChatButton()]),
@@ -96,21 +98,21 @@ class ListPane extends StatelessWidget {
               children: roomCtrl.roomList
                   .asMap()
                   .map((index, room) {
-                return MapEntry(
-                    index,
-                    ListTile(
-                      onTap: () {
-                        onSelect(index);
-                      },
-                      selected: selectedIndex == index,
-                      leading: ExcludeSemantics(
-                        child: CircleAvatar(child: Text('$index')),
-                      ),
-                      title: Text(
-                        'chat room $index',
-                      ),
-                    ));
-              })
+                    return MapEntry(
+                        index,
+                        ListTile(
+                          onTap: () {
+                            onSelect(index);
+                          },
+                          selected: selectedIndex == index,
+                          leading: ExcludeSemantics(
+                            child: CircleAvatar(child: Text('$index')),
+                          ),
+                          title: Text(
+                            'chat room $index',
+                          ),
+                        ));
+                  })
                   .values
                   .toList(),
             ),
