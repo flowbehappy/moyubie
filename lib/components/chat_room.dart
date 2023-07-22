@@ -1,7 +1,6 @@
 import 'package:dual_screen/dual_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/components/chat.dart';
 import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/repository/chat_room.dart' as repo;
@@ -93,7 +92,7 @@ class ListPane extends StatelessWidget {
             controller: _scrollController,
             child: ListView(
               controller: _scrollController,
-              restorationId: 'list_demo_list_view',
+              restorationId: 'chat_room_list_view',
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: roomCtrl.roomList
                   .asMap()
@@ -106,10 +105,17 @@ class ListPane extends StatelessWidget {
                           },
                           selected: selectedIndex == index,
                           leading: ExcludeSemantics(
+<<<<<<< Updated upstream
                             child: CircleAvatar(child: Text('$index')),
                           ),
                           title: Text(
                             'chat room $index',
+=======
+                            child: CircleAvatar(child: Text(room.name[0])),
+                          ),
+                          title: Text(
+                            room.name,
+>>>>>>> Stashed changes
                           ),
                         ));
                   })
@@ -118,14 +124,6 @@ class ListPane extends StatelessWidget {
             ),
           ));
     });
-  }
-
-  __onTapChatRoom(index) {
-    comp.ChatRoomController controller = Get.find();
-    String roomUuid = controller.roomList[index].uuid;
-    controller.currentChatRoomUuid(roomUuid);
-    MessageController controllerMessage = Get.find();
-    controllerMessage.loadAllMessages(roomUuid);
   }
 }
 
@@ -141,18 +139,29 @@ class DetailsPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: onClose == null
-            ? null
-            : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
-        title: Text(
-          selectedIndex == -1 ? "" : "Chat Room $selectedIndex",
+    return GetX<comp.ChatRoomController>(builder: (controller){
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: onClose == null
+              ? null
+              : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
+          title: Text(
+            _currentRoomName(controller),
+          ),
+          actions: const [ChatDetailButton()],
         ),
-      ),
-      body: const ChatWindow(),
-    );
+        body: const ChatWindow(),
+      );
+    });
+  }
+
+  String _currentRoomName(comp.ChatRoomController controller) {
+    var idx = controller.currentRoomIndex.value.value;
+    if (idx == -1) {
+      return "";
+    }
+    return controller.roomList[idx].name;
   }
 }
 
@@ -207,5 +216,205 @@ class NewChatButton extends StatelessWidget {
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
     Navigator.pop(context);
+  }
+}
+
+class ChatDetailButton extends StatefulWidget {
+  const ChatDetailButton({super.key});
+
+  @override
+  State<ChatDetailButton> createState() => _ChatDetailButtonState();
+}
+
+class _ChatDetailButtonState extends State<ChatDetailButton>
+    with RestorationMixin {
+  late RestorableRouteFuture<String> _alertDismissDialogRoute;
+  late RestorableRouteFuture<String> _alertRenameDialogRoute;
+
+  @override
+  String get restorationId => 'confirm_dialog';
+
+  @override
+  void initState() {
+    super.initState();
+    _alertDismissDialogRoute = RestorableRouteFuture<String>(
+      onPresent: (navigator, arguments) {
+        return navigator.restorablePush(_alertDismissRoute);
+      },
+    );
+    _alertRenameDialogRoute = RestorableRouteFuture<String>(
+      onPresent: (navigator, arguments) {
+        return navigator.restorablePush(_alertRenameRoute);
+      },
+    );
+  }
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(
+      _alertDismissDialogRoute,
+      'alert_dismiss_dialog_route',
+    );
+    registerForRestoration(
+      _alertRenameDialogRoute,
+      'alert_rename_dialog_route',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<Text>(
+      padding: const EdgeInsets.only(right: 32),
+      icon: const Icon(Icons.more_horiz),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Align(
+                alignment: Alignment(-1.2, 0),
+                child: Text("Dismiss Room",
+                    style: TextStyle(color: Colors.redAccent)),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _alertDismissDialogRoute.present();
+              },
+            ),
+          ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.drive_file_rename_outline),
+              title: const Align(
+                alignment: Alignment(-1.2, 0),
+                child: Text("Rename Room"),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _alertRenameDialogRoute.present();
+              },
+            ),
+          ),
+        ];
+      },
+    );
+  }
+
+  _deleteChatRoom() {
+    final comp.ChatRoomController chatRoomController = Get.find();
+    final MessageController messageController = Get.find();
+    messageController.messageList.value = [];
+    chatRoomController.setCurrentRoom(-1);
+    chatRoomController.deleteChatRoom();
+  }
+
+  _renameChatRoom(String newName) {
+    if (newName.isEmpty) {
+      return;
+    }
+    final comp.ChatRoomController chatRoomController = Get.find();
+    chatRoomController.renameChatRoom(newName);
+  }
+
+  Route<String> _alertDismissRoute(
+    BuildContext buildCtx,
+    Object? arguments,
+  ) {
+    final theme = Theme.of(buildCtx);
+    final dialogTextStyle = theme.textTheme.titleMedium!
+        .copyWith(color: theme.textTheme.bodySmall!.color);
+
+    return DialogRoute<String>(
+      context: buildCtx,
+      builder: (context) {
+        return AlertDialog(
+          content: Text(
+            "Do you want to dismiss this chat room?",
+            style: dialogTextStyle,
+          ),
+          actions: [
+            _DialogButton(
+              text: "Dismiss",
+              onPressed: _deleteChatRoom,
+            ),
+            const _DialogButton(
+              text: "Cancel",
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Route<String> _alertRenameRoute(
+      BuildContext buildCtx,
+      Object? arguments,
+      ) {
+    final theme = Theme.of(buildCtx);
+    final dialogTextStyle = theme.textTheme.titleMedium!
+        .copyWith(color: theme.textTheme.bodySmall!.color);
+    var newName = "";
+
+    return DialogRoute<String>(
+      context: buildCtx,
+      builder: (context) {
+        return AlertDialog(
+          content: TextFormField(
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter some text';
+              }
+              return null;
+            },
+            style: dialogTextStyle,
+            decoration: InputDecoration(
+              labelText: "New Name",
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+              filled: true,
+            ),
+            autovalidateMode: AutovalidateMode.always,
+            maxLines: 1,
+            onChanged: (value) {
+              newName = value;
+            },
+          ),
+          actions: [
+            _DialogButton(
+              text: "Done",
+              onPressed: () => _renameChatRoom(newName),
+            ),
+            _DialogButton(
+              text: "Cancel",
+              onPressed: () {},
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DialogButton extends StatelessWidget {
+  const _DialogButton({required this.text, this.onPressed});
+
+  final String text;
+  final Function? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () {
+        if (onPressed != null) {
+          onPressed!();
+        }
+        Navigator.of(context).pop(text);
+      },
+      child: Text(text),
+    );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:get/get.dart';
 
@@ -23,14 +22,15 @@ class ChatRoomController extends GetxController {
     update();
   }
 
-  void deleteChatRoom(int index) async {
-    ChatRoom chatRoom = roomList[index];
-    await ChatRoomRepository().deleteChatRoom(chatRoom.uuid);
+  void deleteChatRoom() async {
+    await ChatRoomRepository().deleteChatRoom(currentChatRoomUuid.value);
     roomList.value = await ChatRoomRepository().getChatRooms();
     update();
   }
 
-  void renameChatRoom(ChatRoom chatRoom) async {
+  void renameChatRoom(String newName) async {
+    var chatRoom = roomList[currentRoomIndex.value.value];
+    chatRoom.name = newName;
     await ChatRoomRepository().updateChatRoom(chatRoom);
     roomList.value = await ChatRoomRepository().getChatRooms();
     update();
