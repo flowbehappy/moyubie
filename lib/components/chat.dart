@@ -139,21 +139,26 @@ class _ChatWindowState extends State<ChatWindow> {
     String name = "?";
     Color? color;
     Widget? text_box;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (message.source) {
       case MessageSource.user:
         icon = FontAwesomeIcons.fish;
         name = "User";
-        color = Colors.blue[100];
+        color = Color.fromARGB(255, 156, 225, 111);
         text_box = Padding(
           padding: const EdgeInsets.all(8.0),
           child: SelectableText(
             message.message,
+            style: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
           ),
         );
         break;
       case MessageSource.bot:
         icon = FontAwesomeIcons.robot;
         name = "bot";
+        color = isDark
+            ? Color.fromARGB(255, 92, 89, 89)
+            : Color.fromARGB(255, 255, 255, 255);
         text_box = Markdown(text: message.message);
         break;
       default:
