@@ -297,7 +297,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     );
   }
 
-  _deleteChatRoom() {
+  static _deleteChatRoom() {
     final comp.ChatRoomController chatRoomController = Get.find();
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
@@ -305,7 +305,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     chatRoomController.deleteChatRoom();
   }
 
-  _renameChatRoom(String newName) {
+  static _renameChatRoom(String newName) {
     if (newName.isEmpty) {
       return;
     }
@@ -313,7 +313,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     chatRoomController.renameChatRoom(newName);
   }
 
-  Route<String> _alertDismissRoute(
+  static Route<String> _alertDismissRoute(
     BuildContext buildCtx,
     Object? arguments,
   ) {
@@ -343,7 +343,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     );
   }
 
-  Route<String> _alertRenameRoute(
+  static Route<String> _alertRenameRoute(
     BuildContext buildCtx,
     Object? arguments,
   ) {
