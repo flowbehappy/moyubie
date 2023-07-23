@@ -1,4 +1,5 @@
 import 'package:dart_openai/dart_openai.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moyubie/repository/chat_room.dart';
@@ -8,6 +9,8 @@ import 'package:get_storage/get_storage.dart';
 
 class SettingsController extends GetxController {
   final isObscure = true.obs;
+
+  bool isLLMReady = false;
 
   final openAiKey = "".obs;
   final openAiKeyTmp = "".obs;
@@ -37,6 +40,10 @@ class SettingsController extends GetxController {
 
   static SettingsController get to => Get.find();
 
+  bool get getIsLLMReady {
+    return isLLMReady;
+  }
+
   @override
   void onInit() async {
     await getThemeModeFromPreferences();
@@ -44,6 +51,7 @@ class SettingsController extends GetxController {
     await getOpenAiBaseUrlFromPreferences();
     await getOpenAiKeyFromPreferences();
     await getServerlessCmdFromPreferences();
+    await getLLMFromPreferences();
     await getGptModelFromPreferences();
     await getUseStreamFromPreferences();
     await initAppVersion();
@@ -67,24 +75,75 @@ class SettingsController extends GetxController {
   //   setGlmBaseUrl(baseUrl);
   // }
 
-  void saveTmpOption() {
+  Future<String?> validateTiDB() async {
+    var crr = ChatRoomRepository();
+    var conn = await crr.getRemoteDb(forceInit: true);
+    if (conn == null) {
+      return "Cannot connect to remote database with ${crr.remoteDBToString()}, ";
+    }
+
+    return null;
+  }
+
+  Future<String?> validateLLM() async {
+    if (llm.value == "OpenAI") {
+      if (openAiKey.value.length <= 10) {
+        return "Invalid OpenAI key: ${openAiKey.value}";
+      }
+
+      try {
+        OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
+        OpenAI.baseUrl =
+            GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+      } catch (e) {
+        return "Cannot connect to OpenAI, error: ${e.toString()}";
+      }
+    }
+
+    return null;
+  }
+
+  void saveTmpOption() async {
     GetStorage _box = GetStorage();
     llm.value = llmTmp.value;
+    _box.write('llm', llm.value);
     gptModel.value = gptModelTmp.value;
     _box.write('gptModel', gptModel.value);
     openAiKey.value = openAiKeyTmp.value;
     _box.write('openAiKey', openAiKey.value);
     serverlessCmd.value = serverlessCmdTmp.value;
     _box.write('serverlessCmd', serverlessCmd.value);
-    updateServerlessCmdToRepo(serverlessCmd.value);
-    if (llm.value == "OpenAI") {
-      OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
-      OpenAI.baseUrl =
-          GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+
+    bool hasLLM = openAiKey.value.isNotEmpty && llm.value != "Echo";
+    bool hasRemoteDB = updateTiDBCmdToRepo(serverlessCmd.value);
+
+    if (hasLLM) {
+      var res = await validateLLM();
+      if (res != null) {
+        isLLMReady = false;
+        // TODO: show setting error tips
+        return;
+      } else {
+        isLLMReady = true;
+      }
     }
+
+    if (hasRemoteDB) {
+      var res = await validateTiDB();
+      if (res != null) {
+        ChatRoomRepository().setRemoteDBValid(false);
+        // TODO: show setting error tips
+        return;
+      } else {
+        ChatRoomRepository().setRemoteDBValid(true);
+      }
+    }
+
+    // TODO: show success tips
   }
 
-  updateServerlessCmdToRepo(String cmd) {
+  // Return true if we find host is not empty.
+  bool updateTiDBCmdToRepo(String cmd) {
     cmd = cmd.replaceFirst(" -p", " -p ");
     final options = cmd.split(" ");
     var nextOpts = List.from(options);
@@ -121,6 +180,8 @@ class SettingsController extends GetxController {
       }
     }
     ChatRoomRepository().updateRemoteDBConfig(host, port, user, password);
+
+    return host.isNotEmpty;
   }
 
   void setOpenAiKey(String text) {
@@ -155,6 +216,16 @@ class SettingsController extends GetxController {
     String baseUrl =
         _box.read('openAiBaseUrl') ?? "https://api.openai-proxy.com";
     setOpenAiBaseUrl(baseUrl);
+  }
+
+  void setLlm(String text) {
+    llmTmp.value = text;
+  }
+
+  getLLMFromPreferences() async {
+    GetStorage _box = GetStorage();
+    String llm = _box.read('llm') ?? "Echo";
+    setLlm(llm);
   }
 
   void setGptModel(String text) {
@@ -225,10 +296,6 @@ class SettingsController extends GetxController {
     GetStorage _box = GetStorage();
     bool useWebSearch = _box.read('useWebSearch') ?? false;
     setUseWebSearch(useWebSearch);
-  }
-
-  void setLlm(String text) {
-    llmTmp.value = text;
   }
 
   void setLocale(Locale lol) {
