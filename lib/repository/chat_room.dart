@@ -83,6 +83,7 @@ class ChatRoomRepository {
   static const String _columnAskAI = 'ask_ai';
 
   static MySQLConnection? _remoteDatabase;
+  static bool isRemoteDBValid = false;
   static String host = "";
   static int port = 0;
   static String userName = "";
@@ -129,9 +130,18 @@ class ChatRoomRepository {
     return "hose: $host, port: $port, userName: $userName, password: $password";
   }
 
+  void setRemoteDBValid(bool v) {
+    isRemoteDBValid = v;
+  }
+
   Future<MySQLConnection?> getRemoteDb({bool forceInit = false}) async {
+    bool shouldInit = _remoteDatabase == null || forceInit;
+    if (host.isEmpty || (!isRemoteDBValid && !forceInit)) {
+      shouldInit = false;
+    }
+
     try {
-      if (_remoteDatabase == null || forceInit) {
+      if (shouldInit) {
         // Make sure the old connection has been close
         _remoteDatabase?.close();
 
@@ -165,7 +175,7 @@ class ChatRoomRepository {
     } catch (e) {
       return Future(() => null);
     }
-    return _remoteDatabase!;
+    return _remoteDatabase;
   }
 
   Future<List<ChatRoom>> getChatRooms({String? where}) async {

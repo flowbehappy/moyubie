@@ -1,4 +1,5 @@
 import 'package:dart_openai/dart_openai.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moyubie/repository/chat_room.dart';
@@ -8,6 +9,8 @@ import 'package:get_storage/get_storage.dart';
 
 class SettingsController extends GetxController {
   final isObscure = true.obs;
+
+  bool isLLMReady = false;
 
   final openAiKey = "".obs;
   final openAiKeyTmp = "".obs;
@@ -36,6 +39,10 @@ class SettingsController extends GetxController {
   final version = "1.0.0".obs;
 
   static SettingsController get to => Get.find();
+
+  bool get getIsLLMReady {
+    return isLLMReady;
+  }
 
   @override
   void onInit() async {
@@ -68,13 +75,17 @@ class SettingsController extends GetxController {
   //   setGlmBaseUrl(baseUrl);
   // }
 
-  Future<String?> validateAndInitSettings() async {
+  Future<String?> validateTiDB() async {
     var crr = ChatRoomRepository();
-    var conn = await crr.getRemoteDb();
+    var conn = await crr.getRemoteDb(forceInit: true);
     if (conn == null) {
       return "Cannot connect to remote database with ${crr.remoteDBToString()}, ";
     }
 
+    return null;
+  }
+
+  Future<String?> validateLLM() async {
     if (llm.value == "OpenAI") {
       if (openAiKey.value.length <= 10) {
         return "Invalid OpenAI key: ${openAiKey.value}";
@@ -102,17 +113,37 @@ class SettingsController extends GetxController {
     _box.write('openAiKey', openAiKey.value);
     serverlessCmd.value = serverlessCmdTmp.value;
     _box.write('serverlessCmd', serverlessCmd.value);
-    updateServerlessCmdToRepo(serverlessCmd.value);
 
-    var error = await validateAndInitSettings();
-    if (error != null) {
-      // TODO: show setting tips
-    } else {
-      // TODO: show success tips
+    bool hasLLM = openAiKey.value.isNotEmpty && llm.value != "Echo";
+    bool hasRemoteDB = updateTiDBCmdToRepo(serverlessCmd.value);
+
+    if (hasLLM) {
+      var res = await validateLLM();
+      if (res != null) {
+        isLLMReady = false;
+        // TODO: show setting error tips
+        return;
+      } else {
+        isLLMReady = true;
+      }
     }
+
+    if (hasRemoteDB) {
+      var res = await validateTiDB();
+      if (res != null) {
+        ChatRoomRepository().setRemoteDBValid(false);
+        // TODO: show setting error tips
+        return;
+      } else {
+        ChatRoomRepository().setRemoteDBValid(true);
+      }
+    }
+
+    // TODO: show success tips
   }
 
-  updateServerlessCmdToRepo(String cmd) {
+  // Return true if we find host is not empty.
+  bool updateTiDBCmdToRepo(String cmd) {
     cmd = cmd.replaceFirst(" -p", " -p ");
     final options = cmd.split(" ");
     var nextOpts = List.from(options);
@@ -149,6 +180,8 @@ class SettingsController extends GetxController {
       }
     }
     ChatRoomRepository().updateRemoteDBConfig(host, port, user, password);
+
+    return host.isNotEmpty;
   }
 
   void setOpenAiKey(String text) {

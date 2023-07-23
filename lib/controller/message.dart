@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/repository/message.dart';
 import 'package:get/get.dart';
@@ -21,10 +22,7 @@ class MessageController extends GetxController {
 
     final messages =
         await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
-
     if (!input.ask_ai) {
-      final messages =
-          await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
       messageList.value = messages;
       return;
     }

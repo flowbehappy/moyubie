@@ -330,7 +330,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
             style: dialogTextStyle,
           ),
           actions: [
-            const _DialogButton(
+            _DialogButton(
               text: "Dismiss",
               onPressed: _deleteChatRoom,
             ),
