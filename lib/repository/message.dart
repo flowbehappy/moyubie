@@ -15,9 +15,7 @@ class MessageRepository {
     return _instance;
   }
 
-  MessageRepository._internal() {
-    init();
-  }
+  MessageRepository._internal();
 
   void postMessage(
       String chatRoomUuid,
@@ -31,12 +29,6 @@ class MessageRepository {
     // await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
     _getResponseFromGpt(chatRoomUuid, userName, question, convContext,
         onResponse, onError, onSuccess);
-  }
-
-  void init() {
-    OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
-    OpenAI.baseUrl =
-        GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
   }
 
   void _getResponseFromGpt(

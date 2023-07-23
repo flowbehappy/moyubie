@@ -1,3 +1,4 @@
+import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moyubie/utils/package.dart';
@@ -74,6 +75,11 @@ class SettingsController extends GetxController {
     _box.write('openAiKey', openAiKey.value);
     serverlessCmd.value = serverlessCmdTmp.value;
     _box.write('serverlessCmd', serverlessCmd.value);
+    if (llm.value == "OpenAI") {
+      OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
+      OpenAI.baseUrl =
+          GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+    }
   }
 
   void setOpenAiKey(String text) {

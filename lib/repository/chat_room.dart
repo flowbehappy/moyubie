@@ -55,7 +55,7 @@ class Message {
       'create_time': createTime.toString(),
       'message': message,
       'source': source.name,
-      'ask_ai': ask_ai,
+      'ask_ai': ask_ai ? '1' : '0',
     };
   }
 

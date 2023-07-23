@@ -80,9 +80,8 @@ class _ChatWindowState extends State<ChatWindow> {
                         controller: _controller,
                         keyboardType: TextInputType.multiline,
                         decoration: InputDecoration(
-                          // labelText: "input".tr,
                           hintText:
-                              "Send to".tr + " " + _currentRoomName(controller),
+                              "Send to ".tr + _currentRoomName(controller),
                           floatingLabelBehavior: FloatingLabelBehavior.auto,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
@@ -101,6 +100,7 @@ class _ChatWindowState extends State<ChatWindow> {
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
+                          FocusManager.instance.primaryFocus?.unfocus();
                           _sendMessage();
                         },
                         style: ElevatedButton.styleFrom(
@@ -135,28 +135,29 @@ class _ChatWindowState extends State<ChatWindow> {
 
   void _sendMessage() {
     var message = _controller.text;
+    if (message.isEmpty) {
+      return;
+    }
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
-    if (message.isNotEmpty) {
-      var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
-      var first_letters =
-          message.substring(0, min(3, message.length)).toLowerCase();
-      var ask_ai = first_letters == "@ai";
-      String ai_question = "";
-      if (ask_ai) {
-        ai_question = message.substring(3).trimLeft();
-      }
-      final newMessage = Message(
-        uuid: uuid.v4(),
-        userName: 'User',
-        createTime: DateTime.now(),
-        message: message,
-        source: MessageSource.user,
-        ask_ai: ask_ai,
-      );
-      messageController.addMessage(chatRoomUuid, newMessage, ai_question);
-      _formKey.currentState!.reset();
+    var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
+    var first_letters =
+    message.substring(0, min(3, message.length)).toLowerCase();
+    var ask_ai = first_letters == "@ai";
+    String ai_question = "";
+    if (ask_ai) {
+      ai_question = message.substring(3).trimLeft();
     }
+    final newMessage = Message(
+      uuid: uuid.v4(),
+      userName: 'User',
+      createTime: DateTime.now(),
+      message: message,
+      source: MessageSource.user,
+      ask_ai: ask_ai,
+    );
+    messageController.addMessage(chatRoomUuid, newMessage, ai_question);
+    _formKey.currentState!.reset();
   }
 
   Widget _buildMessageCard(Message message) {
