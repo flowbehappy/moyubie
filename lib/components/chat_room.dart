@@ -86,8 +86,8 @@ class ListPane extends StatelessWidget {
               title: const Text("Chat Room"),
               foregroundColor: Colors.white,
               backgroundColor: Color.fromARGB(255, 70, 70, 70),
-              automaticallyImplyLeading: false,
               toolbarHeight: 40,
+              automaticallyImplyLeading: false,
               actions: const [NewChatButton()]),
           body: Scrollbar(
             controller: _scrollController,
@@ -136,6 +136,9 @@ class DetailsPane extends StatelessWidget {
     return GetX<comp.ChatRoomController>(builder: (controller) {
       return Scaffold(
         appBar: AppBar(
+          foregroundColor: Colors.white,
+          backgroundColor: Color.fromARGB(255, 70, 70, 70),
+          toolbarHeight: 40,
           automaticallyImplyLeading: false,
           leading: onClose == null
               ? null
