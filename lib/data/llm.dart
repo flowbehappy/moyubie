@@ -2,7 +2,6 @@ import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:uuid/uuid.dart';
-import 'package:vibration/vibration.dart';
 
 import '../repository/chat_room.dart';
 
@@ -88,14 +87,6 @@ class ChatGpt extends LLM {
           if (chatStreamEvent.choices.first.delta.content != null) {
             message.message =
                 message.message + chatStreamEvent.choices.first.delta.content!;
-            try {
-              var hasVibration = await Vibration.hasVibrator();
-              if (hasVibration != null && hasVibration) {
-                Vibration.vibrate(duration: 50, amplitude: 128);
-              }
-            } catch (e) {
-              // ignore
-            }
 
             onResponse(message);
           }
