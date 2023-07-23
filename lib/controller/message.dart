@@ -57,7 +57,7 @@ class MessageController extends GetxController {
       messageList.value = [
         ...messages,
         Message(
-            uuid: uuid.v4(),
+            uuid: uuid.v1(),
             message: e.toString(),
             userName: "bot",
             createTime: DateTime.now(),

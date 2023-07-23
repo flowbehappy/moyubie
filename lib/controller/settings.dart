@@ -44,6 +44,7 @@ class SettingsController extends GetxController {
     await getOpenAiBaseUrlFromPreferences();
     await getOpenAiKeyFromPreferences();
     await getServerlessCmdFromPreferences();
+    await getLLMFromPreferences();
     await getGptModelFromPreferences();
     await getUseStreamFromPreferences();
     await initAppVersion();
@@ -67,9 +68,34 @@ class SettingsController extends GetxController {
   //   setGlmBaseUrl(baseUrl);
   // }
 
-  void saveTmpOption() {
+  Future<String?> validateAndInitSettings() async {
+    var crr = ChatRoomRepository();
+    var conn = await crr.getRemoteDb();
+    if (conn == null) {
+      return "Cannot connect to remote database with ${crr.remoteDBToString()}, ";
+    }
+
+    if (llm.value == "OpenAI") {
+      if (openAiKey.value.length <= 10) {
+        return "Invalid OpenAI key: ${openAiKey.value}";
+      }
+
+      try {
+        OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
+        OpenAI.baseUrl =
+            GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+      } catch (e) {
+        return "Cannot connect to OpenAI, error: ${e.toString()}";
+      }
+    }
+
+    return null;
+  }
+
+  void saveTmpOption() async {
     GetStorage _box = GetStorage();
     llm.value = llmTmp.value;
+    _box.write('llm', llm.value);
     gptModel.value = gptModelTmp.value;
     _box.write('gptModel', gptModel.value);
     openAiKey.value = openAiKeyTmp.value;
@@ -77,10 +103,12 @@ class SettingsController extends GetxController {
     serverlessCmd.value = serverlessCmdTmp.value;
     _box.write('serverlessCmd', serverlessCmd.value);
     updateServerlessCmdToRepo(serverlessCmd.value);
-    if (llm.value == "OpenAI") {
-      OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
-      OpenAI.baseUrl =
-          GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+
+    var error = await validateAndInitSettings();
+    if (error != null) {
+      // TODO: show setting tips
+    } else {
+      // TODO: show success tips
     }
   }
 
@@ -157,6 +185,16 @@ class SettingsController extends GetxController {
     setOpenAiBaseUrl(baseUrl);
   }
 
+  void setLlm(String text) {
+    llmTmp.value = text;
+  }
+
+  getLLMFromPreferences() async {
+    GetStorage _box = GetStorage();
+    String llm = _box.read('llm') ?? "Echo";
+    setLlm(llm);
+  }
+
   void setGptModel(String text) {
     gptModelTmp.value = text;
   }
@@ -225,10 +263,6 @@ class SettingsController extends GetxController {
     GetStorage _box = GetStorage();
     bool useWebSearch = _box.read('useWebSearch') ?? false;
     setUseWebSearch(useWebSearch);
-  }
-
-  void setLlm(String text) {
-    llmTmp.value = text;
   }
 
   void setLocale(Locale lol) {

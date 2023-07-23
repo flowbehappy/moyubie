@@ -142,14 +142,14 @@ class _ChatWindowState extends State<ChatWindow> {
     final ChatRoomController chatRoomController = Get.find();
     var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
     var first_letters =
-    message.substring(0, min(3, message.length)).toLowerCase();
+        message.substring(0, min(3, message.length)).toLowerCase();
     var ask_ai = first_letters == "@ai";
     String ai_question = "";
     if (ask_ai) {
       ai_question = message.substring(3).trimLeft();
     }
     final newMessage = Message(
-      uuid: uuid.v4(),
+      uuid: uuid.v1(),
       userName: 'User',
       createTime: DateTime.now(),
       message: message,

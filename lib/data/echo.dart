@@ -21,7 +21,7 @@ class EchoGPT extends LLM {
     message = message.replaceAll('吗', "");
     message = message.replaceAll('?', "!");
     onSuccess(Message(
-        uuid: uuid.v4(),
+        uuid: uuid.v1(),
         message: message,
         userName: userName,
         createTime: DateTime.now(),

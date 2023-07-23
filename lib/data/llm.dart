@@ -74,7 +74,7 @@ class ChatGpt extends LLM {
     //   }
     // }
     var message = Message(
-        uuid: uuid.v4(),
+        uuid: uuid.v1(),
         message: "",
         userName: userName,
         createTime: DateTime.now(),

@@ -205,7 +205,7 @@ class NewChatButton extends StatelessWidget {
     const uuid = Uuid();
     var createTime = DateTime.now();
     repo.ChatRoom chatRoom = repo.ChatRoom(
-        uuid: uuid.v4(),
+        uuid: uuid.v1(),
         name: "New Chat Room",
         createTime: createTime,
         connectionToken: "");
@@ -330,7 +330,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
             style: dialogTextStyle,
           ),
           actions: [
-            _DialogButton(
+            const _DialogButton(
               text: "Dismiss",
               onPressed: _deleteChatRoom,
             ),
