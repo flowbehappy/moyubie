@@ -534,8 +534,9 @@ class _NewsWindowState extends State<NewsWindow> {
             ))
         : null;
     return AppBar(
-        leading: goBack,
         title: const Text("News"),
+        leading: goBack,
+        toolbarHeight: 40,
         foregroundColor: Colors.white,
         backgroundColor: Color.fromARGB(255, 70, 70, 70),
         actions: actions,

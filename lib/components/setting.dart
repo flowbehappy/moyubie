@@ -10,9 +10,10 @@ class SettingPage extends GetResponsiveView<SettingsController> {
     const sizedBoxSpace = SizedBox(height: 24);
     return Scaffold(
       appBar: AppBar(
+        title: Text("Settings"),
         foregroundColor: Colors.white,
         backgroundColor: Color.fromARGB(255, 70, 70, 70),
-        title: Text('settings'.tr),
+        toolbarHeight: 40,
       ),
       body: GetX<SettingsController>(builder: (controller) {
         return ListView(

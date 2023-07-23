@@ -83,10 +83,11 @@ class ListPane extends StatelessWidget {
     return GetX<comp.ChatRoomController>(builder: (roomCtrl) {
       return Scaffold(
           appBar: AppBar(
+              title: const Text("Chat Room"),
               foregroundColor: Colors.white,
               backgroundColor: Color.fromARGB(255, 70, 70, 70),
               automaticallyImplyLeading: false,
-              title: const Text("Chat Room"),
+              toolbarHeight: 40,
               actions: const [NewChatButton()]),
           body: Scrollbar(
             controller: _scrollController,
@@ -105,17 +106,10 @@ class ListPane extends StatelessWidget {
                           },
                           selected: selectedIndex == index,
                           leading: ExcludeSemantics(
-<<<<<<< Updated upstream
-                            child: CircleAvatar(child: Text('$index')),
-                          ),
-                          title: Text(
-                            'chat room $index',
-=======
                             child: CircleAvatar(child: Text(room.name[0])),
                           ),
                           title: Text(
                             room.name,
->>>>>>> Stashed changes
                           ),
                         ));
                   })
@@ -139,7 +133,7 @@ class DetailsPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetX<comp.ChatRoomController>(builder: (controller){
+    return GetX<comp.ChatRoomController>(builder: (controller) {
       return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -347,9 +341,9 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
   }
 
   Route<String> _alertRenameRoute(
-      BuildContext buildCtx,
-      Object? arguments,
-      ) {
+    BuildContext buildCtx,
+    Object? arguments,
+  ) {
     final theme = Theme.of(buildCtx);
     final dialogTextStyle = theme.textTheme.titleMedium!
         .copyWith(color: theme.textTheme.bodySmall!.color);
@@ -370,8 +364,8 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
             decoration: InputDecoration(
               labelText: "New Name",
               floatingLabelBehavior: FloatingLabelBehavior.auto,
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(5),
               ),
