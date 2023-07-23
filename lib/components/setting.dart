@@ -2,17 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:get/get.dart';
 
-class SettingPage extends GetResponsiveView<SettingsController> {
-  SettingPage({super.key});
+class SettingPage extends StatefulWidget {
+  const SettingPage({super.key});
 
   @override
-  Widget? builder() {
-    const sizedBoxSpace = SizedBox(height: 24);
+  State<StatefulWidget> createState() {
+    return _SettingPageState();
+  }
+}
+
+class _SettingPageState extends State<SettingPage> {
+  @override
+  Widget build(BuildContext context) {
+    const SizedBox sizedBoxSpace = SizedBox(height: 24);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Settings"),
+        title: const Text("Settings"),
         foregroundColor: Colors.white,
-        backgroundColor: Color.fromARGB(255, 70, 70, 70),
+        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
         toolbarHeight: 40,
       ),
       body: GetX<SettingsController>(builder: (controller) {
@@ -24,7 +31,9 @@ class SettingPage extends GetResponsiveView<SettingsController> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    controller.saveTmpOption();
+                  },
                   child: const Text("Save"),
                 ),
               ],
@@ -35,11 +44,11 @@ class SettingPage extends GetResponsiveView<SettingsController> {
               children: [
                 const Text("AGI"),
                 Tooltip(
-                  message: "description for AGI",
+                  message: "Artificial General Intelligence",
                   child: IconButton(
                     iconSize: 10.0,
                     splashRadius: 10,
-                    color: Theme.of(screen.context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     onPressed: () {},
                     icon: const Icon(Icons.question_mark),
                   ),
@@ -75,7 +84,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                         labelStyle: TextStyle(
                             fontWeight: FontWeight.bold,
                             color:
-                                Theme.of(screen.context!).colorScheme.primary),
+                                Theme.of(context).colorScheme.primary),
                         floatingLabelBehavior: FloatingLabelBehavior.auto,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
@@ -85,7 +94,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                         ),
                         filled: true,
                       ),
-                      items: <String>['OpenAI', 'ChatGlm', 'IF', 'Echo']
+                      items: <String>['Echo', 'OpenAI']
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -122,7 +131,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                         decoration: InputDecoration(
                           labelStyle: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(screen.context!)
+                              color: Theme.of(context)
                                   .colorScheme
                                   .primary),
                           floatingLabelBehavior: FloatingLabelBehavior.auto,
@@ -180,6 +189,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                           ),
                           filled: true,
                           suffixIcon: IconButton(
+                            splashRadius: 10,
                             icon: Icon(
                               Icons.remove_red_eye,
                               color: controller.isObscure.value
@@ -194,7 +204,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                         ),
                         autovalidateMode: AutovalidateMode.always,
                         maxLines: 1,
-                        onFieldSubmitted: (value) {
+                        onChanged: (value) {
                           controller.setOpenAiKey(value);
                         },
                         obscureText: controller.isObscure.value,
@@ -212,7 +222,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                   child: IconButton(
                     iconSize: 10.0,
                     splashRadius: 10,
-                    color: Theme.of(screen.context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     onPressed: () {},
                     icon: const Icon(Icons.question_mark),
                   ),
@@ -230,7 +240,7 @@ class SettingPage extends GetResponsiveView<SettingsController> {
             SizedBox(
               height: 200,
               child: TextFormField(
-                // initialValue: controller.glmBaseUrl.value,
+                initialValue: controller.serverlessCmd.value,
                 decoration: InputDecoration(
                   hintText:
                       "mysql --connect-timeout 15 -u xxx.root' -h xxx -P xxx -D test",
@@ -247,8 +257,8 @@ class SettingPage extends GetResponsiveView<SettingsController> {
                 maxLines: null,
                 minLines: 10,
                 onEditingComplete: () {},
-                onFieldSubmitted: (value) {
-                  controller.setGlmBaseUrl(value);
+                onChanged: (value) {
+                  controller.setServerlessCmd(value);
                 },
               ),
             )

@@ -120,10 +120,9 @@ class MyApp extends StatelessWidget {
           body: TabBarView(
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              Container(
-                  child: ChatRoom(restorationId: "chat_room", type: type)),
-              Container(child: NewsWindow(ty: type)),
-              Container(child: SettingPage()),
+              ChatRoom(restorationId: "chat_room", type: type),
+              NewsWindow(ty: type),
+              SettingPage(),
             ],
           ),
         ),

@@ -6,14 +6,21 @@ import 'package:get_storage/get_storage.dart';
 
 class SettingsController extends GetxController {
   final isObscure = true.obs;
+
   final openAiKey = "".obs;
-  final glmBaseUrl = "".obs;
+  final openAiKeyTmp = "".obs;
+
+  final serverlessCmd = "".obs;
+  final serverlessCmdTmp = "".obs;
+
+  // final glmBaseUrl = "".obs;
 
   final openAiBaseUrl = "https://api.openai-proxy.com".obs;
 
   final themeMode = ThemeMode.system.obs;
 
   final gptModel = "gpt-3.5-turbo".obs;
+  final gptModelTmp = "gpt-3.5-turbo".obs;
 
   final locale = const Locale('zh').obs;
 
@@ -22,6 +29,7 @@ class SettingsController extends GetxController {
   final useWebSearch = false.obs;
 
   final llm = "Echo".obs;
+  final llmTmp = "Echo".obs;
 
   final version = "1.0.0".obs;
 
@@ -33,9 +41,11 @@ class SettingsController extends GetxController {
     await getLocaleFromPreferences();
     await getOpenAiBaseUrlFromPreferences();
     await getOpenAiKeyFromPreferences();
+    await getServerlessCmdFromPreferences();
     await getGptModelFromPreferences();
     await getUseStreamFromPreferences();
     await initAppVersion();
+    saveTmpOption();
     super.onInit();
   }
 
@@ -43,28 +53,47 @@ class SettingsController extends GetxController {
     version.value = await getAppVersion();
   }
 
-  void setGlmBaseUrl(String baseUrl) {
-    glmBaseUrl.value = baseUrl;
-    GetStorage _box = GetStorage();
-    _box.write('glmBaseUrl', baseUrl);
-  }
+  // void setGlmBaseUrl(String baseUrl) {
+  //   glmBaseUrl.value = baseUrl;
+  //   GetStorage _box = GetStorage();
+  //   _box.write('glmBaseUrl', baseUrl);
+  // }
 
-  getGlmBaseUrlFromPreferences() async {
+  // getGlmBaseUrlFromPreferences() async {
+  //   GetStorage _box = GetStorage();
+  //   String baseUrl = _box.read('glmBaseUrl') ?? "https://api.openai-proxy.com";
+  //   setGlmBaseUrl(baseUrl);
+  // }
+
+  void saveTmpOption() {
     GetStorage _box = GetStorage();
-    String baseUrl = _box.read('glmBaseUrl') ?? "https://api.openai-proxy.com";
-    setGlmBaseUrl(baseUrl);
+    llm.value = llmTmp.value;
+    gptModel.value = gptModelTmp.value;
+    _box.write('gptModel', gptModel.value);
+    openAiKey.value = openAiKeyTmp.value;
+    _box.write('openAiKey', openAiKey.value);
+    serverlessCmd.value = serverlessCmdTmp.value;
+    _box.write('serverlessCmd', serverlessCmd.value);
   }
 
   void setOpenAiKey(String text) {
-    openAiKey.value = text;
-    GetStorage _box = GetStorage();
-    _box.write('openAiKey', text);
+    openAiKeyTmp.value = text;
   }
 
   getOpenAiKeyFromPreferences() async {
     GetStorage _box = GetStorage();
     String key = _box.read('openAiKey') ?? "";
     setOpenAiKey(key);
+  }
+
+  void setServerlessCmd(String text) {
+    serverlessCmdTmp.value = text;
+  }
+
+  getServerlessCmdFromPreferences() async {
+    GetStorage _box = GetStorage();
+    String cmd = _box.read('serverlessCmd') ?? "";
+    setServerlessCmd(cmd);
   }
 
   void setOpenAiBaseUrl(String baseUrl) {
@@ -82,9 +111,7 @@ class SettingsController extends GetxController {
   }
 
   void setGptModel(String text) {
-    gptModel.value = text;
-    GetStorage _box = GetStorage();
-    _box.write('gptModel', text);
+    gptModelTmp.value = text;
   }
 
   getGptModelFromPreferences() async {
@@ -154,7 +181,7 @@ class SettingsController extends GetxController {
   }
 
   void setLlm(String text) {
-    llm.value = text;
+    llmTmp.value = text;
   }
 
   void setLocale(Locale lol) {

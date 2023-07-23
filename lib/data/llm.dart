@@ -1,8 +1,6 @@
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/utils/bingSearch.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vibration/vibration.dart';
 

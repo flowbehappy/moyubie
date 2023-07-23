@@ -34,9 +34,9 @@ class MessageRepository {
   }
 
   void init() {
-    // OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
-    // OpenAI.baseUrl =
-    GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+    OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
+    OpenAI.baseUrl =
+        GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
   }
 
   void _getResponseFromGpt(
