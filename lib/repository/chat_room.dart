@@ -1,5 +1,7 @@
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:mysql_client/mysql_client.dart';
 
 class ChatRoom {
   String uuid;
@@ -79,6 +81,12 @@ class ChatRoomRepository {
   static const String _columnMessageSource = 'source';
   static const String _columnAskAI = 'ask_ai';
 
+  static MySQLConnection? _remoteDatabase;
+  static String host = "";
+  static int port = 0;
+  static String userName = "";
+  static String password = "";
+
   static Database? _database;
   static ChatRoomRepository? _instance;
 
@@ -106,6 +114,37 @@ class ChatRoomRepository {
       });
     }
     return _database!;
+  }
+
+  updateRemoteDBConfig(
+      String host, int port, String userName, String password) {
+    ChatRoomRepository.host = host;
+    ChatRoomRepository.port = port;
+    ChatRoomRepository.userName = userName;
+    ChatRoomRepository.password = password;
+  }
+
+  Future<MySQLConnection> _getRemoteDb() async {
+    if (_remoteDatabase == null) {
+      var conn = await MySQLConnection.createConnection(
+          host: host, port: port, userName: userName, password: password);
+      _remoteDatabase = conn;
+      await conn.connect();
+      await conn.execute("CREATE DATABASE IF NOT EXISTS chatgpt;");
+      await conn.execute("USE chatgpt;");
+      var res = await conn.execute("SHOW TABLES LIKE 'chat_room';");
+      if (res.rows.isEmpty) {
+        await conn.execute('''
+          CREATE TABLE IF NOT EXISTS $_tableChatRoom (
+            $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
+            $_columnChatRoomName TEXT,
+            $_columnChatRoomCreateTime TEXT,
+            $_columnChatRoomConnectionToken TEXT
+          )
+        ''');
+      }
+    }
+    return _remoteDatabase!;
   }
 
   Future<List<ChatRoom>> getChatRooms() async {
@@ -138,6 +177,17 @@ class ChatRoomRepository {
           $_columnAskAI INTEGER
         )
         ''');
+    final remoteDB = await _getRemoteDb();
+    await remoteDB.execute('''
+        CREATE TABLE IF NOT EXISTS `${chatRoom.uuid}` (
+          $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
+          $_columnMessageUserName TEXT,
+          $_columnMessageCreateTime TEXT,
+          $_columnMessageMessage TEXT,
+          $_columnMessageSource TEXT,
+          $_columnAskAI INTEGER
+        )
+        ''');
   }
 
   Future<void> updateChatRoom(ChatRoom chatRoom) async {
@@ -147,6 +197,15 @@ class ChatRoomRepository {
       chatRoom.toMap(),
       where: '$_columnChatRoomUuid = ?',
       whereArgs: [chatRoom.uuid],
+    );
+    final remoteDB = await _getRemoteDb();
+    await remoteDB.execute('''
+      UPDATE $_tableChatRoom SET
+        $_columnChatRoomName = '${chatRoom.name}',
+        $_columnChatRoomCreateTime = '${chatRoom.createTime.toString()}',
+        $_columnChatRoomConnectionToken = '${chatRoom.connectionToken}'
+      WHERE $_columnChatRoomUuid = '${chatRoom.uuid}'
+    '''
     );
   }
 
@@ -160,6 +219,12 @@ class ChatRoomRepository {
       );
     });
     await db.execute('DROP TABLE IF EXISTS `$uuid`');
+
+    final remoteDB = await _getRemoteDb();
+    await remoteDB.execute('''
+      DELETE FROM $_tableChatRoom WHERE $_columnChatRoomUuid = '$uuid'
+    ''');
+    await remoteDB.execute('DROP TABLE IF EXISTS `$uuid`');
   }
 
   Future<List<Message>> getMessagesByChatRoomUUid(String uuid) async {
@@ -184,6 +249,12 @@ class ChatRoomRepository {
       message.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    final remoteDB = await _getRemoteDb();
+    await remoteDB.execute('''
+        INSERT INTO `$chatRoomUuid` VALUES ('${message.uuid}', 
+        '${message.userName}', '${message.createTime.toString()}', 
+        '${message.message}', '${message.source.name}', ${message.ask_ai ? 1 : 0})
+    ''');
   }
 
   Future<void> deleteMessage(String chatRoomUuid, String messageUuid) async {
@@ -193,5 +264,10 @@ class ChatRoomRepository {
       where: '$_columnMessageUuid = ?',
       whereArgs: [messageUuid],
     );
+
+    final remoteDB = await _getRemoteDb();
+    await remoteDB.execute('''
+      DELETE FROM `$chatRoomUuid` WHERE $_columnMessageUuid = '$messageUuid'
+    ''');
   }
 }

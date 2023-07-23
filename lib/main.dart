@@ -29,13 +29,13 @@ void main() async {
   if (kIsWeb) {
     // Change default factory on the web
     databaseFactory = databaseFactoryFfiWeb;
-    // TODO(tangenta): only used for debug, remove it later.
-    String path = join(await getDatabasesPath(), 'chatgpt.db');
-    await deleteDatabase(path);
   } else if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
+  // TODO(tangenta): only used for debug, remove it later.
+  String path = join(await getDatabasesPath(), 'chatgpt.db');
+  await deleteDatabase(path);
   runApp(const MyApp());
 }
 

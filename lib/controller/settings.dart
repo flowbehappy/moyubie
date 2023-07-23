@@ -1,6 +1,7 @@
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/utils/package.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -75,11 +76,51 @@ class SettingsController extends GetxController {
     _box.write('openAiKey', openAiKey.value);
     serverlessCmd.value = serverlessCmdTmp.value;
     _box.write('serverlessCmd', serverlessCmd.value);
+    updateServerlessCmdToRepo(serverlessCmd.value);
     if (llm.value == "OpenAI") {
       OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
       OpenAI.baseUrl =
           GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
     }
+  }
+
+  updateServerlessCmdToRepo(String cmd) {
+    cmd = cmd.replaceFirst(" -p", " -p ");
+    final options = cmd.split(" ");
+    var nextOpts = List.from(options);
+    nextOpts.removeAt(0);
+    nextOpts.add("");
+    String user = "";
+    String host = "";
+    int port = 0;
+    String password = "";
+
+    for (int i = 0; i < options.length; i += 1) {
+      final opt = options[i];
+      final nextOpt = nextOpts[i];
+      switch (opt) {
+        case "-u":
+        case "--user":
+          user = nextOpt.replaceAll("'", "");
+          user = user.replaceAll('"', "");
+          user = user.replaceAll("'", "");
+          break;
+        case "-h":
+        case "--host":
+          host = nextOpt;
+          break;
+        case "-P":
+        case "--port":
+          port = int.parse(nextOpt);
+          break;
+        case "-p":
+        case "--password":
+          password = nextOpt;
+          break;
+        default:
+      }
+    }
+    ChatRoomRepository().updateRemoteDBConfig(host, port, user, password);
   }
 
   void setOpenAiKey(String text) {
