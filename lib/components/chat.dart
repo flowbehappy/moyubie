@@ -104,6 +104,8 @@ class _ChatWindowState extends State<ChatWindow> {
                           _sendMessage();
                         },
                         style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 250, 94, 83),
                           shape: const RoundedRectangleBorder(
                               borderRadius:
                                   BorderRadius.all(Radius.circular(8))),
