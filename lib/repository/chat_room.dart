@@ -28,19 +28,26 @@ enum MessageSource {
   bot,
 }
 
+// The context
+class AIConversationContext {
+  // TODO
+}
+
 class Message {
   String uuid;
   String userName;
   DateTime createTime;
   String message;
   MessageSource source;
+  bool ask_ai = false;
 
   Message(
       {required this.uuid,
       required this.userName,
       required this.createTime,
       required this.message,
-      required this.source});
+      required this.source,
+      this.ask_ai = false});
   Map<String, dynamic> toMap() {
     return {
       'uuid': uuid,
@@ -48,12 +55,13 @@ class Message {
       'create_time': createTime.toString(),
       'message': message,
       'source': source.name,
+      'ask_ai': ask_ai,
     };
   }
 
   @override
   String toString() {
-    return 'Message{uuid: $uuid, userName: $userName, createTime: $createTime, message: $message, source: $source}';
+    return 'Message{uuid: $uuid, userName: $userName, createTime: $createTime, message: $message, source: $source}, askAI: $ask_ai';
   }
 }
 
@@ -69,6 +77,7 @@ class ChatRoomRepository {
   static const String _columnMessageCreateTime = 'create_time';
   static const String _columnMessageMessage = 'message';
   static const String _columnMessageSource = 'source';
+  static const String _columnAskAI = 'ask_ai';
 
   static Database? _database;
   static ChatRoomRepository? _instance;
@@ -125,7 +134,8 @@ class ChatRoomRepository {
           $_columnMessageUserName TEXT,
           $_columnMessageCreateTime TEXT,
           $_columnMessageMessage TEXT,
-          $_columnMessageSource TEXT
+          $_columnMessageSource TEXT,
+          $_columnAskAI INTEGER
         )
         ''');
   }
@@ -157,13 +167,13 @@ class ChatRoomRepository {
     final List<Map<String, dynamic>> maps = await db.query('`$uuid`');
     return List.generate(maps.length, (i) {
       return Message(
-        uuid: maps[i][_columnMessageUuid],
-        userName: maps[i][_columnMessageUserName],
-        createTime: DateTime.parse(maps[i][_columnMessageCreateTime]),
-        message: maps[i][_columnMessageMessage],
-        source: MessageSource.values
-            .firstWhere((e) => e.name == maps[i][_columnMessageSource]),
-      );
+          uuid: maps[i][_columnMessageUuid],
+          userName: maps[i][_columnMessageUserName],
+          createTime: DateTime.parse(maps[i][_columnMessageCreateTime]),
+          message: maps[i][_columnMessageMessage],
+          source: MessageSource.values
+              .firstWhere((e) => e.name == maps[i][_columnMessageSource]),
+          ask_ai: maps[i][_columnAskAI] == 1);
     });
   }
 

@@ -9,9 +9,14 @@ import 'package:vibration/vibration.dart';
 import '../repository/chat_room.dart';
 
 abstract class LLM {
-  getResponse(String chatRoomUuid, String userName,
-      List<Message> messages, ValueChanged<Message> onResponse,
-      ValueChanged<Message> errorCallback, ValueChanged<Message> onSuccess);
+  getResponse(
+      String chatRoomUuid,
+      String userName,
+      String question,
+      AIConversationContext convContext,
+      ValueChanged<Message> onResponse,
+      ValueChanged<Message> errorCallback,
+      ValueChanged<Message> onSuccess);
 }
 
 class ChatGpt extends LLM {
@@ -21,13 +26,14 @@ class ChatGpt extends LLM {
   getResponse(
       String chatRoomUuid,
       String userName,
-      List<Message> messages,
+      String question,
+      AIConversationContext convContext,
       ValueChanged<Message> onResponse,
       ValueChanged<Message> errorCallback,
       ValueChanged<Message> onSuccess) async {
     List<OpenAIChatCompletionChoiceMessageModel> openAIMessages = [];
     //将messages反转
-    messages = messages.reversed.toList();
+    // messages = messages.reversed.toList();
 
     // 将messages里面的每条消息的内容取出来拼接在一起
     String content = "";
@@ -46,21 +52,30 @@ class ChatGpt extends LLM {
     }
     bool useWebSearch = SettingsController.to.useWebSearch.value;
     if (useWebSearch) {
-      messages.first.message = await fetchAndParse(messages.first.message);
+      // messages.first.message = await fetchAndParse(messages.first.message);
     }
-    for (Message message in messages) {
-      content = content + message.message;
-      if (content.length < maxTokenLength || openAIMessages.isEmpty) {
-        // 插入到 openAIMessages 第一个位置
-        openAIMessages.insert(
-          0,
-          OpenAIChatCompletionChoiceMessageModel(
-            content: message.message,
-            role: OpenAIChatMessageRole.user,
-          ),
-        );
-      }
-    }
+
+    openAIMessages.insert(
+      0,
+      OpenAIChatCompletionChoiceMessageModel(
+        content: question,
+        role: OpenAIChatMessageRole.user,
+      ),
+    );
+
+    // for (Message message in messages) {
+    //   content = content + message.message;
+    //   if (content.length < maxTokenLength || openAIMessages.isEmpty) {
+    //     // 插入到 openAIMessages 第一个位置
+    //     openAIMessages.insert(
+    //       0,
+    //       OpenAIChatCompletionChoiceMessageModel(
+    //         content: message.message,
+    //         role: OpenAIChatMessageRole.user,
+    //       ),
+    //     );
+    //   }
+    // }
     var message = Message(
         uuid: uuid.v4(),
         message: "",

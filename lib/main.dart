@@ -109,7 +109,7 @@ class MyApp extends StatelessWidget {
       theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),
       darkTheme: FlexThemeData.dark(scheme: FlexScheme.ebonyClay),
       themeMode: ThemeMode.system,
-      locale: const Locale('zh'),
+      // locale: const Locale('zh'),
       // translations: MyTranslations(),
       builder: EasyLoading.init(),
       debugShowCheckedModeBanner: false,

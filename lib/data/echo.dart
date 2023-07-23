@@ -11,11 +11,12 @@ class EchoGPT extends LLM {
   getResponse(
       String chatRoomUuid,
       String userName,
-      List<Message> messages,
+      String question,
+      AIConversationContext convContext,
       ValueChanged<Message> onResponse,
       ValueChanged<Message> errorCallback,
       ValueChanged<Message> onSuccess) async {
-    var message = messages.last.message;
+    var message = question;
     message = message.replaceAll('？', "！");
     message = message.replaceAll('吗', "");
     message = message.replaceAll('?', "!");

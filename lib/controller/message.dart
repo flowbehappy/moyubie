@@ -14,22 +14,40 @@ class MessageController extends GetxController {
         await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
   }
 
-  void addMessage(String chatRoomUuid, Message message) async {
-    await ChatRoomRepository().addMessage(chatRoomUuid, message);
+  void addMessage(
+      String chatRoomUuid, Message input, String ai_question) async {
+    // Add user intput to message list
+    await ChatRoomRepository().addMessage(chatRoomUuid, input);
+
     final messages =
         await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
-    messageList.value = messages;
-    // wait for all the state emit
+
+    if (!input.ask_ai) {
+      final messages =
+          await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+      messageList.value = messages;
+      return;
+    }
+
+    // If this message is a question for AI, then send request to AI service.
     final completer = Completer();
+
+    // wait for all the state emit
     try {
-      MessageRepository().postMessage(chatRoomUuid, "", message,
-          (Message message) {
-        messageList.value = [...messages, message];
-      }, (Message message) {
-        messageList.value = [...messages, message];
-      }, (Message message) async {
+      MessageRepository().postMessage(
+          chatRoomUuid, //
+          "",
+          ai_question,
+          AIConversationContext(), //
+          (Message res) {
+        messageList.value = [...messages, res];
+      }, //
+          (Message res) {
+        messageList.value = [...messages, res];
+      }, //
+          (Message res) async {
         // if streaming is done ,load all the message
-        ChatRoomRepository().addMessage(chatRoomUuid, message);
+        ChatRoomRepository().addMessage(chatRoomUuid, res);
         final messages =
             await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
         messageList.value = messages;

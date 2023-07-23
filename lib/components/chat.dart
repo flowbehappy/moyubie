@@ -9,6 +9,7 @@ import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:math';
 
 import '../repository/chat_room.dart';
 
@@ -131,19 +132,27 @@ class _ChatWindowState extends State<ChatWindow> {
   }
 
   void _sendMessage() {
-    final message = _controller.text;
+    var message = _controller.text;
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
     if (message.isNotEmpty) {
       var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
+      var first_letters =
+          message.substring(0, min(3, message.length)).toLowerCase();
+      var ask_ai = first_letters == "@ai";
+      String ai_question = "";
+      if (ask_ai) {
+        ai_question = message.substring(3).trimLeft();
+      }
       final newMessage = Message(
         uuid: uuid.v4(),
         userName: 'User',
         createTime: DateTime.now(),
         message: message,
         source: MessageSource.user,
+        ask_ai: ask_ai,
       );
-      messageController.addMessage(chatRoomUuid, newMessage);
+      messageController.addMessage(chatRoomUuid, newMessage, ai_question);
       _formKey.currentState!.reset();
     }
   }

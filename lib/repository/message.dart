@@ -19,24 +19,31 @@ class MessageRepository {
     init();
   }
 
-  void postMessage(String chatRoomUuid, String userName,
-      Message message, ValueChanged<Message> onResponse,
-      ValueChanged<Message> onError, ValueChanged<Message> onSuccess) async {
-    List<Message> messages = await ChatRoomRepository()
-        .getMessagesByChatRoomUUid(chatRoomUuid);
-    _getResponseFromGpt(chatRoomUuid, userName, messages, onResponse, onError, onSuccess);
+  void postMessage(
+      String chatRoomUuid,
+      String userName,
+      String question,
+      AIConversationContext convContext,
+      ValueChanged<Message> onResponse,
+      ValueChanged<Message> onError,
+      ValueChanged<Message> onSuccess) async {
+    // List<Message> messages =
+    // await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+    _getResponseFromGpt(chatRoomUuid, userName, question, convContext,
+        onResponse, onError, onSuccess);
   }
 
   void init() {
     // OpenAI.apiKey = GetStorage().read('openAiKey') ?? "sk-xx";
     // OpenAI.baseUrl =
-        GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
+    GetStorage().read('openAiBaseUrl') ?? "https://api.openai.com";
   }
 
   void _getResponseFromGpt(
       String chatRoomUuid,
       String userName,
-      List<Message> messages,
+      String question,
+      AIConversationContext convContext,
       ValueChanged<Message> onResponse,
       ValueChanged<Message> errorCallback,
       ValueChanged<Message> onSuccess) async {
@@ -44,16 +51,20 @@ class MessageRepository {
 
     switch (llm.toUpperCase()) {
       case "OPENAI":
-        ChatGpt().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
+        ChatGpt().getResponse(chatRoomUuid, userName, question, convContext,
+            onResponse, errorCallback, onSuccess);
         break;
       case "CHATGLM":
-        ChatGlM().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
+        ChatGlM().getResponse(chatRoomUuid, userName, question, convContext,
+            onResponse, errorCallback, onSuccess);
         break;
       case "ECHO":
-        EchoGPT().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
+        EchoGPT().getResponse(chatRoomUuid, userName, question, convContext,
+            onResponse, errorCallback, onSuccess);
         break;
       default:
-        ChatGpt().getResponse(chatRoomUuid, userName, messages, onResponse, errorCallback, onSuccess);
+        ChatGpt().getResponse(chatRoomUuid, userName, question, convContext,
+            onResponse, errorCallback, onSuccess);
     }
   }
 
