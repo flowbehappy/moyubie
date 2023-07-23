@@ -105,6 +105,7 @@ class MyApp extends StatelessWidget {
     Get.put(MessageController());
     Get.put(PromptController());
     Get.put(ChatRoomController());
+    Get.put(NewsService());
     return MaterialApp(
       theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),
       darkTheme: FlexThemeData.dark(scheme: FlexScheme.ebonyClay),

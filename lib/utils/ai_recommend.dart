@@ -15,15 +15,15 @@ class AIContext {
   String model;
 
   AIContext({required this.api_key, required this.model});
-
 }
 
-class UserProfile  {
+class UserProfile {
   String job;
   String language;
   List<String> tags;
 
   UserProfile({this.job = "", this.language = "", this.tags = const []});
+
   Map<String, dynamic> toJson() {
     var res = <String, dynamic>{};
     if (!job.isEmpty) {
@@ -68,21 +68,21 @@ class TagCollector extends WithOpenAI {
       name: "send_report",
       description: "发送分析得到的用户信息给调用者。",
       parametersSchema: {
-          "type": "object",
-          "properties": {
-            _PromptStrings._interesting_fields: {
-              "type": "array",
-              "items": {"type": "string"}
-            },
-            _PromptStrings._interesting_topic: {
-              "type": "array",
-              "items": {"type": "string"}
-            },
-            _PromptStrings._lang: {"type": "string"},
-            _PromptStrings._country: {"type": "string"},
-            _PromptStrings._job: {"type": "string"}
+        "type": "object",
+        "properties": {
+          _PromptStrings._interesting_fields: {
+            "type": "array",
+            "items": {"type": "string"}
           },
-          "required": ["感兴趣的领域", "感兴趣的新闻主题"],
+          _PromptStrings._interesting_topic: {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          _PromptStrings._lang: {"type": "string"},
+          _PromptStrings._country: {"type": "string"},
+          _PromptStrings._job: {"type": "string"}
+        },
+        "required": ["感兴趣的领域", "感兴趣的新闻主题"],
       });
 
   static const _fn_fetch_message = OpenAIFunctionModel(
@@ -94,22 +94,26 @@ class TagCollector extends WithOpenAI {
     },
   );
 
-
   TagCollector(super._context);
 
   Future<UserProfile> messageToTags(List<String> msgs) async {
     final res = await OpenAI.instance.chat.create(
-        model: _context.model,
-        messages: [
-          OpenAIChatCompletionChoiceMessageModel(
-              role: OpenAIChatMessageRole.system, content: _sys_prompt),
-          OpenAIChatCompletionChoiceMessageModel(
-              role: OpenAIChatMessageRole.function,
-              functionName: _fn_fetch_message.name,
-              content: JsonEncoder().convert(msgs))
-        ],
-        functions: [_fn_fetch_message, _fn_send_report],
-        functionCall: FunctionCall.forFunction(_fn_send_report.name));
+      model: _context.model,
+      messages: [
+        OpenAIChatCompletionChoiceMessageModel(
+            role: OpenAIChatMessageRole.system, content: _sys_prompt),
+        OpenAIChatCompletionChoiceMessageModel(
+            role: OpenAIChatMessageRole.function,
+            functionName: _fn_fetch_message.name,
+            content: JsonEncoder().convert(msgs))
+      ],
+      functions: [_fn_fetch_message, _fn_send_report],
+      functionCall: FunctionCall.forFunction(_fn_send_report.name),
+      // Make GPT be more possible to extract some abstract concepts.
+      // (When it is hard to directly use the same text in the input, LLM may try to detect newer words. Hopefully...)
+      presencePenalty: 0.8,
+      frequencyPenalty: 0.5,
+    );
     final args = res.choices[0].message.functionCall?.arguments;
     final lang = args?[_PromptStrings._lang] ?? "";
     final tags = [
@@ -152,32 +156,46 @@ class NewsPromoter extends WithOpenAI {
         }
       });
   static const _sys_prompt =
-      '你是一个新闻推荐服务。你通过 `get_user_info` 获得用户分析报告，通过 `get_news` 获得今日新闻。'
+      '你是一个新闻推荐服务。你通过且仅通过 `get_user_info` 获得用户分析报告，通过 `get_news` 获得今日新闻。'
       '你要从中选出尽可能多用户可能感兴趣的新闻（但是不要超过五条），并给出相应的理由，随后将理由翻译给用户的惯用语言，推荐理由请不要和标题过度相似。'
-      '传递推荐给 `recommend_news`，你只需要传递 id 和推荐理由，不要带上新闻的其它属性。';
-  
+      '传递推荐给 `recommend_news`，你只需要传递 id 和推荐理由，不要带上新闻的其它属性。不要使用 `get_user_info` 以外任何地方的用户信息，也不要用和用户信息不相符的理由推荐。';
+
   NewsPromoter(super._context);
 
-  Future<List<Recommend>> promotNews(UserProfile userInfo, List<Map<String, dynamic>> news) async {
-    final res = await OpenAI.instance.chat.create(model: _context.model, messages: [
+  Future<List<Recommend>> promotNews(
+      UserProfile userInfo, List<Map<String, dynamic>> news) async {
+    final res = await OpenAI.instance.chat.create(
+        model: _context.model,
+        messages: [
           OpenAIChatCompletionChoiceMessageModel(
               role: OpenAIChatMessageRole.system, content: _sys_prompt),
-
-        OpenAIChatCompletionChoiceMessageModel(role: OpenAIChatMessageRole.function, functionName: _fn_get_news.name, content: JsonEncoder().convert(news)),
-        OpenAIChatCompletionChoiceMessageModel(role: OpenAIChatMessageRole.function, functionName: _fn_get_user_info.name, content: JsonEncoder().convert(userInfo)),
-    ],functionCall: FunctionCall.forFunction(_fn_recommend_news.name), functions: [_fn_get_news, _fn_get_user_info, _fn_recommend_news]);
-    final args =res.choices[0].message.functionCall?.arguments; 
+          OpenAIChatCompletionChoiceMessageModel(
+              role: OpenAIChatMessageRole.function,
+              functionName: _fn_get_news.name,
+              content: JsonEncoder().convert(news)),
+          OpenAIChatCompletionChoiceMessageModel(
+              role: OpenAIChatMessageRole.function,
+              functionName: _fn_get_user_info.name,
+              content: JsonEncoder().convert(userInfo)),
+        ],
+        // Make the output more predictable.
+        temperature: 0,
+        functionCall: FunctionCall.forFunction(_fn_recommend_news.name),
+        functions: [_fn_get_news, _fn_get_user_info, _fn_recommend_news]);
+    final args = res.choices[0].message.functionCall?.arguments;
     final recommends = args?[_PromptStrings._recommend_news] as List<dynamic>;
     var recs = <Recommend>[];
     for (var item in recommends) {
       try {
         var m = item as Map<String, dynamic>;
         recs.add(Recommend(m[_PromptStrings._id], m[_PromptStrings._reason]));
-      } catch(e) {
-        log("Error on AI response");
+      } catch (e) {
+        log("Error on parsing AI response...");
         log(e);
+        rethrow;
       }
     }
+    log(recs);
     return recs;
   }
 }
