@@ -29,10 +29,6 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-  // TODO(tangenta): only used for debug, remove it later.
-  // TODO: I think we should add a button in Settings panel to do the job.
-  // String path = join(await getDatabasesPath(), 'moyubie.db');
-  // await deleteDatabase(path);
   runApp(const MyApp());
 }
 
