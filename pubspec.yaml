@@ -59,6 +59,8 @@ dependencies:
   url_launcher: ^6.1.12
   easy_refresh: ^3.3.2+1
   mysql_client: ^0.0.27
+  firebase_analytics: ^10.4.4
+  firebase_core: ^2.15.0
 
 dev_dependencies:
   flutter_test:

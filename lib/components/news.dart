@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:dual_screen/dual_screen.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:moyubie/components/chat_room.dart';
@@ -32,9 +33,10 @@ mixin BgTaskIndicatorExt<T extends StatefulWidget> on State<T> {
   }
 
   Widget prog() {
-    return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [ Container(padding: const EdgeInsets.only(bottom: 4), child: indct()), if (_task_text != null) Text(_task_text!)]);
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(padding: const EdgeInsets.only(bottom: 4), child: indct()),
+      if (_task_text != null) Text(_task_text!)
+    ]);
   }
 
   Future<R> runTask<R>(Future<R> Function(void Function(int) setProgress) fut,
@@ -114,8 +116,12 @@ class NewsService {
           if (newsJson == null || newsJson['url'] == null) {
             continue;
           }
-          news.add(News(_NewsSource.HackerNews, newsJson['id'], newsJson['url'],
-              newsJson['title'], "${newsJson["score"]} scores by ${newsJson["by"]}"));
+          news.add(News(
+              _NewsSource.HackerNews,
+              newsJson['id'],
+              newsJson['url'],
+              newsJson['title'],
+              "${newsJson["score"]} scores by ${newsJson["by"]}"));
         }
         if (news.length >= limit) {
           if (futs.isEmpty) {
@@ -544,9 +550,13 @@ class _NewsWindowState extends State<NewsWindow>
               : EasyRefresh(
                   controller: _rfrctl,
                   header: easyRefreshHeader,
-                  onRefresh: () => agiAccessible
-                      ? promoteNews()
-            : Future.delayed(Duration(seconds: 3)),
+                  onRefresh: () async {
+                    await FirebaseAnalytics.instance
+                        .logEvent(name: "refresh_news");
+                    agiAccessible
+                        ? promoteNews()
+                        : Future.delayed(Duration(seconds: 3));
+                  },
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                     children: [
@@ -603,7 +613,9 @@ class _NewsWindowState extends State<NewsWindow>
             const MaterialStatePropertyAll(TextStyle(color: Colors.white)),
         trailing: [
           IconButton(
-              onPressed: () {
+              onPressed: () async {
+                await FirebaseAnalytics.instance.logEvent(
+                    name: "search_news", parameters: {"query": _search.text});
                 fillSearchResult();
               },
               icon: const Icon(
