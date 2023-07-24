@@ -93,7 +93,7 @@ class News {
 }
 
 class NewsService {
-  List<News> _cached = [];
+  List<News> _cached = _TestData.hackerNews;
   final _concurrency = 8;
 
   Future<void> refreshTopNews(int limit) async {
@@ -492,7 +492,7 @@ class NewsWindow extends StatefulWidget {
 }
 
 class _NewsWindowState extends State<NewsWindow>
-    with BgTaskIndicatorExt<NewsWindow> {
+    with BgTaskIndicatorExt<NewsWindow>, TickerProviderStateMixin {
   static bool webViewSupported() {
     try {
       return Platform.isAndroid || Platform.isIOS;
@@ -516,9 +516,15 @@ class _NewsWindowState extends State<NewsWindow>
   final WebViewController? _webctl =
       webViewSupported() ? WebViewController() : null;
   final EasyRefreshController _rfrctl = EasyRefreshController();
+  late final TabController _tabctl;
   int _web_load_progress = 0;
 
   final TextEditingController _search = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -533,6 +539,7 @@ class _NewsWindowState extends State<NewsWindow>
         _news = news;
       });
     }(), taskName: "Fetching hacker news for you...");
+    _tabctl = TabController(length: 2, vsync: this);
     super.initState();
   }
 
@@ -541,47 +548,58 @@ class _NewsWindowState extends State<NewsWindow>
     var panePriority = widget.ty == ChatRoomType.tablet
         ? TwoPanePriority.both
         : (_openedLink == null ? TwoPanePriority.start : TwoPanePriority.end);
-    return Scaffold(
-        appBar: appbar(enableGoBack: panePriority == TwoPanePriority.end),
-        body: TwoPane(
-          paneProportion: 0.3,
-          startPane: bgTaskRunning
-              ? Center(child: prog())
-              : EasyRefresh(
-                  controller: _rfrctl,
-                  header: easyRefreshHeader,
-                  onRefresh: () async {
-                    await FirebaseAnalytics.instance
-                        .logEvent(name: "refresh_news");
-                    agiAccessible
-                        ? promoteNews()
-                        : Future.delayed(Duration(seconds: 3));
-                  },
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                    children: [
-                      ...(_search.text.isEmpty ? _all_promoted : _promoted_news)
-                          .map((e) => _PromotedCard(e,
-                              onEnter: (promoted) =>
-                                  {setUrl(promoted.news.url)})),
-                      ..._news
-                          .where((n) =>
-                              !_all_promoted.any((p) => p.news.id == n.id))
-                          .map((e) => _NewsCard(e,
-                              onEnter: (news) => {setUrl(news.url)}))
-                    ],
-                  ),
-                ),
-          endPane: contentForWeb(),
-          panePriority: panePriority,
-        ));
+    return TwoPane(
+      paneProportion: 0.3,
+      startPane: Scaffold(
+          appBar: appbar(),
+          body: TabBarView(controller: _tabctl, children: [
+            EasyRefresh(
+              controller: _rfrctl,
+              header: refreshHeader,
+              onRefresh: refreshNews,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                children: [
+                  ..._news.map((e) =>
+                      _NewsCard(e, onEnter: (news) => {setUrl(news.url)}))
+                ],
+              ),
+            ),
+            EasyRefresh(
+              controller: _rfrctl,
+              header: aiPromoteHeader,
+              onRefresh: () async {
+                await FirebaseAnalytics.instance.logEvent(name: "refresh_news");
+                promoteNews();
+              },
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                children: [
+                  ...(_search.text.isEmpty ? _all_promoted : _promoted_news)
+                      .map((e) => _PromotedCard(e,
+                          onEnter: (promoted) => {setUrl(promoted.news.url)})),
+                ],
+              ),
+            ),
+          ])),
+      endPane: contentForWeb(),
+      panePriority: panePriority,
+    );
   }
 
-  bool get agiAccessible => !_ai_ctx.api_key.isEmpty;
+  bool get agiAccessible => _ai_ctx.api_key.isNotEmpty;
 
-  Header get easyRefreshHeader => agiAccessible
-      ? ClassicHeader(
-          triggerOffset: context.height / 5,
+  Header get refreshHeader => const ClassicHeader(
+        dragText: "Drag down to fetch some news!",
+        armedText: "Release to fetch some news!",
+        processingText: "We are gathering news for you...",
+        readyText: "Here we go!",
+        processedText: "Done!",
+        failedText: "Oops...",
+      );
+
+  Header get aiPromoteHeader => agiAccessible
+      ? const ClassicHeader(
           dragText: "Drag down to ask AI pick some news for you!",
           armedText: "Release to let AI pick your favorite!",
           processingText: "AI is picking news for you...",
@@ -616,7 +634,7 @@ class _NewsWindowState extends State<NewsWindow>
               onPressed: () async {
                 await FirebaseAnalytics.instance.logEvent(
                     name: "search_news", parameters: {"query": _search.text});
-                fillSearchResult();
+                refreshNews();
               },
               icon: const Icon(
                 Icons.search,
@@ -625,63 +643,70 @@ class _NewsWindowState extends State<NewsWindow>
         ],
       );
 
-  AppBar appbar({
-    enableGoBack = false,
-    enableRefresh = true,
-  }) {
-    IconButton? goBack;
-    if (enableGoBack) {
-      goBack = IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          setState(() {
-            _openedLink = null;
-            _err = null;
-          });
-          _webctl?.loadHtmlString("<html></html>");
-        },
-      );
-    }
-    var actions = useInlineWebView && _openedLink != null
-        ? [
-            IconButton(
-                onPressed: () => {
-                      launchUrl(
-                          Uri.parse(
-                            _openedLink!,
-                          ),
-                          mode: LaunchMode.externalApplication)
-                    },
-                icon: const Icon(Icons.open_in_browser))
-          ]
-        : <Widget>[];
-    if (enableRefresh) {
-      actions.add(IconButton(
-          onPressed: () {
-            fillSearchResult();
-          },
-          icon: Icon(Icons.refresh)));
-    }
-    var progress = _web_load_progress > 0
-        ? PreferredSize(
-            preferredSize: const Size.fromHeight(4.0),
-            child: LinearProgressIndicator(
-              value: _web_load_progress.toDouble() / 100.0,
-            ))
-        : null;
+  AppBar browserAppBar() {
+    final goBack = IconButton(
+      icon: const Icon(Icons.close),
+      onPressed: () {
+        setState(() {
+          _openedLink = null;
+          _err = null;
+        });
+        _webctl?.loadHtmlString("<html></html>");
+      },
+    );
+    final bottom = PreferredSize(
+        preferredSize: const Size.fromHeight(4.0),
+        child: LinearProgressIndicator(
+          value: _web_load_progress.toDouble() / 100.0,
+        ));
+    final actions = [
+      IconButton(
+          onPressed: () => {
+                launchUrl(
+                    Uri.parse(
+                      _openedLink!,
+                    ),
+                    mode: LaunchMode.externalApplication)
+              },
+          icon: const Icon(Icons.open_in_browser))
+    ];
     return AppBar(
-        title: const Text("News"),
         leading: goBack,
         toolbarHeight: 40,
         foregroundColor: Colors.white,
         backgroundColor: Color.fromARGB(255, 70, 70, 70),
         actions: actions,
-        bottom: progress);
+        bottom: bottom);
+  }
+
+  AppBar appbar() {
+    final actions = [
+      IconButton(
+          onPressed: () {
+            refreshNews();
+          },
+          icon: Icon(Icons.refresh))
+    ];
+    var bottom = TabBar(
+      tabs: const <Widget>[
+        Tab(icon: Icon(Icons.newspaper)),
+        Tab(icon: Icon(Icons.recommend)),
+      ],
+      controller: _tabctl,
+    );
+    return AppBar(
+        title: const Text("News"),
+        toolbarHeight: 40,
+        foregroundColor: Colors.white,
+        backgroundColor: Color.fromARGB(255, 70, 70, 70),
+        actions: actions,
+        bottom: bottom);
   }
 
   Widget contentForWeb() {
     if (useInlineWebView) {
-      return WebViewWidget(controller: _webctl!);
+      return Scaffold(
+          appBar: browserAppBar(), body: WebViewWidget(controller: _webctl!));
     }
     if (_err != null) {
       return Center(
@@ -692,7 +717,8 @@ class _NewsWindowState extends State<NewsWindow>
                       color: Colors.white, fontWeight: FontWeight.bold))));
     }
     return const Center(
-        child: Text("The URL will be open at external browser."));
+        child: Text(
+            "Webview not supported. The URL will be open at external browser."));
   }
 
   Future<void> openUrl(String link) async {
@@ -742,7 +768,7 @@ class _NewsWindowState extends State<NewsWindow>
     });
   }
 
-  Future<void> fillSearchResult() async {
+  Future<void> refreshNews() async {
     final srv = Get.find<NewsService>();
     var topNews = await runOneShotTask(() async {
       await srv.refreshTopNews(20);
@@ -750,22 +776,26 @@ class _NewsWindowState extends State<NewsWindow>
     }(), taskName: "Refreshing the top news...");
     var newNews =
         topNews.where((news) => news.title.contains(_search.text)).toList();
-    setState(() {
-      _promoted_news = [];
-      _news = newNews;
-    });
+    if (mounted) {
+      setState(() {
+        _promoted_news = [];
+        _news = newNews;
+      });
+    }
   }
 }
 
 class _NewsCard extends StatelessWidget {
+  final Key? key;
   final News _news;
   final void Function(News)? onEnter;
 
-  const _NewsCard(this._news, {this.onEnter});
+  const _NewsCard(this._news, {this.onEnter, this.key});
 
   @override
   Widget build(BuildContext context) {
     return Card(
+        key: key,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => {},
@@ -780,15 +810,17 @@ class _NewsCard extends StatelessWidget {
 }
 
 class _PromotedCard extends StatelessWidget {
+  final Key? key;
   final _Promoted _promoted;
   final void Function(_Promoted)? onEnter;
 
-  const _PromotedCard(this._promoted, {this.onEnter});
+  const _PromotedCard(this._promoted, {this.onEnter, this.key});
 
   @override
   Widget build(BuildContext context) {
     var th = Theme.of(context);
     return Card(
+        key: key,
         clipBehavior: Clip.antiAlias,
         color: th.primaryColor,
         child: InkWell(
