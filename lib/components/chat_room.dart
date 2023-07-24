@@ -85,7 +85,7 @@ class ListPane extends StatelessWidget {
           appBar: AppBar(
               title: const Text("Chat Room"),
               foregroundColor: Colors.white,
-              backgroundColor: Color.fromARGB(255, 70, 70, 70),
+              backgroundColor: const Color.fromARGB(255, 70, 70, 70),
               toolbarHeight: 40,
               automaticallyImplyLeading: false,
               actions: const [NewChatButton()]),
@@ -139,7 +139,7 @@ class DetailsPane extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             foregroundColor: Colors.white,
-            backgroundColor: Color.fromARGB(255, 70, 70, 70),
+            backgroundColor: const Color.fromARGB(255, 70, 70, 70),
             toolbarHeight: 40,
             automaticallyImplyLeading: false,
             leading: onClose == null
@@ -198,6 +198,18 @@ class NewChatButton extends StatelessWidget {
               ),
             ),
           ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.download),
+              title: const Align(
+                alignment: Alignment(-1.2, 0),
+                child: Text("Load Chat Rooms"),
+              ),
+              onTap: () {
+                _loadChatRooms(context);
+              },
+            )
+          ),
         ];
       },
     );
@@ -216,6 +228,13 @@ class NewChatButton extends StatelessWidget {
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
     Navigator.pop(context);
+  }
+
+  _loadChatRooms(BuildContext context) {
+    final comp.ChatRoomController chatRoomController = Get.find();
+    chatRoomController.loadChatRooms();
+    Navigator.pop(context);
+
   }
 }
 
@@ -332,12 +351,12 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
             "Do you want to dismiss this chat room?",
             style: dialogTextStyle,
           ),
-          actions: [
+          actions: const [
             _DialogButton(
               text: "Dismiss",
               onPressed: _deleteChatRoom,
             ),
-            const _DialogButton(
+            _DialogButton(
               text: "Cancel",
             ),
           ],

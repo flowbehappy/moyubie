@@ -44,6 +44,12 @@ class ChatRoomController extends GetxController {
     update();
   }
 
+  void loadChatRooms() async {
+    roomList.value = await ChatRoomRepository().getChatRoomsRemote();
+    await ChatRoomRepository().replaceLocalChatRooms(roomList);
+    update();
+  }
+
   void reset() {
     currentRoomIndex.value = IntegerWrapper(-1);
     currentChatRoomUuid.value = "";
