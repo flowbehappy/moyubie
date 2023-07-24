@@ -134,21 +134,24 @@ class DetailsPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetX<comp.ChatRoomController>(builder: (controller) {
-      return Scaffold(
-        appBar: AppBar(
-          foregroundColor: Colors.white,
-          backgroundColor: Color.fromARGB(255, 70, 70, 70),
-          toolbarHeight: 40,
-          automaticallyImplyLeading: false,
-          leading: onClose == null
-              ? null
-              : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
-          title: Text(
-            _currentRoomName(controller),
+      return GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          appBar: AppBar(
+            foregroundColor: Colors.white,
+            backgroundColor: Color.fromARGB(255, 70, 70, 70),
+            toolbarHeight: 40,
+            automaticallyImplyLeading: false,
+            leading: onClose == null
+                ? null
+                : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
+            title: Text(
+              _currentRoomName(controller),
+            ),
+            actions: const [ChatDetailButton()],
           ),
-          actions: const [ChatDetailButton()],
+          body: const ChatWindow(),
         ),
-        body: const ChatWindow(),
       );
     });
   }
@@ -203,7 +206,7 @@ class NewChatButton extends StatelessWidget {
   _addNewChatRoom(BuildContext context) {
     final comp.ChatRoomController chatRoomController = Get.find();
     const uuid = Uuid();
-    var createTime = DateTime.now();
+    var createTime = DateTime.now().toUtc();
     repo.ChatRoom chatRoom = repo.ChatRoom(
         uuid: uuid.v1(),
         name: "New Chat Room",

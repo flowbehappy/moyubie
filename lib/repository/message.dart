@@ -44,7 +44,7 @@ class MessageRepository {
       ValueChanged<Message> onSuccess) async {
     String llm = SettingsController.to.llm.value;
 
-    if (llm.toLowerCase() == "ECHO") {
+    if (llm.toUpperCase() == "ECHO") {
       EchoGPT().getResponse(chatRoomUuid, userName, question, convContext,
           onResponse, errorCallback, onSuccess);
       return;
