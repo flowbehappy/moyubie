@@ -30,34 +30,14 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
   // TODO(tangenta): only used for debug, remove it later.
-  String path = join(await getDatabasesPath(), 'chatgpt.db');
-  await deleteDatabase(path);
+  // TODO: I think we should add a button in Settings panel to do the job.
+  // String path = join(await getDatabasesPath(), 'moyubie.db');
+  // await deleteDatabase(path);
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   Get.put(SettingsController());
-  //   Get.put(ConversationController());
-  //   Get.put(MessageController());
-  //   Get.put(PromptController());
-  //   return GetMaterialApp(
-  //     initialRoute: '/',
-  //     getPages: routes,
-  //     unknownRoute:
-  //         GetPage(name: '/not_found', page: () => const UnknownRoutePage()),
-  //     theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),
-  //     darkTheme: FlexThemeData.dark(scheme: FlexScheme.ebonyClay),
-  //     themeMode: ThemeMode.system,
-  //     locale: const Locale('zh'),
-  //     translations: MyTranslations(),
-  //     builder: EasyLoading.init(),
-  //     debugShowCheckedModeBanner: false,
-  //   );
-  // }
 
   Widget menu() {
     return GetX<ChatRoomController>(builder: (controller) {
