@@ -243,7 +243,7 @@ class _SettingPageState extends State<SettingPage> {
                   decoration: InputDecoration(
                     hintMaxLines: 100,
                     hintText:
-                        "Go to www.tidbcloud.com, create a TiDB cluster of free Serverless Tier. Copy and paste the connection text of your TiDB Serverless's cluster here. For example: \n\nmysql --connect-timeout 15 -u 'xxxxxx.root' -h gateway01.us-west-2.prod.aws.tidbcloud.com -P 4000 -D test --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/ssl/cert.pem -pxxxxxx",
+                        "Go to www.tidbcloud.com, create a TiDB cluster of free Serverless Tier. Copy the connection text of your cluster and paste here. For example: \n\nmysql --connect-timeout 15 -u 'xxxxxx.root' -h gateway01.us-west-2.prod.aws.tidbcloud.com -P 4000 -D test --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/ssl/cert.pem -pxxxxxx",
                     floatingLabelBehavior: FloatingLabelBehavior.auto,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
