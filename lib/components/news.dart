@@ -570,7 +570,7 @@ class _NewsWindowState extends State<NewsWindow>
               header: aiPromoteHeader,
               onRefresh: () async {
                 await FirebaseAnalytics.instance.logEvent(name: "refresh_news");
-                promoteNews();
+                await promoteNews();
               },
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
@@ -634,7 +634,7 @@ class _NewsWindowState extends State<NewsWindow>
               onPressed: () async {
                 await FirebaseAnalytics.instance.logEvent(
                     name: "search_news", parameters: {"query": _search.text});
-                refreshNews();
+                await refreshNews();
               },
               icon: const Icon(
                 Icons.search,
