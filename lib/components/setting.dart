@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:moyubie/controller/chat_room.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:get/get.dart';
+import 'package:moyubie/repository/chat_room.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -12,6 +14,12 @@ class SettingPage extends StatefulWidget {
 }
 
 class _SettingPageState extends State<SettingPage> {
+  _onPressedReset() {
+    ChatRoomRepository().removeDatabase();
+    ChatRoomController controller = Get.find();
+    controller.reset();
+  }
+
   @override
   Widget build(BuildContext context) {
     const SizedBox sizedBoxSpace = SizedBox(height: 24);
@@ -31,6 +39,11 @@ class _SettingPageState extends State<SettingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  ElevatedButton(
+                      onPressed: _onPressedReset,
+                      child: const Text("Remove Cache")
+                  ),
+                  const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
                       controller.saveTmpOption();

@@ -43,6 +43,13 @@ class ChatRoomController extends GetxController {
     currentChatRoomUuid.value = chatRoom.uuid;
     update();
   }
+
+  void reset() {
+    currentRoomIndex.value = IntegerWrapper(-1);
+    currentChatRoomUuid.value = "";
+    roomList.clear();
+    update();
+  }
 }
 
 class IntegerWrapper {

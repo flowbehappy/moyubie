@@ -4,6 +4,7 @@ import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:mysql_client/mysql_client.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class ChatRoom {
   String uuid;
@@ -128,6 +129,12 @@ class ChatRoomRepository {
     ChatRoomRepository.port = port;
     ChatRoomRepository.userName = userName;
     ChatRoomRepository.password = password;
+  }
+
+  removeDatabase() async {
+    String path = join(await getDatabasesPath(), 'moyubie.db');
+    await deleteDatabase(path);
+    _database = null;
   }
 
   String remoteDBToString() {
