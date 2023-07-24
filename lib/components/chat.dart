@@ -162,6 +162,7 @@ class _ChatWindowState extends State<ChatWindow> {
   Widget _buildMessageCard(Message message) {
     IconData icon = FontAwesomeIcons.question;
     String name = "?";
+    String time = message.createTime.toString();
     Color? color;
     Widget? text_box;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -180,7 +181,7 @@ class _ChatWindowState extends State<ChatWindow> {
         break;
       case MessageSource.bot:
         icon = FontAwesomeIcons.robot;
-        name = "bot";
+        name = "Bot";
         color = isDark
             ? Color.fromARGB(255, 92, 89, 89)
             : Color.fromARGB(255, 255, 255, 255);
@@ -201,6 +202,10 @@ class _ChatWindowState extends State<ChatWindow> {
               width: 5,
             ),
             Text(name),
+            const SizedBox(
+              width: 5,
+            ),
+            Text(time),
           ],
         ),
         Row(

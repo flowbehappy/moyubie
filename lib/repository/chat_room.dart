@@ -1,4 +1,5 @@
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -16,11 +17,11 @@ class ChatRoom {
       required this.createTime,
       required this.connectionToken});
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toSQLMap() {
     return {
       'uuid': uuid,
       'name': name,
-      'create_time': createTime.toString(),
+      'create_time': "unixepoch(${createTime.toString()})",
       'connection_token': connectionToken,
     };
   }
@@ -109,7 +110,7 @@ class ChatRoomRepository {
           CREATE TABLE $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
-            $_columnChatRoomCreateTime TEXT,
+            $_columnChatRoomCreateTime INTEGER,
             $_columnChatRoomConnectionToken TEXT
           )
         ''');
@@ -166,7 +167,7 @@ class ChatRoomRepository {
           CREATE TABLE IF NOT EXISTS $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
-            $_columnChatRoomCreateTime TEXT,
+            $_columnChatRoomCreateTime DATETIME,
             $_columnChatRoomConnectionToken TEXT
           )
         ''');
@@ -196,14 +197,14 @@ class ChatRoomRepository {
     final db = await _getDb();
     await db.insert(
       _tableChatRoom,
-      chatRoom.toMap(),
+      chatRoom.toSQLMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     await db.execute('''
         CREATE TABLE IF NOT EXISTS `${chatRoom.uuid}` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
           $_columnMessageUserName TEXT,
-          $_columnMessageCreateTime TEXT,
+          $_columnMessageCreateTime INTEGER,
           $_columnMessageMessage TEXT,
           $_columnMessageSource TEXT,
           $_columnAskAI INTEGER
@@ -221,7 +222,7 @@ class ChatRoomRepository {
         CREATE TABLE IF NOT EXISTS `${chatRoom.uuid}` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
           $_columnMessageUserName TEXT,
-          $_columnMessageCreateTime TEXT,
+          $_columnMessageCreateTime DATETIME,
           $_columnMessageMessage TEXT,
           $_columnMessageSource TEXT,
           $_columnAskAI INTEGER
@@ -236,7 +237,7 @@ class ChatRoomRepository {
     final db = await _getDb();
     await db.update(
       _tableChatRoom,
-      chatRoom.toMap(),
+      chatRoom.toSQLMap(),
       where: '$_columnChatRoomUuid = ?',
       whereArgs: [chatRoom.uuid],
     );
@@ -245,7 +246,7 @@ class ChatRoomRepository {
       await remoteDB.execute('''
       UPDATE $_tableChatRoom SET
         $_columnChatRoomName = :name,
-        $_columnChatRoomCreateTime = '${chatRoom.createTime.toString()}',
+        $_columnChatRoomCreateTime = unixepoch('${chatRoom.createTime.toString()}'),
         $_columnChatRoomConnectionToken = :token
       WHERE $_columnChatRoomUuid = '${chatRoom.uuid}'
     ''', {"name": chatRoom.name, "token": chatRoom.connectionToken});
@@ -272,19 +273,23 @@ class ChatRoomRepository {
     }
   }
 
-  Future<List<Message>> getMessagesByChatRoomUUid(String uuid) async {
+  Future<List<Message>> getMessagesByChatRoomUUid(String uuid,
+      {int limit = 1000}) async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query('`$uuid`');
-    return List.generate(maps.length, (i) {
-      return Message(
-          uuid: maps[i][_columnMessageUuid],
-          userName: maps[i][_columnMessageUserName],
-          createTime: DateTime.parse(maps[i][_columnMessageCreateTime]),
-          message: maps[i][_columnMessageMessage],
+    final List<Map<String, dynamic>> maps = await db.query('`$uuid`',
+        orderBy: "$_columnMessageCreateTime desc", limit: limit);
+    List<Message> messages = List<Message>.empty();
+    for (final m in maps.reversed) {
+      messages.add(Message(
+          uuid: m[_columnMessageUuid],
+          userName: m[_columnMessageUserName],
+          createTime: DateTime.parse(m[_columnMessageCreateTime]),
+          message: m[_columnMessageMessage],
           source: MessageSource.values
-              .firstWhere((e) => e.name == maps[i][_columnMessageSource]),
-          ask_ai: maps[i][_columnAskAI] == 1);
-    });
+              .firstWhere((e) => e.name == m[_columnMessageSource]),
+          ask_ai: m[_columnAskAI] == 1));
+    }
+    return messages;
   }
 
   Future<void> addMessage(String chatRoomUuid, Message message) async {
@@ -294,35 +299,58 @@ class ChatRoomRepository {
       message.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    var remoteDB = await getRemoteDb();
-    if (remoteDB != null) {
-      // Must use SQL with param
-      try {
-        await remoteDB.execute('''INSERT IGNORE INTO `$chatRoomUuid` 
-      ($_columnMessageUuid, $_columnMessageUserName, $_columnMessageCreateTime, $_columnMessageMessage, $_columnMessageSource, $_columnAskAI) VALUES 
-      (:uuid, :user, :createTime, :message, :source, :askAI)''', {
-          "uuid": message.uuid,
-          "user": message.userName,
-          "createTime": message.createTime.toString(),
-          "message": message.message,
-          "source": message.source,
-          "askAI": message.ask_ai ? 1 : 0
-        });
-      } catch (e) {
-        if (e is MySQLServerException) {
-          if (e.errorCode == 1146) {
-            // Create the chat room. It is possible that the create the chat room before adding mysql/TiDB connection.
-            final rooms = await getChatRooms(
-                where: "$_columnChatRoomUuid = '$chatRoomUuid'");
-            if (rooms.length == 1) {
-              // Add chat room again.
-              addChatRoom(rooms.first);
-            } else {
-              // If it is not, then too weird. I give up!
-            }
+
+    // Don't wait for remote message finish adding to TiDB.
+    var addRemote = addMessageRemote(chatRoomUuid, message);
+    addRemote
+        .then((value) => {
+              // todo
+            })
+        .onError((error, stackTrace) => {
+              // todo
+            });
+  }
+
+  Future<String?> addMessageRemote(String chatRoomUuid, Message message) async {
+    try {
+      await insertMessageRemote(chatRoomUuid, message);
+    } catch (e) {
+      if (e is MySQLServerException) {
+        if (e.errorCode == 1146) {
+          // Create the chat room. It is possible that user create chat room before adding mysql/TiDB connection.
+          final rooms = await getChatRooms(
+              where: "$_columnChatRoomUuid = '$chatRoomUuid'");
+          if (rooms.length == 1) {
+            // Add chat room again.
+            await addChatRoom(rooms.first);
+            await insertMessageRemote(chatRoomUuid, message);
+          } else {
+            // If it is not, then too weird. I give up!
           }
         }
       }
+
+      return e.toString();
+    }
+
+    // Lots of exception we haven't handled yet. But who cares!
+    return null;
+  }
+
+  Future<void> insertMessageRemote(String chatRoomUuid, Message message) async {
+    var remoteDB = await getRemoteDb();
+    if (remoteDB != null) {
+      // Must use SQL with param
+      await remoteDB.execute('''INSERT IGNORE INTO `$chatRoomUuid` 
+      ($_columnMessageUuid, $_columnMessageUserName, $_columnMessageCreateTime, $_columnMessageMessage, $_columnMessageSource, $_columnAskAI) VALUES 
+      (:uuid, :user, :createTime, :message, :source, :askAI)''', {
+        "uuid": message.uuid,
+        "user": message.userName,
+        "createTime": message.createTime.toString(),
+        "message": message.message,
+        "source": message.source,
+        "askAI": message.ask_ai ? 1 : 0
+      });
     }
   }
 
