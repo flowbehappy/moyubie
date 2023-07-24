@@ -123,7 +123,7 @@ class MyApp extends StatelessWidget {
             children: [
               ChatRoom(restorationId: "chat_room", type: type),
               NewsWindow(ty: type),
-              SettingPage(),
+              const SettingPage(),
             ],
           ),
         ),

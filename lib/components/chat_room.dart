@@ -134,21 +134,24 @@ class DetailsPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetX<comp.ChatRoomController>(builder: (controller) {
-      return Scaffold(
-        appBar: AppBar(
-          foregroundColor: Colors.white,
-          backgroundColor: Color.fromARGB(255, 70, 70, 70),
-          toolbarHeight: 40,
-          automaticallyImplyLeading: false,
-          leading: onClose == null
-              ? null
-              : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
-          title: Text(
-            _currentRoomName(controller),
+      return GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          appBar: AppBar(
+            foregroundColor: Colors.white,
+            backgroundColor: Color.fromARGB(255, 70, 70, 70),
+            toolbarHeight: 40,
+            automaticallyImplyLeading: false,
+            leading: onClose == null
+                ? null
+                : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
+            title: Text(
+              _currentRoomName(controller),
+            ),
+            actions: const [ChatDetailButton()],
           ),
-          actions: const [ChatDetailButton()],
+          body: const ChatWindow(),
         ),
-        body: const ChatWindow(),
       );
     });
   }
