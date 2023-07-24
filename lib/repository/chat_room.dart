@@ -278,7 +278,7 @@ class ChatRoomRepository {
   }
 
   Future<List<Message>> getMessagesByChatRoomUUid(String uuid,
-      {int limit = 1000}) async {
+      {int limit = 500}) async {
     final db = await _getDb();
     final List<Map<String, dynamic>> maps = await db.query('`$uuid`',
         orderBy: "$_columnMessageCreateTime desc", limit: limit);

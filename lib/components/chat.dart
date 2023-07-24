@@ -62,7 +62,7 @@ class _ChatWindowState extends State<ChatWindow> {
                 children: [
                   Expanded(
                     child: TextFormField(
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 16),
                       controller: _controller,
                       keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
@@ -209,7 +209,7 @@ class _ChatWindowState extends State<ChatWindow> {
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Expanded(
+            Flexible(
               child: Card(
                 color: color,
                 margin: const EdgeInsets.all(8),

@@ -68,7 +68,7 @@ class _SettingPageState extends State<SettingPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 50,
+                    width: 55,
                     child: Text("Service"),
                   ),
                   const SizedBox(width: 30),
@@ -84,8 +84,7 @@ class _SettingPageState extends State<SettingPage> {
                           // hintText: 'llmHint'.tr,
                           labelStyle: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color:
-                              Theme.of(context).colorScheme.primary),
+                              color: Theme.of(context).colorScheme.primary),
                           floatingLabelBehavior: FloatingLabelBehavior.auto,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
@@ -132,9 +131,7 @@ class _SettingPageState extends State<SettingPage> {
                           decoration: InputDecoration(
                             labelStyle: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary),
+                                color: Theme.of(context).colorScheme.primary),
                             floatingLabelBehavior: FloatingLabelBehavior.auto,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
@@ -199,7 +196,7 @@ class _SettingPageState extends State<SettingPage> {
                               ),
                               onPressed: () {
                                 controller.isObscure.value =
-                                !controller.isObscure.value;
+                                    !controller.isObscure.value;
                               },
                             ),
                           ),
@@ -219,7 +216,8 @@ class _SettingPageState extends State<SettingPage> {
                 children: [
                   const Text("TiDB Serverless"),
                   Tooltip(
-                    message: "description for TiDB Serverless",
+                    message:
+                        "TiDB Serverless is an online database service which can be accessed from any where. Get it for free: www.tidbcloud.com",
                     child: IconButton(
                       iconSize: 10.0,
                       splashRadius: 10,
@@ -243,11 +241,12 @@ class _SettingPageState extends State<SettingPage> {
                 child: TextFormField(
                   initialValue: controller.serverlessCmd.value,
                   decoration: InputDecoration(
+                    hintMaxLines: 100,
                     hintText:
-                    "mysql --connect-timeout 15 -u xxx.root' -h xxx -P xxx -D test",
+                        "Go to www.tidbcloud.com, create a TiDB cluster of free Serverless Tier. Copy and paste the connection text of your TiDB Serverless's cluster here. For example: \n\nmysql --connect-timeout 15 -u 'xxxxxx.root' -h gateway01.us-west-2.prod.aws.tidbcloud.com -P 4000 -D test --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/ssl/cert.pem -pxxxxxx",
                     floatingLabelBehavior: FloatingLabelBehavior.auto,
                     contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5),
                       borderSide: BorderSide.none,
