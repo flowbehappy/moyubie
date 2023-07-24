@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:moyubie/components/markdown.dart';
-import 'package:moyubie/components/prompts.dart';
 import 'package:moyubie/controller/chat_room.dart';
 import 'package:moyubie/controller/message.dart';
-import 'package:moyubie/controller/prompt.dart';
-import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
-import 'package:intl/intl.dart';
 
 import '../repository/chat_room.dart';
 
@@ -27,101 +23,87 @@ class _ChatWindowState extends State<ChatWindow> {
   final _scrollController = ScrollController();
 
   final uuid = const Uuid();
-  final DateFormat msgTimeFormat = DateFormat('yyyy-MM-dd hh:mm:ss');
 
   @override
   Widget build(BuildContext context) {
-    return GetX<comp.ChatRoomController>(builder: (controller) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Expanded(
-              child: GetX<MessageController>(
-                builder: (controller) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _scrollToNewMessage();
-                  });
-                  if (controller.messageList.isNotEmpty) {
-                    return ListView.builder(
-                      controller: _scrollController,
-                      itemCount: controller.messageList.length,
-                      itemBuilder: (context, index) {
-                        return _buildMessageCard(controller.messageList[index]);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Expanded(
+            child: GetX<MessageController>(
+              builder: (controller) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _scrollToNewMessage();
+                });
+                if (controller.messageList.isNotEmpty) {
+                  return ListView.builder(
+                    controller: _scrollController,
+                    itemCount: controller.messageList.length,
+                    itemBuilder: (context, index) {
+                      return _buildMessageCard(controller.messageList[index]);
+                    },
+                  );
+                } else {
+                  return const Center(
+                    child: Center(child: Text("Empty")),
+                  );
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Form(
+            key: _formKey, // 将 GlobalKey 赋值给 Form 组件的 key 属性
+            child: RawKeyboardListener(
+              focusNode: FocusNode(),
+              onKey: _handleKeyEvent,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      style: const TextStyle(fontSize: 13),
+                      controller: _controller,
+                      keyboardType: TextInputType.multiline,
+                      decoration: InputDecoration(
+                        hintText: "@ai talk to AI",
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                      ),
+                      autovalidateMode: AutovalidateMode.always,
+                      maxLines: null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _sendMessage();
                       },
-                    );
-                  } else {
-                    return const Center(
-                      child: Center(child: Text("Empty")),
-                    );
-                  }
-                },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 250, 94, 83),
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(8))),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: const Icon(Icons.send),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Form(
-              key: _formKey, // 将 GlobalKey 赋值给 Form 组件的 key 属性
-              child: RawKeyboardListener(
-                focusNode: FocusNode(),
-                onKey: _handleKeyEvent,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        style: const TextStyle(fontSize: 13),
-                        controller: _controller,
-                        keyboardType: TextInputType.multiline,
-                        decoration: InputDecoration(
-                          hintText:
-                              "Send to ".tr + _currentRoomName(controller),
-                          floatingLabelBehavior: FloatingLabelBehavior.auto,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                        ),
-                        autovalidateMode: AutovalidateMode.always,
-                        maxLines: null,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _sendMessage();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromARGB(255, 250, 94, 83),
-                          shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(8))),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: const Icon(Icons.send),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 25),
-          ],
-        ),
-      );
-    });
-  }
-
-  String _currentRoomName(comp.ChatRoomController controller) {
-    var idx = controller.currentRoomIndex.value.value;
-    if (idx == -1) {
-      return "";
-    }
-    return controller.roomList[idx].name;
+          ),
+          const SizedBox(height: 25),
+        ],
+      ),
+    );
   }
 
   void _sendMessage() {
@@ -154,7 +136,7 @@ class _ChatWindowState extends State<ChatWindow> {
   Widget _buildMessageCard(Message message) {
     IconData icon = FontAwesomeIcons.question;
     String name = "?";
-    String timeStr = msgTimeFormat.format(message.createTime.toLocal());
+    String timeStr = message.createTime.toLocal().toString().substring(0, 19);
     Color? color;
     Widget? msg_box;
 

@@ -158,7 +158,7 @@ class ChatRoomRepository {
 
         conn.onClose(() {
           // I haven't check the client carefully.
-          // It is enough to handle connection broken or someting bad?
+          // Is it enough to handle connection broken or someting bad?
           _remoteDatabase = null;
         });
 
@@ -285,8 +285,9 @@ class ChatRoomRepository {
     return List<Message>.from(maps.reversed.map((m) => Message(
         uuid: m[_columnMessageUuid],
         userName: m[_columnMessageUserName],
-        createTime:
-            DateTime.fromMillisecondsSinceEpoch(m[_columnMessageCreateTime]),
+        createTime: DateTime.fromMillisecondsSinceEpoch(
+            m[_columnMessageCreateTime],
+            isUtc: true),
         message: m[_columnMessageMessage],
         source: MessageSource.values
             .firstWhere((e) => e.name == m[_columnMessageSource]),
