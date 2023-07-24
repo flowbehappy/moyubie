@@ -8,7 +8,7 @@ import 'package:mysql_client/mysql_client.dart';
 class ChatRoom {
   String uuid;
   String name;
-  DateTime createTime;
+  DateTime createTime; // UTC time zone.
   String connectionToken;
 
   ChatRoom(
@@ -21,7 +21,7 @@ class ChatRoom {
     return {
       'uuid': uuid,
       'name': name,
-      'create_time': "unixepoch(${createTime.toString()})",
+      'create_time': createTime.millisecondsSinceEpoch,
       'connection_token': connectionToken,
     };
   }
@@ -40,7 +40,7 @@ class AIConversationContext {
 class Message {
   String uuid;
   String userName;
-  DateTime createTime;
+  DateTime createTime; // UTC time zone.
   String message;
   MessageSource source;
   bool ask_ai = false;
@@ -52,11 +52,12 @@ class Message {
       required this.message,
       required this.source,
       this.ask_ai = false});
-  Map<String, dynamic> toMap() {
+
+  Map<String, dynamic> toSQLMap() {
     return {
       'uuid': uuid,
       'user_name': userName,
-      'create_time': createTime.toString(),
+      'create_time': createTime.millisecondsSinceEpoch,
       'message': message,
       'source': source.name,
       'ask_ai': ask_ai ? '1' : '0',
@@ -73,11 +74,13 @@ class ChatRoomRepository {
   static const String _tableChatRoom = 'chat_room';
   static const String _columnChatRoomUuid = 'uuid';
   static const String _columnChatRoomName = 'name';
+  // UTC time zone. SQLite: Integer(i.e. Unix Time), TiDB: DateTime
   static const String _columnChatRoomCreateTime = 'create_time';
   static const String _columnChatRoomConnectionToken = 'connection_token';
 
   static const String _columnMessageUuid = 'uuid';
   static const String _columnMessageUserName = 'user_name';
+  // UTC time zone. SQLite: Integer(i.e. Unix Time), TiDB: DateTime
   static const String _columnMessageCreateTime = 'create_time';
   static const String _columnMessageMessage = 'message';
   static const String _columnMessageSource = 'source';
@@ -184,10 +187,11 @@ class ChatRoomRepository {
     final List<Map<String, dynamic>> maps =
         await db.query(_tableChatRoom, where: where);
     return List.generate(maps.length, (i) {
+      var ct = maps[i][_columnChatRoomCreateTime];
       return ChatRoom(
         uuid: maps[i][_columnChatRoomUuid],
         name: maps[i][_columnChatRoomName],
-        createTime: DateTime.parse(maps[i][_columnChatRoomCreateTime]),
+        createTime: DateTime.fromMicrosecondsSinceEpoch(ct),
         connectionToken: maps[i][_columnChatRoomConnectionToken],
       );
     });
@@ -278,25 +282,22 @@ class ChatRoomRepository {
     final db = await _getDb();
     final List<Map<String, dynamic>> maps = await db.query('`$uuid`',
         orderBy: "$_columnMessageCreateTime desc", limit: limit);
-    List<Message> messages = List<Message>.empty();
-    for (final m in maps.reversed) {
-      messages.add(Message(
-          uuid: m[_columnMessageUuid],
-          userName: m[_columnMessageUserName],
-          createTime: DateTime.parse(m[_columnMessageCreateTime]),
-          message: m[_columnMessageMessage],
-          source: MessageSource.values
-              .firstWhere((e) => e.name == m[_columnMessageSource]),
-          ask_ai: m[_columnAskAI] == 1));
-    }
-    return messages;
+    return List<Message>.from(maps.reversed.map((m) => Message(
+        uuid: m[_columnMessageUuid],
+        userName: m[_columnMessageUserName],
+        createTime:
+            DateTime.fromMillisecondsSinceEpoch(m[_columnMessageCreateTime]),
+        message: m[_columnMessageMessage],
+        source: MessageSource.values
+            .firstWhere((e) => e.name == m[_columnMessageSource]),
+        ask_ai: m[_columnAskAI] == 1)));
   }
 
   Future<void> addMessage(String chatRoomUuid, Message message) async {
     final db = await _getDb();
     await db.insert(
       '`$chatRoomUuid`',
-      message.toMap(),
+      message.toSQLMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 

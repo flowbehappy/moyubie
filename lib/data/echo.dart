@@ -24,7 +24,7 @@ class EchoGPT extends LLM {
         uuid: uuid.v1(),
         message: message,
         userName: userName,
-        createTime: DateTime.now(),
+        createTime: DateTime.now().toUtc(),
         source: MessageSource.bot));
   }
 }

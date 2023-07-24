@@ -29,10 +29,7 @@ class ChatGpt extends LLM {
       ValueChanged<Message> errorCallback,
       ValueChanged<Message> onSuccess) async {
     List<OpenAIChatCompletionChoiceMessageModel> openAIMessages = [];
-    //将messages反转
-    // messages = messages.reversed.toList();
 
-    // 将messages里面的每条消息的内容取出来拼接在一起
     String content = "";
     String currentModel = SettingsController.to.gptModel.value;
     int maxTokenLength = 1800;
@@ -59,25 +56,11 @@ class ChatGpt extends LLM {
         role: OpenAIChatMessageRole.user,
       ),
     );
-
-    // for (Message message in messages) {
-    //   content = content + message.message;
-    //   if (content.length < maxTokenLength || openAIMessages.isEmpty) {
-    //     // 插入到 openAIMessages 第一个位置
-    //     openAIMessages.insert(
-    //       0,
-    //       OpenAIChatCompletionChoiceMessageModel(
-    //         content: message.message,
-    //         role: OpenAIChatMessageRole.user,
-    //       ),
-    //     );
-    //   }
-    // }
     var message = Message(
         uuid: uuid.v1(),
         message: "",
         userName: userName,
-        createTime: DateTime.now(),
+        createTime: DateTime.now().toUtc(),
         source: MessageSource.bot);
     if (SettingsController.to.useStream.value) {
       Stream<OpenAIStreamChatCompletionModel> chatStream = OpenAI.instance.chat
