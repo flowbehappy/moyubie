@@ -6,9 +6,11 @@ import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/repository/chat_room.dart' as repo;
 import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 enum ChatRoomType {
-  tablet,
+  // For simplicity, we only support 1 type
+  // tablet,
   phone,
 }
 
@@ -30,12 +32,9 @@ class _ChatRoomState extends State<ChatRoom> {
   @override
   Widget build(BuildContext context) {
     return GetX<comp.ChatRoomController>(builder: (controller) {
-      var panePriority = TwoPanePriority.both;
-      if (widget.type == ChatRoomType.phone) {
-        panePriority = controller.currentRoomIndex.value.value == -1
-            ? TwoPanePriority.start
-            : TwoPanePriority.end;
-      }
+      var panePriority = controller.currentRoomIndex.value.value == -1
+          ? TwoPanePriority.start
+          : TwoPanePriority.end;
       return TwoPane(
         paneProportion: 0.3,
         panePriority: panePriority,
@@ -203,12 +202,12 @@ class NewChatButton extends StatelessWidget {
               leading: const Icon(Icons.download),
               title: const Align(
                 alignment: Alignment(-1.2, 0),
-                child: Text("Load Chat Rooms"),
+                child: Text("Sync Chat Room"),
               ),
               onTap: () {
                 _loadChatRooms(context);
               },
-            )
+            ),
           ),
         ];
       },
@@ -225,6 +224,8 @@ class NewChatButton extends StatelessWidget {
         createTime: createTime,
         connectionToken: "");
     chatRoomController.addChatRoom(chatRoom);
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_add");
+
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
     Navigator.pop(context);
@@ -234,7 +235,6 @@ class NewChatButton extends StatelessWidget {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.loadChatRooms();
     Navigator.pop(context);
-
   }
 }
 
@@ -325,6 +325,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     messageController.messageList.value = [];
     chatRoomController.setCurrentRoom(-1);
     chatRoomController.deleteChatRoom();
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_delete");
   }
 
   static _renameChatRoom(String newName) {
@@ -333,6 +334,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     }
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.renameChatRoom(newName);
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_rename");
   }
 
   static Route<String> _alertDismissRoute(

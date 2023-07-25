@@ -78,11 +78,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
-    final ChatRoomType type =
-        shortestSide < 600 ? ChatRoomType.phone : ChatRoomType.tablet;
+    final ChatRoomType type = ChatRoomType.phone;
     final settingsCtl = SettingsController();
     Get.put(settingsCtl);
-    // Get.put(ConversationController());
     Get.put(MessageController());
     Get.put(PromptController());
     Get.put(ChatRoomController());

@@ -4,7 +4,9 @@ import 'package:moyubie/components/markdown.dart';
 import 'package:moyubie/controller/chat_room.dart';
 import 'package:moyubie/controller/message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:get/get.dart';
+import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
 
@@ -23,6 +25,11 @@ class _ChatWindowState extends State<ChatWindow> {
   final _scrollController = ScrollController();
 
   final uuid = const Uuid();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +118,9 @@ class _ChatWindowState extends State<ChatWindow> {
     if (message.isEmpty) {
       return;
     }
+
+    FirebaseAnalytics.instance.logEvent(name: "msg_send");
+
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
     var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
@@ -120,6 +130,8 @@ class _ChatWindowState extends State<ChatWindow> {
     String ai_question = "";
     if (ask_ai) {
       ai_question = message.substring(3).trimLeft();
+
+      FirebaseAnalytics.instance.logEvent(name: "msg_ask_ai");
     }
     final newMessage = Message(
       uuid: uuid.v1(),
