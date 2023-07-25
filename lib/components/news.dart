@@ -578,9 +578,8 @@ class _NewsWindowState extends State<NewsWindow>
 
   @override
   Widget build(BuildContext context) {
-    var panePriority = widget.ty == ChatRoomType.tablet
-        ? TwoPanePriority.both
-        : (_openedLink == null ? TwoPanePriority.start : TwoPanePriority.end);
+    var panePriority =
+        _openedLink == null ? TwoPanePriority.start : TwoPanePriority.end;
     return TwoPane(
       paneProportion: 0.3,
       startPane: Scaffold(

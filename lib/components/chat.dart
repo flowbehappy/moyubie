@@ -6,6 +6,7 @@ import 'package:moyubie/controller/message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:get/get.dart';
+import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
 
@@ -24,6 +25,11 @@ class _ChatWindowState extends State<ChatWindow> {
   final _scrollController = ScrollController();
 
   final uuid = const Uuid();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

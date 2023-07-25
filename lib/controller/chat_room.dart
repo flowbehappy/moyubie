@@ -45,8 +45,9 @@ class ChatRoomController extends GetxController {
   }
 
   void loadChatRooms() async {
-    roomList.value = await ChatRoomRepository().getChatRoomsRemote();
-    await ChatRoomRepository().replaceLocalChatRooms(roomList);
+    var remoteRooms = await ChatRoomRepository().getChatRoomsRemote();
+    await ChatRoomRepository().upsertLocalChatRooms(remoteRooms);
+    roomList.value = await ChatRoomRepository().getChatRooms();
     update();
   }
 
@@ -61,5 +62,7 @@ class ChatRoomController extends GetxController {
 class IntegerWrapper {
   final int _value;
   IntegerWrapper(this._value);
-  int get value { return _value; }
+  int get value {
+    return _value;
+  }
 }

@@ -225,13 +225,14 @@ class ChatRoomRepository {
     }).toList();
   }
 
-  Future<void> replaceLocalChatRooms(List<ChatRoom> rooms) async {
+  Future<void> upsertLocalChatRooms(List<ChatRoom> rooms) async {
     final db = await _getDb();
-    await db.execute("DELETE FROM $_tableChatRoom;");
+    // await db.execute("DELETE FROM $_tableChatRoom;");
     for (var room in rooms) {
       await db.insert(
         _tableChatRoom,
         room.toSQLMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
   }
