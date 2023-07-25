@@ -1,5 +1,7 @@
 # Moyubie
 
+<img src="./assets/icon/icon.png" alt="drawing" width="128"/>
+
 Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
 
 * It is a convenient and powerful AI chat client. Chat messages are synchronized between different devices.
