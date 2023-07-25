@@ -14,15 +14,51 @@ class SettingPage extends StatefulWidget {
 }
 
 class _SettingPageState extends State<SettingPage> {
-  _onPressedReset() {
-    ChatRoomRepository().removeDatabase();
+  _popDone(String content) {
+    if (context.mounted) {
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Done!'),
+          content: Text(content),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  _onClearLocalMessage() async {
+    await ChatRoomRepository().removeDatabase();
     ChatRoomController controller = Get.find();
     controller.reset();
+    _popDone("Cleared all local messages.");
+  }
+
+  _onClearRemoteMessage() async {
+    final res = await ChatRoomRepository().removeDatabaseRemote();
+    if (res) {
+      _popDone("Cleared all remote messages.");
+    } else {
+      _popDone("Clear remote messages failed.");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     const SizedBox sizedBoxSpace = SizedBox(height: 24);
+    const divider = Divider(
+      color: Colors.grey,
+      height: 10,
+      thickness: 1,
+      indent: 0,
+      endIndent: 0,
+    );
+
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
@@ -36,13 +72,10 @@ class _SettingPageState extends State<SettingPage> {
           return ListView(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0),
             children: [
+              sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  ElevatedButton(
-                      onPressed: _onPressedReset,
-                      child: const Text("Remove Cache")),
-                  const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
                       controller.saveTmpOption(context: context);
@@ -51,7 +84,7 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              sizedBoxSpace,
+              // sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -68,13 +101,7 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              const Divider(
-                color: Colors.grey,
-                height: 10,
-                thickness: 1,
-                indent: 0,
-                endIndent: 0,
-              ),
+              divider,
               sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -240,13 +267,7 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              const Divider(
-                color: Colors.grey,
-                height: 10,
-                thickness: 1,
-                indent: 0,
-                endIndent: 0,
-              ),
+              divider,
               sizedBoxSpace,
               SizedBox(
                 height: 200,
@@ -273,7 +294,37 @@ class _SettingPageState extends State<SettingPage> {
                     controller.setServerlessCmd(value);
                   },
                 ),
-              )
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text("Dangerous Zone"),
+                  Tooltip(
+                    message: "Don't use it!",
+                    child: IconButton(
+                      iconSize: 10.0,
+                      splashRadius: 10,
+                      color: Theme.of(context).colorScheme.primary,
+                      onPressed: () {},
+                      icon: const Icon(Icons.question_mark),
+                    ),
+                  ),
+                ],
+              ),
+              divider,
+              sizedBoxSpace,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton(
+                      onPressed: _onClearLocalMessage,
+                      child: const Text("Clear local messages")),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                      onPressed: _onClearRemoteMessage,
+                      child: const Text("Clear remote messages")),
+                ],
+              ),
             ],
           );
         }),

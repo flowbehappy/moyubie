@@ -138,6 +138,22 @@ class ChatRoomRepository {
     _database = null;
   }
 
+  Future<bool> removeDatabaseRemote() async {
+    final db = await getRemoteDb();
+    if (db != null) {
+      var res = await db.execute("SHOW DATABASES LIKE 'moyubie';");
+      if (res.rows.isNotEmpty) {
+        await db.execute("DROP DATABASE moyubie;");
+      }
+
+      await _remoteDatabase?.close();
+      _remoteDatabase = null;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   String remoteDBToString() {
     return "hose: $host, port: $port, userName: $userName, password: $password";
   }
