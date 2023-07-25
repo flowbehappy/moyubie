@@ -611,7 +611,7 @@ class _NewsWindowState extends State<NewsWindow>
                     controller: _rfrctl,
                     header: aiPromoteHeader,
                     onRefresh: () async {
-                      FirebaseAnalytics.instance.logEvent(name: "refresh_news");
+                      FirebaseAnalytics.instance.logEvent(name: "promote_news");
                       await promoteNews();
                     },
                     child: ListView(
@@ -675,7 +675,7 @@ class _NewsWindowState extends State<NewsWindow>
         trailing: [
           IconButton(
               onPressed: () async {
-                await FirebaseAnalytics.instance.logEvent(
+                FirebaseAnalytics.instance.logEvent(
                     name: "search_news", parameters: {"query": _search.text});
                 await refreshNews();
               },
