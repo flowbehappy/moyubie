@@ -17,7 +17,7 @@ void main() {
   test("Promote Test!",() async {
     var ctx = AIContext(api_key: Platform.environment["OAI_API"]!, model: "gpt-3.5-turbo");
     var rec = NewsPromoter(ctx);
-    var res = await rec.promotNews(UserProfile(tags: ["编程", "科技", "软件开发"]), 
+    var res = await rec.promoteNews(UserProfile(tags: ["编程", "科技", "软件开发"]), 
       [{"title": "最新的 Rust 库，可以帮助大家再也没有编译错误！", "id": 1},
       {"title": "国家今日决定免除一切个人所得税征收。", "id": 2},
       {"title": "在山麓的湖泊中发现水怪！", "id": 3},

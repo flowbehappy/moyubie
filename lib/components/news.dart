@@ -12,8 +12,16 @@ import 'package:moyubie/controller/settings.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../utils/ai_recommend.dart';
+
+class PromotedRecord {
+  DateTime at;
+  List<Promoted> records;
+
+  PromotedRecord(this.at, this.records);
+}
 
 mixin BgTaskIndicatorExt<T extends StatefulWidget> on State<T> {
   int? _max;
@@ -46,20 +54,20 @@ mixin BgTaskIndicatorExt<T extends StatefulWidget> on State<T> {
       if (max != null) {
         this._max = max;
       }
-      if (taskName != null) {
-        this._task_text = taskName;
-      }
+      this._task_text = taskName ?? "";
     });
 
     return await fut((x) {
-      setState(() {
-        if (x < 0 || (_max != null && x > _max!)) {
-          this._current = null;
-          this._max = null;
-          return;
-        }
-        this._current = x;
-      });
+      if (mounted) {
+        setState(() {
+          if (x < 0 || (_max != null && x > _max!)) {
+            this._current = null;
+            this._max = null;
+            return;
+          }
+          this._current = x;
+        });
+      }
     });
   }
 
@@ -93,10 +101,29 @@ class News {
 }
 
 class NewsService {
-  List<News> _cached = _TestData.hackerNews;
-  final _concurrency = 8;
+  List<News> _cached = [];
+  List<PromotedRecord> _record = [];
 
-  Future<void> refreshTopNews(int limit) async {
+  int lastTab = 0;
+  final _concurrency = 8;
+  final _limit = 50;
+
+  Future<void> savePromoted(PromotedRecord rec) async {
+    _record.add(rec);
+  }
+
+  Future<List<PromotedRecord>> fetchPromoted() async {
+    final l = _record.toList(growable: false);
+    // DESC ORDER.
+    l.sort((a, b) => b.at.compareTo(a.at));
+    return l;
+  }
+
+  Future<UserProfile> getUserTags() async {
+    return _TestData.prof;
+  }
+
+  Future<void> refreshTopNews() async {
     var topStories = 'https://hacker-news.firebaseio.com/v0/topstories.json';
     var uri = Uri.parse(topStories);
     var response = await http.get(
@@ -106,13 +133,10 @@ class NewsService {
     if (response.statusCode == 200) {
       var topStoriesId = json.decode(response.body) as List<dynamic>;
       var news = <News>[];
-      var futs = <Future>[];
+      var futs = ListQueue();
       for (var id in topStoriesId) {
         if (futs.length > _concurrency) {
-          final res = await Future.any(
-              futs.indexed.map((p) => p.$2.then((value) => (p.$1, value))));
-          futs.removeAt(res.$1);
-          final newsJson = res.$2;
+          final newsJson = await futs.removeFirst();
           if (newsJson == null || newsJson['url'] == null) {
             continue;
           }
@@ -123,7 +147,7 @@ class NewsService {
               newsJson['title'],
               "${newsJson["score"]} scores by ${newsJson["by"]}"));
         }
-        if (news.length >= limit) {
+        if (news.length >= _limit) {
           if (futs.isEmpty) {
             break;
           }
@@ -149,9 +173,9 @@ class NewsService {
     }
   }
 
-  Future<List<News>> cachedOrFetchTopNews(int limit) async {
-    if (_cached.length < limit) {
-      await refreshTopNews(limit);
+  Future<List<News>> cachedOrFetchTopNews() async {
+    if (_cached.length < _limit) {
+      await refreshTopNews();
     }
     return _cached;
   }
@@ -460,26 +484,26 @@ class _TestData {
         "LinkedIn采用了Google开源的协议缓冲区（Protocol Buffers），并将延迟降低了高达60%。这意味着用户可以更快地访问LinkedIn的服务。对于经常使用LinkedIn的用户来说，这是一个可能感兴趣的新闻。")
   ];
 
-  static final prof = UserProfile(tags: ["旅游", "文学", "生活", "娱乐"]);
+  static final prof = UserProfile(tags: ["炼金术", "魔法", "函数式编程", "气候"]);
 
-  static List<_Promoted> getPromoted() {
+  static List<Promoted> getPromoted() {
     return simplePrompted.mapMany((e) {
       News? item = hackerNews.firstWhereOrNull((element) {
         return element.id == e.id;
       });
       if (item == null) {
-        return <_Promoted>[];
+        return <Promoted>[];
       }
-      return [_Promoted(item, e.reason)];
+      return [Promoted(item, e.reason)];
     }).toList();
   }
 }
 
-class _Promoted {
+class Promoted {
   News news;
   String reason;
 
-  _Promoted(this.news, this.reason);
+  Promoted(this.news, this.reason);
 }
 
 class NewsWindow extends StatefulWidget {
@@ -504,8 +528,12 @@ class _NewsWindowState extends State<NewsWindow>
   String? _openedLink;
   String? _err;
   List<News> _news = [];
-  List<_Promoted> _promoted_news = [];
-  List<_Promoted> _all_promoted = [];
+  List<PromotedRecord> _promoted_news = [];
+
+  _NewsWindowState();
+
+  late NewsService _srv;
+  late List<Key> _tab_key;
 
   AIContext get _ai_ctx {
     final settings = Get.find<SettingsController>();
@@ -523,23 +551,28 @@ class _NewsWindowState extends State<NewsWindow>
 
   @override
   void dispose() {
+    _tabctl.removeListener(onTabChanged);
     super.dispose();
   }
 
   @override
   void initState() {
+    _tab_key = Iterable.generate(2, (i) => GlobalKey()).toList();
+    _srv = Get.find<NewsService>();
     _webctl?.setNavigationDelegate(NavigationDelegate(onProgress: (i) {
       setState(() {
         _web_load_progress = i;
       });
     }));
     runOneShotTask(() async {
-      final news = await Get.find<NewsService>().cachedOrFetchTopNews(20);
+      final news = await _srv.cachedOrFetchTopNews();
       setState(() {
         _news = news;
       });
     }(), taskName: "Fetching hacker news for you...");
-    _tabctl = TabController(length: 2, vsync: this);
+    _tabctl = TabController(initialIndex: _srv.lastTab, length: 2, vsync: this);
+    _tabctl.addListener(onTabChanged);
+    onTabChanged(force: true);
     super.initState();
   }
 
@@ -553,34 +586,44 @@ class _NewsWindowState extends State<NewsWindow>
       startPane: Scaffold(
           appBar: appbar(),
           body: TabBarView(controller: _tabctl, children: [
-            EasyRefresh(
-              controller: _rfrctl,
-              header: refreshHeader,
-              onRefresh: refreshNews,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                children: [
-                  ..._news.map((e) =>
-                      _NewsCard(e, onEnter: (news) => {setUrl(news.url)}))
-                ],
-              ),
-            ),
-            EasyRefresh(
-              controller: _rfrctl,
-              header: aiPromoteHeader,
-              onRefresh: () async {
-                await FirebaseAnalytics.instance.logEvent(name: "refresh_news");
-                await promoteNews();
-              },
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                children: [
-                  ...(_search.text.isEmpty ? _all_promoted : _promoted_news)
-                      .map((e) => _PromotedCard(e,
-                          onEnter: (promoted) => {setUrl(promoted.news.url)})),
-                ],
-              ),
-            ),
+            bgTaskRunning
+                ? prog()
+                : EasyRefresh(
+                    key: _tab_key[0],
+                    controller: _rfrctl,
+                    header: refreshHeader,
+                    onRefresh: () async {
+                      FirebaseAnalytics.instance.logEvent(name: "refresh_news");
+                      await refreshNews();
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                      children: [
+                        ..._news.map((e) =>
+                            _NewsCard(e, onEnter: (news) => {setUrl(news.url)}))
+                      ],
+                    ),
+                  ),
+            bgTaskRunning
+                ? prog()
+                : EasyRefresh(
+                    key: _tab_key[1],
+                    controller: _rfrctl,
+                    header: aiPromoteHeader,
+                    onRefresh: () async {
+                      FirebaseAnalytics.instance.logEvent(name: "refresh_news");
+                      await promoteNews();
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                      children: [
+                        ..._promoted_news.map((e) => _PromotedGroup(
+                            record: e,
+                            onEnter: (promoted) =>
+                                {setUrl(promoted.news.url)})),
+                      ],
+                    ),
+                  ),
           ])),
       endPane: contentForWeb(),
       panePriority: panePriority,
@@ -680,13 +723,6 @@ class _NewsWindowState extends State<NewsWindow>
   }
 
   AppBar appbar() {
-    final actions = [
-      IconButton(
-          onPressed: () {
-            refreshNews();
-          },
-          icon: Icon(Icons.refresh))
-    ];
     var bottom = TabBar(
       tabs: const <Widget>[
         Tab(icon: Icon(Icons.newspaper)),
@@ -699,7 +735,6 @@ class _NewsWindowState extends State<NewsWindow>
         toolbarHeight: 40,
         foregroundColor: Colors.white,
         backgroundColor: Color.fromARGB(255, 70, 70, 70),
-        actions: actions,
         bottom: bottom);
   }
 
@@ -746,33 +781,46 @@ class _NewsWindowState extends State<NewsWindow>
     }
   }
 
+  Future<void> fetchPromotedNews() async {
+    final promoted = await _srv.fetchPromoted();
+    if (mounted && _tabctl.index == 1) {
+      setState(() {
+        _promoted_news = promoted;
+      });
+    }
+  }
+
   Future<void> promoteNews() async {
-    final promotedList = await NewsPromoter(_ai_ctx).promotNews(
-        _TestData.prof,
+    final currentPromoted = (await _srv.fetchPromoted())
+        .mapMany((e) => e.records.map((e) => e.news.id))
+        .toSet();
+    final promotedList = await NewsPromoter(_ai_ctx).promoteNews(
+        await _srv.getUserTags(),
         _news
+            .where((element) => !currentPromoted.contains(element.id))
             .map((e) => e.convertToJsonForRecommend())
             .toList(growable: false));
-    var promotedFull = <_Promoted>[];
-    var newNews = _news.where((element) {
+    var promotedFull = _news.mapMany((element) {
       var recommend =
           promotedList.firstWhereOrNull((rec) => rec.id == element.id);
       if (recommend != null) {
-        promotedFull.add(_Promoted(element, recommend.reason));
+        return [Promoted(element, recommend.reason)];
       }
-      return recommend == null;
+      return <Promoted>[];
     }).toList(growable: false);
-    setState(() {
-      _all_promoted = [...promotedFull, ..._all_promoted];
-      _promoted_news = promotedFull;
-      _news = newNews;
-    });
+    final promoted = PromotedRecord(DateTime.now(), promotedFull);
+    await _srv.savePromoted(promoted);
+    if (mounted) {
+      setState(() {
+        _promoted_news = [promoted, ..._promoted_news];
+      });
+    }
   }
 
   Future<void> refreshNews() async {
-    final srv = Get.find<NewsService>();
     var topNews = await runOneShotTask(() async {
-      await srv.refreshTopNews(20);
-      return srv._cached;
+      await _srv.refreshTopNews();
+      return _srv._cached;
     }(), taskName: "Refreshing the top news...");
     var newNews =
         topNews.where((news) => news.title.contains(_search.text)).toList();
@@ -782,6 +830,29 @@ class _NewsWindowState extends State<NewsWindow>
         _news = newNews;
       });
     }
+  }
+
+  void onTabChanged({bool force = false}) async {
+    if (!_tabctl.indexIsChanging && !force) {
+      return;
+    }
+    _srv.lastTab = _tabctl.index;
+    if (_tabctl.index == 0) {
+      runOneShotTask(() async {
+        final news = await _srv.cachedOrFetchTopNews();
+        if (mounted && _tabctl.index == 0) {
+          setState(() {
+            _news = news;
+          });
+        }
+      }());
+      return;
+    }
+    if (_tabctl.index == 1) {
+      runOneShotTask(fetchPromotedNews());
+      return;
+    }
+    throw Exception("unexpected tab index ${_tabctl.index}");
   }
 }
 
@@ -809,10 +880,40 @@ class _NewsCard extends StatelessWidget {
   }
 }
 
+class _PromotedGroup extends StatelessWidget {
+  final PromotedRecord record;
+  final void Function(Promoted)? onEnter;
+
+  const _PromotedGroup({required this.record, this.onEnter});
+
+  @override
+  Widget build(BuildContext context) {
+    final ts = record.at;
+    return Column(children: [
+      Container(
+          padding: const EdgeInsets.only(left: 8),
+          child: Row(
+            children: [
+              Text(
+                timeago.format(ts).capitalizeFirst!,
+              ),
+              Expanded(
+                  child: Divider(
+                indent: 8,
+                height: 8,
+                color: Theme.of(context).primaryColorLight,
+              )),
+            ],
+          )),
+      ...record.records.map((e) => _PromotedCard(e, onEnter: onEnter))
+    ]);
+  }
+}
+
 class _PromotedCard extends StatelessWidget {
   final Key? key;
-  final _Promoted _promoted;
-  final void Function(_Promoted)? onEnter;
+  final Promoted _promoted;
+  final void Function(Promoted)? onEnter;
 
   const _PromotedCard(this._promoted, {this.onEnter, this.key});
 

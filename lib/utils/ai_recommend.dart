@@ -158,11 +158,12 @@ class NewsPromoter extends WithOpenAI {
   static const _sys_prompt =
       '你是一个新闻推荐服务。你通过且仅通过 `get_user_info` 获得用户分析报告，通过 `get_news` 获得今日新闻。'
       '你要从中选出尽可能多用户可能感兴趣的新闻（但是不要超过五条），并给出相应的理由，随后将理由翻译给用户的惯用语言，推荐理由请不要和标题过度相似。'
-      '传递推荐给 `recommend_news`，你只需要传递 id 和推荐理由，不要带上新闻的其它属性。不要使用 `get_user_info` 以外任何地方的用户信息，也不要用和用户信息不相符的理由推荐。';
+      '传递推荐给 `recommend_news`，你只需要传递 id 和推荐理由，不要带上新闻的其它属性。不要使用 `get_user_info` 以外任何地方的用户信息。'
+      '不要用和用户信息不相符的理由推荐，也不要推荐用户感兴趣主题以外的新闻。';
 
   NewsPromoter(super._context);
 
-  Future<List<Recommend>> promotNews(
+  Future<List<Recommend>> promoteNews(
       UserProfile userInfo, List<Map<String, dynamic>> news) async {
     final res = await OpenAI.instance.chat.create(
         model: _context.model,

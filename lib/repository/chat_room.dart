@@ -4,6 +4,7 @@ import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:mysql_client/mysql_client.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class ChatRoom {
   String uuid;
@@ -130,6 +131,12 @@ class ChatRoomRepository {
     ChatRoomRepository.password = password;
   }
 
+  removeDatabase() async {
+    String path = join(await getDatabasesPath(), 'moyubie.db');
+    await deleteDatabase(path);
+    _database = null;
+  }
+
   String remoteDBToString() {
     return "hose: $host, port: $port, userName: $userName, password: $password";
   }
@@ -139,7 +146,7 @@ class ChatRoomRepository {
   }
 
   Future<MySQLConnection?> getRemoteDb({bool forceInit = false}) async {
-    bool shouldInit = _remoteDatabase == null || forceInit;
+    bool shouldInit = _remoteDatabase == null || !_remoteDatabase!.connected || forceInit;
     if (host.isEmpty || (!isRemoteDBValid && !forceInit)) {
       shouldInit = false;
     }
@@ -162,9 +169,12 @@ class ChatRoomRepository {
           _remoteDatabase = null;
         });
 
-        await conn.execute("CREATE DATABASE IF NOT EXISTS moyubie;");
+        var res = await conn.execute("SHOW DATABASES LIKE 'moyubie';");
+        if (res.rows.isEmpty) {
+          await conn.execute("CREATE DATABASE IF NOT EXISTS moyubie;");
+        }
         await conn.execute("USE moyubie;");
-        var res = await conn.execute("SHOW TABLES LIKE 'chat_room';");
+        res = await conn.execute("SHOW TABLES LIKE 'chat_room';");
         if (res.rows.isEmpty) {
           await conn.execute('''
           CREATE TABLE IF NOT EXISTS $_tableChatRoom (
@@ -195,6 +205,32 @@ class ChatRoomRepository {
         connectionToken: maps[i][_columnChatRoomConnectionToken],
       );
     });
+  }
+
+  Future<List<ChatRoom>> getChatRoomsRemote() async {
+    final db = await getRemoteDb();
+    if (db == null) return Future(() => []);
+    var res = await db.execute("SELECT * FROM $_tableChatRoom;");
+    return res.rows.map((e) {
+      var maps = e.assoc();
+      return ChatRoom(
+        uuid: maps[_columnChatRoomUuid]!,
+        name: maps[_columnChatRoomName]!,
+        createTime: DateTime.parse(maps[_columnChatRoomCreateTime]!),
+        connectionToken: maps[_columnChatRoomConnectionToken]!,
+      );
+    }).toList();
+  }
+
+  Future<void> replaceLocalChatRooms(List<ChatRoom> rooms) async {
+    final db = await _getDb();
+    await db.execute("DELETE FROM $_tableChatRoom;");
+    for (var room in rooms) {
+      await db.insert(
+        _tableChatRoom,
+        room.toSQLMap(),
+      );
+    }
   }
 
   Future<void> addChatRoom(ChatRoom chatRoom) async {
