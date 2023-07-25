@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:dual_screen/dual_screen.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:moyubie/components/chat_room.dart';
@@ -591,7 +592,10 @@ class _NewsWindowState extends State<NewsWindow>
                     key: _tab_key[0],
                     controller: _rfrctl,
                     header: refreshHeader,
-                    onRefresh: refreshNews,
+                    onRefresh: () async {
+                      FirebaseAnalytics.instance.logEvent(name: "refresh_news");
+                      await refreshNews();
+                    },
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                       children: [
@@ -606,7 +610,10 @@ class _NewsWindowState extends State<NewsWindow>
                     key: _tab_key[1],
                     controller: _rfrctl,
                     header: aiPromoteHeader,
-                    onRefresh: promoteNews,
+                    onRefresh: () async {
+                      FirebaseAnalytics.instance.logEvent(name: "promote_news");
+                      await promoteNews();
+                    },
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                       children: [
@@ -667,8 +674,10 @@ class _NewsWindowState extends State<NewsWindow>
             const MaterialStatePropertyAll(TextStyle(color: Colors.white)),
         trailing: [
           IconButton(
-              onPressed: () {
-                refreshNews();
+              onPressed: () async {
+                FirebaseAnalytics.instance.logEvent(
+                    name: "search_news", parameters: {"query": _search.text});
+                await refreshNews();
               },
               icon: const Icon(
                 Icons.search,
