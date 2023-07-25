@@ -103,7 +103,7 @@ class SettingsController extends GetxController {
     return null;
   }
 
-  void saveTmpOption() async {
+  void saveTmpOption({BuildContext? context}) async {
     GetStorage _box = GetStorage();
     llm.value = llmTmp.value;
     _box.write('llm', llm.value);
@@ -115,35 +115,77 @@ class SettingsController extends GetxController {
     _box.write('serverlessCmd', serverlessCmd.value);
 
     bool hasLLM = openAiKey.value.isNotEmpty && llm.value != "Echo";
-    bool hasRemoteDB = updateTiDBCmdToRepo(serverlessCmd.value);
-
     if (hasLLM) {
       var res = await validateLLM();
       if (res != null) {
         isLLMReady = false;
-        // TODO: show setting error tips
+        if (context != null && context.mounted) {
+          showDialog<String>(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: const Text('Done!'),
+              content: Text("AI Service validate failed:\n$res"),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'OK'),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
         return;
       } else {
         isLLMReady = true;
       }
     }
 
-    if (hasRemoteDB) {
-      var res = await validateTiDB();
-      if (res != null) {
-        ChatRoomRepository().setRemoteDBValid(false);
-        // TODO: show setting error tips
-        return;
-      } else {
-        ChatRoomRepository().setRemoteDBValid(true);
-      }
+    var res = updateTiDBCmdToRepo(serverlessCmd.value);
+    res ??= await validateTiDB();
+
+    String popMsg;
+    switch (res) {
+      case null:
+        {
+          ChatRoomRepository().setRemoteDBValid(true);
+          popMsg = "OK";
+          break;
+        }
+      case "Empty":
+        {
+          ChatRoomRepository().setRemoteDBValid(false);
+          popMsg =
+              "Warn: Chat messages are only saved to local if you don't specify TiDB Serverless connectin.";
+          break;
+        }
+      default:
+        {
+          ChatRoomRepository().setRemoteDBValid(false);
+          popMsg = "Connect to TiDB Serverless failed:\n$res.";
+        }
     }
 
-    // TODO: show success tips
+    if (context != null && context.mounted) {
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Done!'),
+          content: Text(popMsg),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   // Return true if we find host is not empty.
-  bool updateTiDBCmdToRepo(String cmd) {
+  String? updateTiDBCmdToRepo(String cmd) {
+    if (cmd.isEmpty) return "Empty";
+
     cmd = cmd.replaceFirst(" -p", " -p ");
     final options = cmd.split(" ");
     var nextOpts = List.from(options);
@@ -154,34 +196,43 @@ class SettingsController extends GetxController {
     int port = 0;
     String password = "";
 
-    for (int i = 0; i < options.length; i += 1) {
-      final opt = options[i];
-      final nextOpt = nextOpts[i];
-      switch (opt) {
-        case "-u":
-        case "--user":
-          user = nextOpt.replaceAll("'", "");
-          user = user.replaceAll('"', "");
-          user = user.replaceAll("'", "");
-          break;
-        case "-h":
-        case "--host":
-          host = nextOpt;
-          break;
-        case "-P":
-        case "--port":
-          port = int.parse(nextOpt);
-          break;
-        case "-p":
-        case "--password":
-          password = nextOpt;
-          break;
-        default:
+    try {
+      for (int i = 0; i < options.length; i += 1) {
+        final opt = options[i];
+        final nextOpt = nextOpts[i];
+        switch (opt) {
+          case "-u":
+          case "--user":
+            user = nextOpt.replaceAll("'", "");
+            user = user.replaceAll('"', "");
+            user = user.replaceAll("'", "");
+            break;
+          case "-h":
+          case "--host":
+            host = nextOpt;
+            break;
+          case "-P":
+          case "--port":
+            port = int.parse(nextOpt);
+            break;
+          case "-p":
+          case "--password":
+            password = nextOpt;
+            break;
+          default:
+        }
       }
+    } catch (e) {
+      return e.toString();
     }
+
     ChatRoomRepository().updateRemoteDBConfig(host, port, user, password);
 
-    return host.isNotEmpty;
+    if (user.isEmpty || host.isEmpty || port == 0 || password.isEmpty) {
+      return "Illegal format";
+    }
+
+    return null;
   }
 
   void setOpenAiKey(String text) {

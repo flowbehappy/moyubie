@@ -41,12 +41,11 @@ class _SettingPageState extends State<SettingPage> {
                 children: [
                   ElevatedButton(
                       onPressed: _onPressedReset,
-                      child: const Text("Remove Cache")
-                  ),
+                      child: const Text("Remove Cache")),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
-                      controller.saveTmpOption();
+                      controller.saveTmpOption(context: context);
                     },
                     child: const Text("Save"),
                   ),
