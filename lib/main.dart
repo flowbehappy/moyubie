@@ -80,12 +80,14 @@ class MyApp extends StatelessWidget {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
     final ChatRoomType type =
         shortestSide < 600 ? ChatRoomType.phone : ChatRoomType.tablet;
-    Get.put(SettingsController());
+    final settingsCtl = SettingsController();
+    Get.put(settingsCtl);
     // Get.put(ConversationController());
     Get.put(MessageController());
     Get.put(PromptController());
     Get.put(ChatRoomController());
-    Get.put(NewsService());
+    Get.put(NewsController(settingsCtl.openAiKey, settingsCtl.gptModel));
+    final newsWinKey = GlobalKey();
     return MaterialApp(
       theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),
       darkTheme: FlexThemeData.dark(scheme: FlexScheme.ebonyClay),
@@ -102,7 +104,7 @@ class MyApp extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             children: [
               ChatRoom(restorationId: "chat_room", type: type),
-              NewsWindow(ty: type),
+              NewsWindow(ty: type, key: newsWinKey,),
               const SettingPage(),
             ],
           ),

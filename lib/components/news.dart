@@ -2,13 +2,16 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_openai/dart_openai.dart';
 import 'package:dual_screen/dual_screen.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/components/chat_room.dart';
 import 'package:moyubie/controller/settings.dart';
+import 'package:uuid/uuid.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -100,20 +103,37 @@ class News {
   }
 }
 
-class NewsService {
-  List<News> _cached = [];
-  List<PromotedRecord> _record = [];
+class AIFetchingTask {
+  DateTime startedAt = DateTime.now();
+  List<News> source;
+
+  AIFetchingTask({required this.source});
+}
+
+class NewsController extends GetxController {
+  HashMap<Uuid, AIFetchingTask> _pending_tasks = HashMap();
+
+  RxList<News> _$cached = <News>[].obs;
+  RxList<PromotedRecord> _$record = <PromotedRecord>[].obs;
+  RxString _$ai_key;
+  RxString _$ai_model;
+  RxString _$err = "".obs;
+
+  NewsController(this._$ai_key, this._$ai_model);
+
+  AIContext get _ai_ctx =>
+      AIContext(api_key: _$ai_key.value, model: _$ai_model.value);
 
   int lastTab = 0;
   final _concurrency = 8;
   final _limit = 50;
 
   Future<void> savePromoted(PromotedRecord rec) async {
-    _record.add(rec);
+    _$record.add(rec);
   }
 
   Future<List<PromotedRecord>> fetchPromoted() async {
-    final l = _record.toList(growable: false);
+    final l = _$record.toList(growable: false);
     // DESC ORDER.
     l.sort((a, b) => b.at.compareTo(a.at));
     return l;
@@ -167,17 +187,63 @@ class NewsService {
           }
         }());
       }
-      _cached = news;
+      _$cached.value = news;
     } else {
       throw Exception('Failed to load top news');
     }
   }
 
   Future<List<News>> cachedOrFetchTopNews() async {
-    if (_cached.length < _limit) {
+    if (_$cached.length < _limit) {
       await refreshTopNews();
     }
-    return _cached;
+    return _$cached;
+  }
+
+  Future<PromotedRecord> recommendNews(List<News> news,
+      {UserProfile? profile}) async {
+    final id = Uuid();
+    _pending_tasks[id] = AIFetchingTask(source: news);
+    try {
+      final currentPromoted = (await fetchPromoted())
+          .mapMany((e) => e.records.map((e) => e.news.id))
+          .toSet();
+      final userProfile = profile ?? await getUserTags();
+      final promotedList = await NewsPromoter(_ai_ctx).promoteNews(
+          userProfile,
+          news
+              .where((element) => !currentPromoted.contains(element.id))
+              .map((e) => e.convertToJsonForRecommend())
+              .toList(growable: false));
+      var promotedFull = news.mapMany((element) {
+        var recommend =
+            promotedList.firstWhereOrNull((rec) => rec.id == element.id);
+        if (recommend != null) {
+          return [Promoted(element, recommend.reason)];
+        }
+        return <Promoted>[];
+      }).toList(growable: false);
+      final promoted = PromotedRecord(DateTime.now(), promotedFull);
+      await savePromoted(promoted);
+      return promoted;
+    } catch (e) {
+      if (e is RequestFailedException) {
+        _$err.value = e.message;
+      } else {
+        _$err.value = e.toString();
+      }
+      rethrow;
+    } finally {
+      _pending_tasks.remove(id);
+    }
+  }
+
+  void dismissError() {
+    _$err.value = "";
+  }
+
+  List<AIFetchingTask> pendingTasks() {
+    return _pending_tasks.values.toList(growable: false);
   }
 }
 
@@ -525,15 +591,14 @@ class _NewsWindowState extends State<NewsWindow>
     }
   }
 
-  String? _openedLink;
+  String? _opened_link;
   String? _err;
-  List<News> _news = [];
-  List<PromotedRecord> _promoted_news = [];
 
   _NewsWindowState();
 
-  late NewsService _srv;
+  late NewsController _srv;
   late List<Key> _tab_key;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey();
 
   AIContext get _ai_ctx {
     final settings = Get.find<SettingsController>();
@@ -558,18 +623,14 @@ class _NewsWindowState extends State<NewsWindow>
   @override
   void initState() {
     _tab_key = Iterable.generate(2, (i) => GlobalKey()).toList();
-    _srv = Get.find<NewsService>();
+    _srv = Get.find<NewsController>();
     _webctl?.setNavigationDelegate(NavigationDelegate(onProgress: (i) {
-      setState(() {
-        _web_load_progress = i;
-      });
+      if (mounted && _opened_link != null) {
+        setState(() {
+          _web_load_progress = i;
+        });
+      }
     }));
-    runOneShotTask(() async {
-      final news = await _srv.cachedOrFetchTopNews();
-      setState(() {
-        _news = news;
-      });
-    }(), taskName: "Fetching hacker news for you...");
     _tabctl = TabController(initialIndex: _srv.lastTab, length: 2, vsync: this);
     _tabctl.addListener(onTabChanged);
     onTabChanged(force: true);
@@ -580,51 +641,78 @@ class _NewsWindowState extends State<NewsWindow>
   Widget build(BuildContext context) {
     var panePriority = widget.ty == ChatRoomType.tablet
         ? TwoPanePriority.both
-        : (_openedLink == null ? TwoPanePriority.start : TwoPanePriority.end);
+        : (_opened_link == null ? TwoPanePriority.start : TwoPanePriority.end);
     return TwoPane(
       paneProportion: 0.3,
-      startPane: Scaffold(
-          appBar: appbar(),
-          body: TabBarView(controller: _tabctl, children: [
-            bgTaskRunning
-                ? prog()
-                : EasyRefresh(
-                    key: _tab_key[0],
-                    controller: _rfrctl,
-                    header: refreshHeader,
-                    onRefresh: () async {
-                      FirebaseAnalytics.instance.logEvent(name: "refresh_news");
-                      await refreshNews();
-                    },
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                      children: [
-                        ..._news.map((e) =>
-                            _NewsCard(e, onEnter: (news) => {setUrl(news.url)}))
-                      ],
-                    ),
-                  ),
-            bgTaskRunning
-                ? prog()
-                : EasyRefresh(
-                    key: _tab_key[1],
-                    controller: _rfrctl,
-                    header: aiPromoteHeader,
-                    onRefresh: () async {
-                      FirebaseAnalytics.instance.logEvent(name: "promote_news");
-                      await promoteNews();
-                    },
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                      children: [
-                        ..._promoted_news.map((e) => _PromotedGroup(
-                            record: e,
-                            onEnter: (promoted) =>
-                                {setUrl(promoted.news.url)})),
-                      ],
-                    ),
-                  ),
-          ])),
+      startPane: ScaffoldMessenger(
+        key: _scaffoldKey,
+        child: Scaffold(
+            appBar: appbar(),
+            body: TabBarView(controller: _tabctl, children: [
+              bgTaskRunning
+                  ? prog()
+                  : EasyRefresh(
+                      key: _tab_key[0],
+                      controller: _rfrctl,
+                      header: refreshHeader,
+                      onRefresh: () async {
+                        FirebaseAnalytics.instance
+                            .logEvent(name: "refresh_news");
+                        await refreshNews();
+                      },
+                      child: Obx(
+                        () => ListView(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                          children: [
+                            ..._srv._$cached.map((e) => _NewsCard(e,
+                                onEnter: (news) => {setUrl(news.url)}))
+                          ],
+                        ),
+                      )),
+              bgTaskRunning
+                  ? prog()
+                  : EasyRefresh(
+                      key: _tab_key[1],
+                      controller: _rfrctl,
+                      header: aiPromoteHeader,
+                      onRefresh: () async {
+                        try {
+                          FirebaseAnalytics.instance
+                              .logEvent(name: "promote_news");
+                          await promoteNews();
+                        } catch (e) {
+                          maybeShowBannerForError();
+                          return IndicatorResult.fail;
+                        }
+                      },
+                      child: _srv.pendingTasks().isEmpty &&
+                              _srv._$record.isEmpty
+                          ? ListView(children: [
+                              ListTile(
+                                  title: Text(
+                                    "Yet nothing here.",
+                                  ),
+                                  subtitle:
+                                      Text("Drag down to let AI select some news for you.")),
+                            ])
+                          : Obx(
+                              () => ListView(
+                                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                                children: [
+                                  ..._srv
+                                      .pendingTasks()
+                                      .map((e) => Text(
+                                          "pending ${e.startedAt} fetching task..."))
+                                      .toList(),
+                                  ..._srv._$record.map((e) => _PromotedGroup(
+                                      record: e,
+                                      onEnter: (promoted) =>
+                                          {setUrl(promoted.news.url)})),
+                                ],
+                              ),
+                            )),
+            ])),
+      ),
       endPane: contentForWeb(),
       panePriority: panePriority,
     );
@@ -633,13 +721,13 @@ class _NewsWindowState extends State<NewsWindow>
   bool get agiAccessible => _ai_ctx.api_key.isNotEmpty;
 
   Header get refreshHeader => const ClassicHeader(
-        dragText: "Drag down to fetch some news!",
-        armedText: "Release to fetch some news!",
-        processingText: "We are gathering news for you...",
-        readyText: "Here we go!",
-        processedText: "Done!",
-        failedText: "Oops...",
-      );
+      dragText: "Drag down to fetch some news!",
+      armedText: "Release to fetch some news!",
+      processingText: "We are gathering news for you...",
+      readyText: "Here we go!",
+      processedText: "Done!",
+      failedText: "Oops...",
+      textStyle: TextStyle(overflow: TextOverflow.ellipsis));
 
   Header get aiPromoteHeader => agiAccessible
       ? const ClassicHeader(
@@ -649,7 +737,7 @@ class _NewsWindowState extends State<NewsWindow>
           readyText: "Here we go!",
           processedText: "Done!",
           failedText: "Oops...",
-        )
+          textStyle: TextStyle(overflow: TextOverflow.ellipsis))
       : ClassicHeader(
           triggerOffset: context.height,
           dragText: "AI isn't accessible, try to config the API key?",
@@ -658,6 +746,7 @@ class _NewsWindowState extends State<NewsWindow>
           readyText: "Nothing will happen.",
           processedText: "Ya see?",
           failedText: "Oops...",
+          textStyle: TextStyle(overflow: TextOverflow.ellipsis),
           pullIconBuilder: (ctx, state, offs) => const Icon(Icons.block),
         );
 
@@ -691,7 +780,7 @@ class _NewsWindowState extends State<NewsWindow>
       icon: const Icon(Icons.close),
       onPressed: () {
         setState(() {
-          _openedLink = null;
+          _opened_link = null;
           _err = null;
         });
         _webctl?.loadHtmlString("<html></html>");
@@ -707,7 +796,7 @@ class _NewsWindowState extends State<NewsWindow>
           onPressed: () => {
                 launchUrl(
                     Uri.parse(
-                      _openedLink!,
+                      _opened_link!,
                     ),
                     mode: LaunchMode.externalApplication)
               },
@@ -768,11 +857,41 @@ class _NewsWindowState extends State<NewsWindow>
     }
   }
 
+  void maybeShowBannerForError() {
+    final mgr = _scaffoldKey;
+    if (_srv._$err.isEmpty) {
+      mgr.currentState?.clearMaterialBanners();
+      return;
+    }
+    final banner = MaterialBanner(
+        leading: Icon(Icons.error, color: Colors.white),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        content: Text(
+          _srv._$err.value,
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _srv.dismissError();
+              maybeShowBannerForError();
+            },
+            icon: Icon(
+              Icons.check,
+              color: Colors.white,
+            ),
+          )
+        ],
+        shadowColor: Theme.of(context).shadowColor,
+        backgroundColor: Theme.of(context).colorScheme.error);
+    mgr.currentState?.showMaterialBanner(banner);
+  }
+
   setUrl(String link) async {
     try {
       openUrl(link);
       setState(() {
-        _openedLink = link;
+        _opened_link = link;
       });
     } catch (e) {
       setState(() {
@@ -781,55 +900,14 @@ class _NewsWindowState extends State<NewsWindow>
     }
   }
 
-  Future<void> fetchPromotedNews() async {
-    final promoted = await _srv.fetchPromoted();
-    if (mounted && _tabctl.index == 1) {
-      setState(() {
-        _promoted_news = promoted;
-      });
-    }
-  }
-
   Future<void> promoteNews() async {
-    final currentPromoted = (await _srv.fetchPromoted())
-        .mapMany((e) => e.records.map((e) => e.news.id))
-        .toSet();
-    final promotedList = await NewsPromoter(_ai_ctx).promoteNews(
-        await _srv.getUserTags(),
-        _news
-            .where((element) => !currentPromoted.contains(element.id))
-            .map((e) => e.convertToJsonForRecommend())
-            .toList(growable: false));
-    var promotedFull = _news.mapMany((element) {
-      var recommend =
-          promotedList.firstWhereOrNull((rec) => rec.id == element.id);
-      if (recommend != null) {
-        return [Promoted(element, recommend.reason)];
-      }
-      return <Promoted>[];
-    }).toList(growable: false);
-    final promoted = PromotedRecord(DateTime.now(), promotedFull);
-    await _srv.savePromoted(promoted);
-    if (mounted) {
-      setState(() {
-        _promoted_news = [promoted, ..._promoted_news];
-      });
-    }
+    await _srv.recommendNews(_srv._$cached);
+    maybeShowBannerForError();
   }
 
   Future<void> refreshNews() async {
-    var topNews = await runOneShotTask(() async {
-      await _srv.refreshTopNews();
-      return _srv._cached;
-    }(), taskName: "Refreshing the top news...");
-    var newNews =
-        topNews.where((news) => news.title.contains(_search.text)).toList();
-    if (mounted) {
-      setState(() {
-        _promoted_news = [];
-        _news = newNews;
-      });
-    }
+    await _srv.refreshTopNews();
+    maybeShowBannerForError();
   }
 
   void onTabChanged({bool force = false}) async {
@@ -839,20 +917,10 @@ class _NewsWindowState extends State<NewsWindow>
     _srv.lastTab = _tabctl.index;
     if (_tabctl.index == 0) {
       runOneShotTask(() async {
-        final news = await _srv.cachedOrFetchTopNews();
-        if (mounted && _tabctl.index == 0) {
-          setState(() {
-            _news = news;
-          });
-        }
+        await _srv.cachedOrFetchTopNews();
       }());
       return;
     }
-    if (_tabctl.index == 1) {
-      runOneShotTask(fetchPromotedNews());
-      return;
-    }
-    throw Exception("unexpected tab index ${_tabctl.index}");
   }
 }
 
