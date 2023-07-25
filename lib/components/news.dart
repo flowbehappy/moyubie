@@ -132,7 +132,7 @@ class NewsController extends GetxController {
     _$record.add(rec);
   }
 
-  Future<List<PromotedRecord>> fetchPromoted() async {
+  List<PromotedRecord> get promoted {
     final l = _$record.toList(growable: false);
     // DESC ORDER.
     l.sort((a, b) => b.at.compareTo(a.at));
@@ -205,9 +205,8 @@ class NewsController extends GetxController {
     final id = Uuid();
     _pending_tasks[id] = AIFetchingTask(source: news);
     try {
-      final currentPromoted = (await fetchPromoted())
-          .mapMany((e) => e.records.map((e) => e.news.id))
-          .toSet();
+      final currentPromoted =
+          this.promoted.mapMany((e) => e.records.map((e) => e.news.id)).toSet();
       final userProfile = profile ?? await getUserTags();
       final promotedList = await NewsPromoter(_ai_ctx).promoteNews(
           userProfile,
@@ -248,321 +247,7 @@ class NewsController extends GetxController {
 }
 
 class _TestData {
-  static final hackerNews = [
-    News(
-        _NewsSource.HackerNews,
-        36799548,
-        "https://anytype.io/?hn",
-        "Anytype – open-source, local-first, P2P Notion alternative",
-        "104 scores by TTTZ"),
-    News(
-        _NewsSource.HackerNews,
-        36799776,
-        "https://github.com/bartobri/no-more-secrets",
-        "No-more-secrets: recreate the decryption effect seen in the 1992 movie Sneakers",
-        "66 scores by tambourine_man"),
-    News(
-        _NewsSource.HackerNews,
-        36795173,
-        "https://www.dignitymemorial.com/obituaries/las-vegas-nv/kevin-mitnick-11371668",
-        "Kevin Mitnick has died",
-        "2937 scores by thirtyseven"),
-    News(
-        _NewsSource.HackerNews,
-        36800041,
-        "https://www.projectaria.com/datasets/adt/",
-        "Project Aria 'Digital Twin' Dataset by Meta",
-        "20 scores by socratic1"),
-    News(
-        _NewsSource.HackerNews,
-        36798593,
-        "https://github.com/docusealco/docuseal",
-        "Docuseal: Open-source DocuSign alternative. Create, fill, sign digital documents",
-        "161 scores by thunderbong"),
-    News(
-        _NewsSource.HackerNews,
-        36798774,
-        "https://github.com/Swordfish90/cool-retro-term",
-        "Cool Retro Terminal",
-        "86 scores by qazpot"),
-    News(
-        _NewsSource.HackerNews,
-        36800151,
-        "https://www.jefftk.com/p/accidentally-load-bearing",
-        "Accidentally Load Bearing",
-        "11 scores by jamessun"),
-    News(
-        _NewsSource.HackerNews,
-        36798157,
-        "https://developer.mozilla.org/en-US/play",
-        "MDN Playground",
-        "127 scores by weinzierl"),
-    News(
-        _NewsSource.HackerNews,
-        36799283,
-        "https://up.codes/careers",
-        "UpCodes (YC S17) is hiring a Growth Marketer to make construction efficient",
-        "1 scores by Old_Thrashbarg"),
-    News(
-        _NewsSource.HackerNews,
-        36798864,
-        "https://github.com/Fadi002/unshackle",
-        "Unshackle: A tool to bypass windows password logins",
-        "42 scores by AdvDebug"),
-    News(
-        _NewsSource.HackerNews,
-        36798842,
-        "https://www.pathsensitive.com/2018/02/the-practice-is-not-performance-why.html",
-        "Why project-based learning fails (2018)",
-        "33 scores by jger15"),
-    News(
-        _NewsSource.HackerNews,
-        36799628,
-        "https://giannirosato.com/blog/post/jpegli-xyb/",
-        "XYB JPEG: Perceptual Color Encoding Tested",
-        "15 scores by computerbuster"),
-    News(
-        _NewsSource.HackerNews,
-        36798997,
-        "https://projects.osmocom.org/projects/foss-ims-client/wiki/Wiki",
-        "Open Source IMS Client",
-        "16 scores by McDyver"),
-    News(
-        _NewsSource.HackerNews,
-        36799073,
-        "https://viterbischool.usc.edu/news/2023/07/teaching-robots-to-teach-other-robots/",
-        "AI That Teaches Other AI",
-        "13 scores by geox"),
-    News(
-        _NewsSource.HackerNews,
-        36778309,
-        "https://en.wikipedia.org/wiki/Glossary_of_Japanese_words_of_Portuguese_origin",
-        "Japanese words of Portuguese origin",
-        "181 scores by lermontov"),
-    News(
-        _NewsSource.HackerNews,
-        36798092,
-        "https://dolphin-emu.org/blog/2023/07/20/what-happened-to-dolphin-on-steam/",
-        "What Happened to Dolphin on Steam?",
-        "116 scores by panic"),
-    News(
-        _NewsSource.HackerNews,
-        36791936,
-        "https://daily.jstor.org/delts-dont-lie/",
-        "Delts Don’t Lie",
-        "48 scores by fnubbly"),
-    News(
-        _NewsSource.HackerNews,
-        36798051,
-        "https://chromium.googlesource.com/chromiumos/docs/+/HEAD/development_basics.md#programming-languages-and-style",
-        "ChromiumOS Developer Guide, Programming languages and style",
-        "48 scores by pjmlp"),
-    News(_NewsSource.HackerNews, 36799221, "https://taylor.town/secret-sauce",
-        "Spoil Your Secret Sauce", "9 scores by surprisetalk"),
-    News(_NewsSource.HackerNews, 36798826, "https://pdfdiffer.com/",
-        "Show HN: PDF Differ", "20 scores by m4rc1e"),
-    News(_NewsSource.HackerNews, 36798854, "https://sive.rs/pnt",
-        "The past is not true", "85 scores by swah"),
-    News(
-        _NewsSource.HackerNews,
-        36790301,
-        "https://stanforddaily.com/2023/07/19/stanford-president-resigns-over-manipulated-research-will-retract-at-least-3-papers/",
-        "Stanford president resigns over manipulated research, will retract 3 papers",
-        "1339 scores by dralley"),
-    News(
-        _NewsSource.HackerNews,
-        36768334,
-        "https://github.com/InderdeepBajwa/gitid",
-        "Use multiple Git SSH identities on a single computer",
-        "43 scores by inderdeepbajwa"),
-    News(
-        _NewsSource.HackerNews,
-        36799235,
-        "https://www.bloomberg.com/news/articles/2023-07-19/wall-street-shrinks-ranks-by-21-000-amid-deals-trading-slump",
-        "Wall Street Shrinks Headcount by 21,000 as Dealmaking and Trading Slump",
-        "37 scores by haltingproblem"),
-    News(
-        _NewsSource.HackerNews,
-        36794756,
-        "https://www.youtube.com/watch?v=6-3BFXpBcjc",
-        "The Danger of Popcorn Polymer: Incident at the TPC Group Chemical Plant [video]",
-        "172 scores by oatmeal1"),
-    News(
-        _NewsSource.HackerNews,
-        36794430,
-        "https://www.infoq.com/news/2023/07/linkedin-protocol-buffers-restli/",
-        "LinkedIn adopts protocol buffers and reduces latency up to 60%",
-        "164 scores by ijidak"),
-    News(
-        _NewsSource.HackerNews,
-        36799700,
-        "https://www.theguardian.com/us-news/2023/jul/20/toxic-flame-retardants-human-breast-milk",
-        "Flame retardant found in US breast milk",
-        "12 scores by geox"),
-    News(
-        _NewsSource.HackerNews,
-        36798850,
-        "https://www.washingtonpost.com/wellness/2023/07/19/hearing-loss-hearing-aids-dementia-study/",
-        "Hearing aids may cut risk of cognitive decline by nearly half",
-        "48 scores by maxutility"),
-    News(
-        _NewsSource.HackerNews,
-        36799600,
-        "https://www.nytimes.com/2023/07/19/business/google-artificial-intelligence-news-articles.html",
-        "Google Tests A.I. Tool That Is Able to Write News Articles",
-        "12 scores by asnyder"),
-    News(
-        _NewsSource.HackerNews,
-        36771331,
-        "https://www.infoq.com/news/2023/07/yelp-corrupted-cassandra-rebuild/",
-        "Yelp rebuilds corrupted Cassandra cluster using its data streaming architecture",
-        "83 scores by rgancarz"),
-    News(
-        _NewsSource.HackerNews,
-        36800196,
-        "https://www.theregister.com/2023/07/20/cerebras_condor_galaxy_supercomputer/",
-        "Cerebras's Condor Galaxy AI supercomputer takes flight carrying 36 exaFLOPS",
-        "4 scores by rntn"),
-    News(
-        _NewsSource.HackerNews,
-        36799059,
-        "https://asia.nikkei.com/Business/Tech/Semiconductors/TSMC-delays-U.S.-chip-plant-start-to-2025-due-to-labor-shortages",
-        "TSMC delays U.S. chip plant start to 2025 due to labor shortages",
-        "66 scores by ironyman"),
-    News(
-        _NewsSource.HackerNews,
-        36797079,
-        "https://github.com/Maknee/minigpt4.cpp",
-        "Minigpt4 Inference on CPU",
-        "89 scores by maknee"),
-    News(
-        _NewsSource.HackerNews,
-        36771114,
-        "https://www.oreilly.com/radar/teaching-programming-in-the-age-of-chatgpt/",
-        "Teaching Programming in the Age of ChatGPT",
-        "135 scores by headalgorithm"),
-    News(
-        _NewsSource.HackerNews,
-        36780999,
-        "https://phys.org/news/2023-07-tidal-disruption-event-chinese-astronomers.html",
-        "New tidal disruption event discovered by Chinese astronomers",
-        "23 scores by wglb"),
-    News(
-        _NewsSource.HackerNews,
-        36796422,
-        "https://github.com/mbnuqw/sidebery",
-        "Sidebery – A Firefox extension for managing tabs and bookmarks in sidebar",
-        "146 scores by BafS"),
-    News(
-        _NewsSource.HackerNews,
-        36797178,
-        "https://lists.freebsd.org/archives/freebsd-announce/2023-July/000076.html",
-        "In Memoriam: Hans Petter William Sirevåg Selasky",
-        "100 scores by stargrave"),
-    News(
-        _NewsSource.HackerNews,
-        36798395,
-        "https://en.wikipedia.org/wiki/Vacuum_airship",
-        "Vacuum airship",
-        "61 scores by guerrilla"),
-    News(
-        _NewsSource.HackerNews,
-        36777096,
-        "https://bigthink.com/the-past/kunga-first-hybrid-animal/",
-        "Kunga: Ancient Mesopotamians created the world’s first hybrid animal",
-        "34 scores by diodorus"),
-    News(
-        _NewsSource.HackerNews,
-        36797231,
-        "https://arstechnica.com/science/2023/07/new-slow-repeating-radio-source-we-have-no-idea-what-it-is/",
-        "Something in space has been lighting up every 20 minutes since 1988",
-        "120 scores by Brajeshwar"),
-    News(
-        _NewsSource.HackerNews,
-        36782638,
-        "https://www.transportation.gov/pnt/what-radio-spectrum",
-        "What Is Radio Spectrum?",
-        "46 scores by ZunarJ5"),
-    News(
-        _NewsSource.HackerNews,
-        36800009,
-        "https://arstechnica.com/information-technology/2023/07/ars-on-aws-01/",
-        "Behind the scenes: How we host Ars Technica, part 1",
-        "4 scores by pseudolus"),
-    News(
-        _NewsSource.HackerNews,
-        36799461,
-        "https://shkspr.mobi/blog/2023/07/keeping-a-side-project-alive-with-t-shirts-and-cash/",
-        "Keeping a side project alive with t-shirts and cash",
-        "8 scores by edent"),
-    News(
-        _NewsSource.HackerNews,
-        36793022,
-        "https://www.sharbonline.com/fun-stuff/card-games/complex-hearts/",
-        "Complex Hearts",
-        "21 scores by pcwalton"),
-    News(
-        _NewsSource.HackerNews,
-        36782201,
-        "https://jazz-library.com/articles/comping/",
-        "Jazz Comping (2021)",
-        "111 scores by RickHull"),
-    News(
-        _NewsSource.HackerNews,
-        36798408,
-        "https://hothardware.com/news/intel-14thgen-core-k-cpu-spec-leak",
-        "Intel's 14th Gen Core K-Series CPU Specs Break Cover with Speeds Up to 6GHz",
-        "25 scores by rbanffy"),
-    News(
-        _NewsSource.HackerNews,
-        36796685,
-        "https://acl2023-retrieval-lm.github.io/",
-        "ACL 2023 Tutorial: Retrieval-Based Language Models and Applications",
-        "17 scores by TalktoCrystal"),
-    News(
-        _NewsSource.HackerNews,
-        36798496,
-        "https://blog.google/technology/safety-security/googles-ai-red-team-the-ethical-hackers-making-ai-safer/",
-        "Google Introduces AI Red Team",
-        "5 scores by bhattmayurshiv"),
-    News(
-        _NewsSource.HackerNews,
-        36798863,
-        "https://www.theguardian.com/technology/2023/jul/20/tiktok-is-the-most-popular-news-source-for-12-to-15-year-olds-says-ofcom",
-        "TikTok is the most popular news source for 12 to 15-year-olds",
-        "16 scores by firstSpeaker")
-  ];
-
-  static const hackerNewsIcon =
-      // ImageIcon(AssetImage("hackernews_icon.jpeg"), color: Colors.transparent);
-      Icon(Icons.newspaper);
-
-  static const simplePrompted = [
-    Recommend(36799548,
-        "Anytype是一个开源的、本地优先的、P2P的Notion替代品。它提供了类似Notion的功能，但是数据存储在本地，而不是云端。这样可以增加数据的安全性和隐私保护。对于关注数据安全和隐私的用户来说，Anytype是一个很好的选择。"),
-    Recommend(36795173,
-        "Kevin Mitnick是一位著名的黑客，据称他已经去世了。Kevin Mitnick以他的黑客技术和社会工程学见长，并因此被FBI通缉。他的离世无疑对黑客界产生了一定的影响，所以对关注黑客技术和网络安全的用户来说，这是一个可能感兴趣的新闻。"),
-    Recommend(36791434,
-        "Twenty.com是一个开源的CRM系统，它提供了一个集成的客户关系管理解决方案。对于需要管理客户关系的企业或个人来说，Twenty.com是一个很好的选择。它的开源性质还意味着用户可以根据自己的需求进行定制和扩展。"),
-    Recommend(36790301,
-        "斯坦福大学校长因操纵研究数据的行为辞职，并将撤销其发表的三篇论文。这件事引发了一场关于研究诚信和学术道德的讨论。对于关注科研诚信和学术道德的用户来说，这是一个可能感兴趣的新闻。"),
-    Recommend(36794430,
-        "LinkedIn采用了Google开源的协议缓冲区（Protocol Buffers），并将延迟降低了高达60%。这意味着用户可以更快地访问LinkedIn的服务。对于经常使用LinkedIn的用户来说，这是一个可能感兴趣的新闻。")
-  ];
-
   static final prof = UserProfile(tags: ["炼金术", "魔法", "函数式编程", "气候"]);
-
-  static List<Promoted> getPromoted() {
-    return simplePrompted.mapMany((e) {
-      News? item = hackerNews.firstWhereOrNull((element) {
-        return element.id == e.id;
-      });
-      if (item == null) {
-        return <Promoted>[];
-      }
-      return [Promoted(item, e.reason)];
-    }).toList();
-  }
 }
 
 class Promoted {
@@ -684,32 +369,28 @@ class _NewsWindowState extends State<NewsWindow>
                           return IndicatorResult.fail;
                         }
                       },
-                      child: _srv.pendingTasks().isEmpty &&
-                              _srv._$record.isEmpty
-                          ? ListView(children: [
-                              ListTile(
-                                  title: Text(
-                                    "Yet nothing here.",
-                                  ),
-                                  subtitle: Text(
-                                      "Drag down to let AI select some news for you.")),
-                            ])
-                          : Obx(
-                              () => ListView(
+                      child: Obx(
+                        () => _srv.pendingTasks().isEmpty &&
+                                _srv._$record.isEmpty
+                            ? ListView(children: const [
+                                ListTile(
+                                    title: Text(
+                                      "Yet nothing here.",
+                                    ),
+                                    subtitle: Text(
+                                        "Drag down to let AI select some news for you.")),
+                              ])
+                            : ListView(
                                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                                 children: [
-                                  ..._srv
-                                      .pendingTasks()
-                                      .map((e) => Text(
-                                          "pending ${e.startedAt} fetching task..."))
-                                      .toList(),
-                                  ..._srv._$record.map((e) => _PromotedGroup(
+                                  if (_srv.pendingTasks().isNotEmpty) _PendingCard(_srv.pendingTasks()),
+                                  ..._srv.promoted.map((e) => _PromotedGroup(
                                       record: e,
                                       onEnter: (promoted) =>
                                           {setUrl(promoted.news.url)})),
                                 ],
                               ),
-                            )),
+                      )),
             ])),
       ),
       endPane: contentForWeb(),
@@ -939,11 +620,33 @@ class _NewsCard extends StatelessWidget {
           onTap: () => {},
           onTapUp: (details) => {onEnter?.call(_news)},
           child: ListTile(
-            leading: _TestData.hackerNewsIcon,
+            leading: const Icon(Icons.newspaper),
             title: Text(_news.title),
             subtitle: Text(_news.content),
           ),
         ));
+  }
+}
+
+class _PendingCard extends StatelessWidget {
+  List<AIFetchingTask> _task;
+
+  _PendingCard(this._task);
+
+  @override
+  Widget build(BuildContext context) {
+    var th = Theme.of(context);
+    return Card(
+        key: key,
+        clipBehavior: Clip.antiAlias,
+        color: th.cardColor,
+        child: Container(
+            child: ListTile(subtitle: Container(child: const LinearProgressIndicator(), margin: EdgeInsets.only(top: 8),),
+              title: Text(
+                "We are still longing for ${_task.length} request(s)...",
+                style: th.textTheme.labelLarge,
+              ),
+            )));
   }
 }
 
@@ -959,18 +662,22 @@ class _PromotedGroup extends StatelessWidget {
     return Column(children: [
       Container(
           padding: const EdgeInsets.only(left: 8),
-          child: Row(
-            children: [
-              Text(
-                timeago.format(ts).capitalizeFirst!,
-              ),
-              Expanded(
-                  child: Divider(
-                indent: 8,
-                height: 8,
-                color: Theme.of(context).primaryColorLight,
-              )),
-            ],
+          child: Container(
+            child: Row(
+              children: [
+                Text(
+                  timeago.format(ts).capitalizeFirst!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Expanded(
+                    child: Divider(
+                  indent: 8,
+                  endIndent: 8,
+                  height: 30,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                )),
+              ],
+            ),
           )),
       ...record.records.map((e) => _PromotedCard(e, onEnter: onEnter))
     ]);
