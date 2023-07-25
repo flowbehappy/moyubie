@@ -2,6 +2,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:path/path.dart';
 import 'package:mysql_client/mysql_client.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -146,7 +147,8 @@ class ChatRoomRepository {
   }
 
   Future<MySQLConnection?> getRemoteDb({bool forceInit = false}) async {
-    bool shouldInit = _remoteDatabase == null || !_remoteDatabase!.connected || forceInit;
+    bool shouldInit =
+        _remoteDatabase == null || !_remoteDatabase!.connected || forceInit;
     if (host.isEmpty || (!isRemoteDBValid && !forceInit)) {
       shouldInit = false;
     }
@@ -171,6 +173,7 @@ class ChatRoomRepository {
 
         var res = await conn.execute("SHOW DATABASES LIKE 'moyubie';");
         if (res.rows.isEmpty) {
+          FirebaseAnalytics.instance.logEvent(name: "remote_createdb");
           await conn.execute("CREATE DATABASE IF NOT EXISTS moyubie;");
         }
         await conn.execute("USE moyubie;");
@@ -370,6 +373,8 @@ class ChatRoomRepository {
 
       return e.toString();
     }
+
+    FirebaseAnalytics.instance.logEvent(name: "remote_saved_msg");
 
     // Lots of exception we haven't handled yet. But who cares!
     return null;

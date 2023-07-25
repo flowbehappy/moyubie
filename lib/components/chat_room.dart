@@ -6,6 +6,7 @@ import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/repository/chat_room.dart' as repo;
 import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 enum ChatRoomType {
   tablet,
@@ -208,7 +209,7 @@ class NewChatButton extends StatelessWidget {
               onTap: () {
                 _loadChatRooms(context);
               },
-            )
+            ),
           ),
         ];
       },
@@ -225,6 +226,8 @@ class NewChatButton extends StatelessWidget {
         createTime: createTime,
         connectionToken: "");
     chatRoomController.addChatRoom(chatRoom);
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_add");
+
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
     Navigator.pop(context);
@@ -234,7 +237,6 @@ class NewChatButton extends StatelessWidget {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.loadChatRooms();
     Navigator.pop(context);
-
   }
 }
 
@@ -325,6 +327,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     messageController.messageList.value = [];
     chatRoomController.setCurrentRoom(-1);
     chatRoomController.deleteChatRoom();
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_delete");
   }
 
   static _renameChatRoom(String newName) {
@@ -333,6 +336,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     }
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.renameChatRoom(newName);
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_rename");
   }
 
   static Route<String> _alertDismissRoute(
