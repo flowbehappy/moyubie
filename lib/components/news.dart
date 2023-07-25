@@ -639,9 +639,8 @@ class _NewsWindowState extends State<NewsWindow>
 
   @override
   Widget build(BuildContext context) {
-    var panePriority = widget.ty == ChatRoomType.tablet
-        ? TwoPanePriority.both
-        : (_opened_link == null ? TwoPanePriority.start : TwoPanePriority.end);
+    var panePriority =
+        (_opened_link == null ? TwoPanePriority.start : TwoPanePriority.end);
     return TwoPane(
       paneProportion: 0.3,
       startPane: ScaffoldMessenger(
@@ -692,8 +691,8 @@ class _NewsWindowState extends State<NewsWindow>
                                   title: Text(
                                     "Yet nothing here.",
                                   ),
-                                  subtitle:
-                                      Text("Drag down to let AI select some news for you.")),
+                                  subtitle: Text(
+                                      "Drag down to let AI select some news for you.")),
                             ])
                           : Obx(
                               () => ListView(
