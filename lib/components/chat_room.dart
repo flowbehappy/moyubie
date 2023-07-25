@@ -58,10 +58,10 @@ class _ChatRoomState extends State<ChatRoom> {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.setCurrentRoom(index);
     if (index >= 0) {
-      String roomUuid = chatRoomController.roomList[index].uuid;
-      chatRoomController.currentChatRoomUuid(roomUuid);
+      final room = chatRoomController.getCurrentRoom();
+      chatRoomController.currentChatRoomUuid(room.uuid);
       MessageController controllerMessage = Get.find();
-      controllerMessage.loadAllMessages(roomUuid);
+      controllerMessage.loadAllMessages(room);
     }
   }
 }
@@ -219,10 +219,12 @@ class NewChatButton extends StatelessWidget {
     const uuid = Uuid();
     var createTime = DateTime.now().toUtc();
     repo.ChatRoom chatRoom = repo.ChatRoom(
-        uuid: uuid.v1(),
-        name: "New Chat Room",
-        createTime: createTime,
-        connectionToken: "");
+      uuid: uuid.v1(),
+      name: "New Chat Room",
+      createTime: createTime,
+      connectionToken: repo.ChatRoomRepository.myTiDBConn.toToken(),
+      role: repo.Role.host,
+    );
     chatRoomController.addChatRoom(chatRoom);
     FirebaseAnalytics.instance.logEvent(name: "chat_room_add");
 
@@ -323,8 +325,9 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     final comp.ChatRoomController chatRoomController = Get.find();
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
+    final room = chatRoomController.getCurrentRoom();
     chatRoomController.setCurrentRoom(-1);
-    chatRoomController.deleteChatRoom();
+    chatRoomController.deleteChatRoom(room);
     FirebaseAnalytics.instance.logEvent(name: "chat_room_delete");
   }
 

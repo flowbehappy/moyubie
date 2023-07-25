@@ -90,7 +90,8 @@ class _SettingPageState extends State<SettingPage> {
                 children: [
                   const Text("AGI"),
                   Tooltip(
-                    message: "Artificial General Intelligence",
+                    message:
+                        "Artificial General Intelligence.\nYou can use @ai to talk to the AI service in any chat room.",
                     child: IconButton(
                       iconSize: 10.0,
                       splashRadius: 10,
@@ -256,7 +257,7 @@ class _SettingPageState extends State<SettingPage> {
                   const Text("TiDB Serverless"),
                   Tooltip(
                     message:
-                        "TiDB Serverless is an online database service which can be accessed from any where. Get it for free: www.tidbcloud.com",
+                        "TiDB Serverless is an online database service.\nMoyubie can store your chat messages on TiDB Serverless, so that you can access them from anywhere with any devices.\nTiDB Serverless is also required for group chat.",
                     child: IconButton(
                       iconSize: 10.0,
                       splashRadius: 10,
