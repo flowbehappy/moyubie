@@ -140,7 +140,7 @@ class NewsController extends GetxController {
   }
 
   Future<UserProfile> getUserTags() async {
-    return _TestData.prof;
+    return _TestData.prof_eng;
   }
 
   Future<void> refreshTopNews() async {
@@ -248,6 +248,7 @@ class NewsController extends GetxController {
 
 class _TestData {
   static final prof = UserProfile(tags: ["炼金术", "魔法", "函数式编程", "气候"]);
+  static final prof_eng = UserProfile(tags: ["Database", "Computer Science", "Programming"]);
 }
 
 class Promoted {
@@ -643,7 +644,7 @@ class _PendingCard extends StatelessWidget {
         child: Container(
             child: ListTile(subtitle: Container(child: const LinearProgressIndicator(), margin: EdgeInsets.only(top: 8),),
               title: Text(
-                "We are still longing for ${_task.length} request(s)...",
+                "We are still longing for ${_task.length} response(s)...",
                 style: th.textTheme.labelLarge,
               ),
             )));

@@ -46,10 +46,33 @@ class _PromptStrings {
   static const _country = "国家";
   static const _job = "职业";
 
+  static const _interesting_fields_eng = "Interesting Fields";
+  static const _interesting_topic_eng = "Interesting News Topics";
+
   static const _recommend_news = "recommend_news";
   static const _items = "items";
   static const _reason = "reason";
   static const _id = "id";
+
+  static const get_user_info_desc = "获取用户的分析报告。";
+  static const get_news_desc = "获取新闻列表。";
+  static const recommend_news_desc = "将指定的新闻推荐给用户，并附带上推荐理由。";
+}
+
+class _PromptStringsEn {
+  static const _interesting_topic = "Interesting News Topics";
+  static const _interesting_fields = "Interesting Fields";
+  static const _lang = "Language";
+  static const _country = "Country";
+  static const _job = "Occupation";
+
+  static const _fn_send_report_desc =
+      "Send the user information obtained from the analysis to the caller.";
+  static const _fn_fetch_message_desc = "Fetch recent messages from the user.";
+
+  static const get_user_info_desc = "Obtain the user's analysis report.";
+  static const get_news_desc = "Get the list of news.";
+  static const recommend_news_desc = "Recommend specified news articles to the user with accompanying reasons.";
 }
 
 class WithOpenAI {
@@ -64,17 +87,21 @@ class TagCollector extends WithOpenAI {
   static const _sys_prompt = "你是一个用户画像服务，你通过 `fetch_message` 获得用户最近的问题。"
       "请通过这些问题（不要带上其它任何来源）猜测用户关注的领域，以及如果要推送新闻内容，什么主题的内容那样的人会感兴趣？"
       "请把这些信息发送给“send_report”函数，如果有些属性猜不出来，那么请不要带上那些东西。";
+  static const _sys_prompt_en =
+      "You are a user profiling service that obtains the user's recent questions through the fetch_message function. "
+      "Please use these questions (without considering any other sources) to guess the user's areas of interest and the topics of news content that people with similar interests would find intriguing. "
+      'Send this information to the "send_report" function. If there are certain attributes you cannot determine, please omit them from the report.';
   static const _fn_send_report = OpenAIFunctionModel(
       name: "send_report",
-      description: "发送分析得到的用户信息给调用者。",
+      description: _PromptStringsEn._fn_send_report_desc,
       parametersSchema: {
         "type": "object",
         "properties": {
-          _PromptStrings._interesting_fields: {
+          _PromptStringsEn._interesting_fields: {
             "type": "array",
             "items": {"type": "string"}
           },
-          _PromptStrings._interesting_topic: {
+          _PromptStringsEn._interesting_topic: {
             "type": "array",
             "items": {"type": "string"}
           },
@@ -82,12 +109,15 @@ class TagCollector extends WithOpenAI {
           _PromptStrings._country: {"type": "string"},
           _PromptStrings._job: {"type": "string"}
         },
-        "required": ["感兴趣的领域", "感兴趣的新闻主题"],
+        "required": [
+          _PromptStringsEn._interesting_fields,
+          _PromptStringsEn._interesting_topic
+        ],
       });
 
   static const _fn_fetch_message = OpenAIFunctionModel(
     name: "fetch_message",
-    description: "获得用户最近的消息。",
+    description: _PromptStringsEn._fn_fetch_message_desc,
     parametersSchema: {
       "type": "object",
       "properties": {},
@@ -101,7 +131,7 @@ class TagCollector extends WithOpenAI {
       model: _context.model,
       messages: [
         OpenAIChatCompletionChoiceMessageModel(
-            role: OpenAIChatMessageRole.system, content: _sys_prompt),
+            role: OpenAIChatMessageRole.system, content: _sys_prompt_en),
         OpenAIChatCompletionChoiceMessageModel(
             role: OpenAIChatMessageRole.function,
             functionName: _fn_fetch_message.name,
@@ -130,15 +160,15 @@ class TagCollector extends WithOpenAI {
 class NewsPromoter extends WithOpenAI {
   static const _fn_get_user_info = OpenAIFunctionModel(
       name: "get_user_info",
-      description: "获取用户的分析报告。",
+      description: _PromptStringsEn.get_user_info_desc,
       parametersSchema: {"type": "object", "properties": {}});
   static const _fn_get_news = OpenAIFunctionModel(
       name: "get_news",
-      description: "获取新闻列表。",
+      description: _PromptStringsEn.get_news_desc,
       parametersSchema: {"type": "object", "properties": {}});
   static const _fn_recommend_news = OpenAIFunctionModel(
       name: "recommend_news",
-      description: "将指定的新闻推荐给用户，并附带上推荐理由。",
+      description: _PromptStringsEn.recommend_news_desc,
       parametersSchema: {
         "type": "object",
         "properties": {
@@ -160,6 +190,11 @@ class NewsPromoter extends WithOpenAI {
       '你要从中选出尽可能多用户可能感兴趣的新闻（但是不要超过五条），并给出相应的理由，随后将理由翻译给用户的惯用语言，推荐理由请不要和标题过度相似。'
       '传递推荐给 `recommend_news`，你只需要传递 id 和推荐理由，不要带上新闻的其它属性。不要使用 `get_user_info` 以外任何地方的用户信息。'
       '不要用和用户信息不相符的理由推荐，也不要推荐用户感兴趣主题以外的新闻。';
+  static const _sys_prompt_en =
+      "You are a news recommendation service. You obtain the user analysis report exclusively through 'get_user_info' and today's news through 'get_news'."
+      "Your task is to select as many news articles as possible that users might be interested in (but not exceeding five articles), and provide corresponding reasons. "
+      "Pass the recommendations to 'recommend_news'. You only need to provide the news id and the recommended reasons, without including any other properties of the news. Do not use user information from any other source besides 'get_user_info'."
+      "Do not recommend news with reasons that do not match the user's preferences, and avoid recommending news outside of the user's interested topics.";
 
   NewsPromoter(super._context);
 
@@ -169,7 +204,7 @@ class NewsPromoter extends WithOpenAI {
         model: _context.model,
         messages: [
           OpenAIChatCompletionChoiceMessageModel(
-              role: OpenAIChatMessageRole.system, content: _sys_prompt),
+              role: OpenAIChatMessageRole.system, content: _sys_prompt_en),
           OpenAIChatCompletionChoiceMessageModel(
               role: OpenAIChatMessageRole.function,
               functionName: _fn_get_news.name,
@@ -180,7 +215,7 @@ class NewsPromoter extends WithOpenAI {
               content: JsonEncoder().convert(userInfo)),
         ],
         // Make the output more predictable.
-        temperature: 0,
+        topP: 0.08,
         functionCall: FunctionCall.forFunction(_fn_recommend_news.name),
         functions: [_fn_get_news, _fn_get_user_info, _fn_recommend_news]);
     final args = res.choices[0].message.functionCall?.arguments;
