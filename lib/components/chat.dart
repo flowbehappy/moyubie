@@ -132,7 +132,7 @@ class _ChatWindowState extends State<ChatWindow> {
 
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
-    var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
+    final room = chatRoomController.getCurrentRoom();
     var first_letters =
         message.substring(0, min(3, message.length)).toLowerCase();
     var ask_ai = first_letters == "@ai";
@@ -150,7 +150,7 @@ class _ChatWindowState extends State<ChatWindow> {
       source: MessageSource.user,
       ask_ai: ask_ai,
     );
-    messageController.addMessage(chatRoomUuid, newMessage, ai_question);
+    messageController.addMessage(room, newMessage, ai_question);
     _formKey.currentState!.reset();
   }
 
@@ -261,7 +261,7 @@ class _ChatWindowState extends State<ChatWindow> {
     var polling = false;
     _timer = Timer.periodic(
       const Duration(seconds: 3),
-          (Timer timer) {
+      (Timer timer) {
         if (polling) {
           return;
         }
@@ -275,8 +275,8 @@ class _ChatWindowState extends State<ChatWindow> {
 
   void _loadMessagesRemote() async {
     final ChatRoomController chatRoomController = Get.find();
-    var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
+    final room = chatRoomController.getCurrentRoom();
     final MessageController messageController = Get.find();
-    messageController.upsertRemoteMessages(chatRoomUuid);
+    messageController.upsertRemoteMessages(room);
   }
 }

@@ -11,18 +11,20 @@ class MessageController extends GetxController {
   final messageList = <Message>[].obs;
   final uuid = const Uuid();
 
-  void loadAllMessages(String chatRoomUuid) async {
-    final msgList = await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+  void loadAllMessages(ChatRoom room) async {
+    final msgList = await ChatRoomRepository().getMessagesByChatRoomUUid(room);
     messageList.value = msgList;
-    final messageListRemote = await ChatRoomRepository().getNewMessagesByChatRoomUuidRemote(
-        chatRoomUuid, msgList.lastOrNull?.createTime);
+    final messageListRemote = await ChatRoomRepository()
+        .getNewMessagesByChatRoomUuidRemote(
+            room, msgList.lastOrNull?.createTime);
     messageList.value = [...msgList, ...messageListRemote];
     update();
   }
 
-  void upsertRemoteMessages(String roomUuid) async {
+  void upsertRemoteMessages(ChatRoom room) async {
     final lastMsgTime = messageList.lastOrNull?.createTime;
-    final newMessages =  await ChatRoomRepository().getNewMessagesByChatRoomUuidRemote(roomUuid, lastMsgTime);
+    final newMessages = await ChatRoomRepository()
+        .getNewMessagesByChatRoomUuidRemote(room, lastMsgTime);
     bool needUpdate = false;
     for (var item in newMessages) {
       if (messageList.where((m) => m.uuid == item.uuid).isEmpty) {
@@ -35,13 +37,13 @@ class MessageController extends GetxController {
     }
   }
 
-  void addMessage(
-      String chatRoomUuid, Message input, String ai_question) async {
+  void addMessage(ChatRoom room, Message input, String ai_question) async {
     // Add user intput to message list
-    await ChatRoomRepository().addMessage(chatRoomUuid, input);
+    await ChatRoomRepository().addMessage(room, input);
 
-    final messages =
-        await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+    final chatRoomUuid = room.uuid;
+
+    final messages = await ChatRoomRepository().getMessagesByChatRoomUUid(room);
     if (!input.ask_ai) {
       messageList.value = messages;
       return;
@@ -65,9 +67,9 @@ class MessageController extends GetxController {
       }, //
           (Message res) async {
         // if streaming is done ,load all the message
-        ChatRoomRepository().addMessage(chatRoomUuid, res);
+        ChatRoomRepository().addMessage(room, res);
         final messages =
-            await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+            await ChatRoomRepository().getMessagesByChatRoomUUid(room);
         messageList.value = messages;
         completer.complete();
       });

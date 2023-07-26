@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/utils/package.dart';
+import 'package:moyubie/utils/tidb.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -63,28 +64,6 @@ class SettingsController extends GetxController {
     version.value = await getAppVersion();
   }
 
-  // void setGlmBaseUrl(String baseUrl) {
-  //   glmBaseUrl.value = baseUrl;
-  //   GetStorage _box = GetStorage();
-  //   _box.write('glmBaseUrl', baseUrl);
-  // }
-
-  // getGlmBaseUrlFromPreferences() async {
-  //   GetStorage _box = GetStorage();
-  //   String baseUrl = _box.read('glmBaseUrl') ?? "https://api.openai-proxy.com";
-  //   setGlmBaseUrl(baseUrl);
-  // }
-
-  Future<String?> validateTiDB() async {
-    var crr = ChatRoomRepository();
-    var conn = await crr.getRemoteDb(forceInit: true);
-    if (conn == null) {
-      return "Cannot connect to remote database with ${crr.remoteDBToString()}, ";
-    }
-
-    return null;
-  }
-
   Future<String?> validateLLM() async {
     if (llm.value == "OpenAI") {
       if (openAiKey.value.length <= 10) {
@@ -141,26 +120,25 @@ class SettingsController extends GetxController {
     }
 
     var res = updateTiDBCmdToRepo(serverlessCmd.value);
-    res ??= await validateTiDB();
+    res ??= await ChatRoomRepository.myTiDBConn.validateRemoteDB();
 
     String popMsg;
     switch (res) {
       case null:
         {
-          ChatRoomRepository().setRemoteDBValid(true);
           popMsg = "OK";
           break;
         }
       case "Empty":
         {
-          ChatRoomRepository().setRemoteDBValid(false);
+          ChatRoomRepository.myTiDBConn.clearConnect();
           popMsg =
               "Warn: Chat messages are only saved to local if you don't specify TiDB Serverless connectin.";
           break;
         }
       default:
         {
-          ChatRoomRepository().setRemoteDBValid(false);
+          ChatRoomRepository.myTiDBConn.clearConnect();
           popMsg = "Connect to TiDB Serverless failed:\n$res.";
         }
     }
@@ -186,46 +164,10 @@ class SettingsController extends GetxController {
   String? updateTiDBCmdToRepo(String cmd) {
     if (cmd.isEmpty) return "Empty";
 
-    cmd = cmd.replaceFirst(" -p", " -p ");
-    final options = cmd.split(" ");
-    var nextOpts = List.from(options);
-    nextOpts.removeAt(0);
-    nextOpts.add("");
-    String user = "";
-    String host = "";
-    int port = 0;
-    String password = "";
-
-    try {
-      for (int i = 0; i < options.length; i += 1) {
-        final opt = options[i];
-        final nextOpt = nextOpts[i];
-        switch (opt) {
-          case "-u":
-          case "--user":
-            user = nextOpt.replaceAll("'", "");
-            user = user.replaceAll('"', "");
-            user = user.replaceAll("'", "");
-            break;
-          case "-h":
-          case "--host":
-            host = nextOpt;
-            break;
-          case "-P":
-          case "--port":
-            port = int.parse(nextOpt);
-            break;
-          case "-p":
-          case "--password":
-            password = nextOpt;
-            break;
-          default:
-        }
-      }
-    } catch (e) {
-      return e.toString();
+    var (host, port, user, password) = parseTiDBConnectionText(cmd);
+    if (port == 0) {
+      return user;
     }
-
     ChatRoomRepository().updateRemoteDBConfig(host, port, user, password);
 
     if (user.isEmpty || host.isEmpty || port == 0 || password.isEmpty) {

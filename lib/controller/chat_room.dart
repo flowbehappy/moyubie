@@ -14,6 +14,10 @@ class ChatRoomController extends GetxController {
     super.onInit();
   }
 
+  ChatRoom getCurrentRoom() {
+    return roomList[currentRoomIndex.value.value];
+  }
+
   void setCurrentRoom(int index) async {
     currentRoomIndex.value = IntegerWrapper(index);
     if (index > 0) {
@@ -22,8 +26,8 @@ class ChatRoomController extends GetxController {
     update();
   }
 
-  void deleteChatRoom() async {
-    await ChatRoomRepository().deleteChatRoom(currentChatRoomUuid.value);
+  void deleteChatRoom(ChatRoom room) async {
+    await ChatRoomRepository().deleteChatRoom(room);
     roomList.value = await ChatRoomRepository().getChatRooms();
     update();
   }

@@ -37,6 +37,10 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
+
+  String path = join(await getDatabasesPath(), 'moyubie.db');
+  await deleteDatabase(path);
+
   runApp(const MyApp());
 }
 

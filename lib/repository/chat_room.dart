@@ -2,29 +2,120 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:moyubie/utils/tidb.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:path/path.dart';
 import 'package:mysql_client/mysql_client.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'dart:convert';
+import 'dart:math';
+
+class TiDBConnection {
+  MySQLConnection? connection;
+
+  String host = "";
+  int port = 0;
+  String userName = "";
+  String userNamePrefix = "";
+  String password = "";
+
+  close() async {
+    if (connection != null) {
+      if (connection!.connected) {
+        await connection?.close();
+      }
+    }
+    connection = null;
+  }
+
+  bool hasSet() {
+    return host.isNotEmpty &&
+        port != 0 &&
+        userName.isNotEmpty &&
+        password.isNotEmpty;
+  }
+
+  setConnect(String host, int port, String userName, String password) async {
+    this.host = host;
+    this.port = port;
+    this.userName = userName;
+    this.password = password;
+    userNamePrefix = userName.split(".").first;
+
+    close();
+  }
+
+  clearConnect() async {
+    host = "";
+    port = 0;
+    userName = "";
+    userNamePrefix = "";
+    password = "";
+
+    close();
+  }
+
+  @override
+  String toString() {
+    return "hose: $host, port: $port, userName: $userName, password: $password";
+  }
+
+  String toToken() {
+    String connText = hasSet() //
+        ? "mysql -u '$userName' -h $host -P 4000 -p$password"
+        : "";
+    return base64.encode(utf8.encode(connText));
+  }
+
+  Future<String?> validateRemoteDB() async {
+    var dbConn =
+        await ChatRoomRepository.getRemoteDb(this, true, forceInit: true);
+    if (dbConn == null) {
+      return "Cannot connect to remote database with ${toString()}, ";
+    }
+    return null;
+  }
+
+  static TiDBConnection fromToken(String token) {
+    String str = utf8.decode(base64.decode(token));
+    var conn = TiDBConnection();
+    var (host, port, userName, password) = parseTiDBConnectionText(str);
+    conn.setConnect(host, port, userName, password);
+    return conn;
+  }
+}
+
+enum Role {
+  host,
+  guest,
+}
 
 class ChatRoom {
   String uuid;
   String name;
   DateTime createTime; // UTC time zone.
   String connectionToken;
+  Role role;
 
-  ChatRoom(
-      {required this.uuid,
-      required this.name,
-      required this.createTime,
-      required this.connectionToken});
+  ChatRoom({
+    required this.uuid,
+    required this.name,
+    required this.createTime,
+    required this.connectionToken,
+    required this.role,
+  });
+
+  bool isHost() {
+    return role == Role.host;
+  }
 
   Map<String, dynamic> toSQLMap() {
     return {
       'uuid': uuid,
       'name': name,
       'create_time': createTime.millisecondsSinceEpoch,
-      'connection_token': connectionToken,
+      'connection': connectionToken,
+      'role': role.name,
     };
   }
 }
@@ -78,7 +169,9 @@ class ChatRoomRepository {
   static const String _columnChatRoomName = 'name';
   // UTC time zone. SQLite: Integer(i.e. Unix Time), TiDB: DateTime
   static const String _columnChatRoomCreateTime = 'create_time';
-  static const String _columnChatRoomConnectionToken = 'connection_token';
+  static const String _columnChatRoomConnectionToken = 'connection';
+  // The user role of this chat room, could be 'host' or 'guest'
+  static const String _columnChatRoomRole = 'role';
 
   static const String _columnMessageUuid = 'uuid';
   static const String _columnMessageUserName = 'user_name';
@@ -88,15 +181,16 @@ class ChatRoomRepository {
   static const String _columnMessageSource = 'source';
   static const String _columnAskAI = 'ask_ai';
 
-  static MySQLConnection? _remoteDatabase;
-  static bool isRemoteDBValid = false;
-  static String host = "";
-  static int port = 0;
-  static String userName = "";
-  static String password = "";
+  static var myTiDBConn = TiDBConnection();
+  // TODO: We haven't implement connection GC yet!!!
+  static var connMap = <String, TiDBConnection>{};
 
   static Database? _database;
   static ChatRoomRepository? _instance;
+
+  static const _chars =
+      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+  final Random _rnd = Random();
 
   ChatRoomRepository._internal();
 
@@ -116,7 +210,8 @@ class ChatRoomRepository {
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
             $_columnChatRoomCreateTime INTEGER,
-            $_columnChatRoomConnectionToken TEXT
+            $_columnChatRoomConnectionToken TEXT,
+            $_columnChatRoomRole TEXT
           )
         ''');
       });
@@ -124,12 +219,31 @@ class ChatRoomRepository {
     return _database!;
   }
 
+  TiDBConnection ensureConnection(String token) {
+    var conn = connMap[token];
+    if (conn != null) {
+      return conn;
+    }
+    conn = TiDBConnection.fromToken(token);
+    connMap[token] = conn;
+    return conn;
+  }
+
   updateRemoteDBConfig(
-      String host, int port, String userName, String password) {
-    ChatRoomRepository.host = host;
-    ChatRoomRepository.port = port;
-    ChatRoomRepository.userName = userName;
-    ChatRoomRepository.password = password;
+    String host,
+    int port,
+    String userName,
+    String password,
+  ) {
+    myTiDBConn.setConnect(host, port, userName, password);
+  }
+
+  static Future<String?> validateRemoteDB(TiDBConnection conn) async {
+    var dbConn = await getRemoteDb(conn, true, forceInit: true);
+    if (dbConn == null) {
+      return "Cannot connect to remote database with ${conn.toString()}, ";
+    }
+    return null;
   }
 
   removeDatabase() async {
@@ -139,76 +253,88 @@ class ChatRoomRepository {
   }
 
   Future<bool> removeDatabaseRemote() async {
-    final db = await getRemoteDb();
+    final db = await getRemoteDb(myTiDBConn, true);
     if (db != null) {
       var res = await db.execute("SHOW DATABASES LIKE 'moyubie';");
       if (res.rows.isNotEmpty) {
         await db.execute("DROP DATABASE moyubie;");
       }
 
-      await _remoteDatabase?.close();
-      _remoteDatabase = null;
+      res = await db.execute(
+          "SELECT `user` FROM mysql.user where `user` like '${myTiDBConn.userNamePrefix}.MYB_%';");
+      for (final row in res.rows) {
+        final user = row.colByName("user");
+        await db.execute("DROP USER '$user';");
+      }
+
+      await myTiDBConn.close();
       return true;
     } else {
       return false;
     }
   }
 
-  String remoteDBToString() {
-    return "hose: $host, port: $port, userName: $userName, password: $password";
+  String myRemoteDBToString() {
+    return "hose: ${myTiDBConn.host}, port: ${myTiDBConn.port}, userName: ${myTiDBConn.userName}, password: ${myTiDBConn.password}";
   }
 
-  void setRemoteDBValid(bool v) {
-    isRemoteDBValid = v;
-  }
-
-  Future<MySQLConnection?> getRemoteDb({bool forceInit = false}) async {
+  static Future<MySQLConnection?> getRemoteDb(TiDBConnection conn, bool isHost,
+      {bool forceInit = false}) async {
     bool shouldInit =
-        _remoteDatabase == null || !_remoteDatabase!.connected || forceInit;
-    if (host.isEmpty || (!isRemoteDBValid && !forceInit)) {
+        conn.connection == null || !conn.connection!.connected || forceInit;
+    if (conn.host.isEmpty ||
+        conn.port == 0 ||
+        conn.userName.isEmpty ||
+        conn.password.isEmpty) {
       shouldInit = false;
     }
 
     try {
       if (shouldInit) {
         // Make sure the old connection has been close
-        _remoteDatabase?.close();
+        conn.connection?.close();
 
-        var conn = await MySQLConnection.createConnection(
-            host: host, port: port, userName: userName, password: password);
-        _remoteDatabase = conn;
-        if (_remoteDatabase == null) return Future(() => null);
+        var dbConn = await MySQLConnection.createConnection(
+            host: conn.host,
+            port: conn.port,
+            userName: conn.userName,
+            password: conn.password);
+        conn.connection = dbConn;
 
-        await conn.connect();
+        await dbConn.connect();
 
-        conn.onClose(() {
+        dbConn.onClose(() {
           // I haven't check the client carefully.
           // Is it enough to handle connection broken or someting bad?
-          _remoteDatabase = null;
+          conn.connection = null;
         });
 
-        var res = await conn.execute("SHOW DATABASES LIKE 'moyubie';");
-        if (res.rows.isEmpty) {
-          FirebaseAnalytics.instance.logEvent(name: "remote_createdb");
-          await conn.execute("CREATE DATABASE IF NOT EXISTS moyubie;");
-        }
-        await conn.execute("USE moyubie;");
-        res = await conn.execute("SHOW TABLES LIKE 'chat_room';");
-        if (res.rows.isEmpty) {
-          await conn.execute('''
-          CREATE TABLE IF NOT EXISTS $_tableChatRoom (
+        if (isHost) {
+          var res = await dbConn.execute("SHOW DATABASES LIKE 'moyubie';");
+          if (res.rows.isEmpty) {
+            FirebaseAnalytics.instance.logEvent(name: "remote_createdb");
+            await dbConn.execute("CREATE DATABASE IF NOT EXISTS moyubie;");
+          }
+          await dbConn.execute("USE moyubie;");
+          res = await dbConn.execute("SHOW TABLES LIKE 'chat_room';");
+          if (res.rows.isEmpty) {
+            await dbConn.execute('''
+            CREATE TABLE IF NOT EXISTS $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
-            $_columnChatRoomCreateTime DATETIME,
-            $_columnChatRoomConnectionToken TEXT
-          )
-        ''');
+            $_columnChatRoomCreateTime DATETIME(6),
+            $_columnChatRoomConnectionToken TEXT,
+            $_columnChatRoomRole TEXT
+            )
+            ''');
+          }
         }
       }
     } catch (e) {
       return Future(() => null);
     }
-    return _remoteDatabase;
+
+    return conn.connection;
   }
 
   Future<List<ChatRoom>> getChatRooms({String? where}) async {
@@ -218,18 +344,19 @@ class ChatRoomRepository {
     return List.generate(maps.length, (i) {
       var ct = maps[i][_columnChatRoomCreateTime];
       return ChatRoom(
-        uuid: maps[i][_columnChatRoomUuid],
-        name: maps[i][_columnChatRoomName],
-        createTime: DateTime.fromMicrosecondsSinceEpoch(ct),
-        connectionToken: maps[i][_columnChatRoomConnectionToken],
-      );
+          uuid: maps[i][_columnChatRoomUuid],
+          name: maps[i][_columnChatRoomName],
+          createTime: DateTime.fromMicrosecondsSinceEpoch(ct),
+          connectionToken: maps[i][_columnChatRoomConnectionToken],
+          role: Role.values
+              .firstWhere((e) => e.name == maps[i][_columnChatRoomRole]));
     });
   }
 
   Future<List<ChatRoom>> getChatRoomsRemote() async {
-    final db = await getRemoteDb();
+    final db = await getRemoteDb(myTiDBConn, true);
     if (db == null) return Future(() => []);
-    var res = await db.execute("SELECT * FROM $_tableChatRoom;");
+    var res = await db.execute("SELECT * FROM moyubie.$_tableChatRoom;");
     return res.rows.map((e) {
       var maps = e.assoc();
       return ChatRoom(
@@ -237,6 +364,8 @@ class ChatRoomRepository {
         name: maps[_columnChatRoomName]!,
         createTime: DateTime.parse(maps[_columnChatRoomCreateTime]!),
         connectionToken: maps[_columnChatRoomConnectionToken]!,
+        role:
+            Role.values.firstWhere((e) => e.name == maps[_columnChatRoomRole]),
       );
     }).toList();
   }
@@ -245,8 +374,9 @@ class ChatRoomRepository {
     final db = await _getDb();
     // await db.execute("DELETE FROM $_tableChatRoom;");
     for (var room in rooms) {
+      // TODO Remote this
       await db.execute('''
-        CREATE TABLE IF NOT EXISTS `${room.uuid}` (
+        CREATE TABLE IF NOT EXISTS `msg_${room.uuid}` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
           $_columnMessageUserName TEXT,
           $_columnMessageCreateTime INTEGER,
@@ -263,15 +393,67 @@ class ChatRoomRepository {
     }
   }
 
-  Future<void> addChatRoom(ChatRoom chatRoom) async {
+  String genRandomString(int length) {
+    return String.fromCharCodes(Iterable.generate(
+        length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+  }
+
+  Future<void> addChatRoom(ChatRoom room) async {
+    var roomConn = TiDBConnection.fromToken(room.connectionToken);
+
+    final remoteDB = await getRemoteDb(myTiDBConn, true);
+    if (remoteDB != null) {
+      if (room.isHost()) {
+        String user = "${myTiDBConn.userNamePrefix}.MYB_${genRandomString(10)}";
+        String pwd = genRandomString(20);
+        await remoteDB.execute('''
+        CREATE TABLE IF NOT EXISTS moyubie.`msg_${room.uuid}` (
+          $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
+          $_columnMessageUserName TEXT,
+          $_columnMessageCreateTime DATETIME(6),
+          $_columnMessageMessage TEXT,
+          $_columnMessageSource TEXT,
+          $_columnAskAI INTEGER
+        );
+        ''');
+
+        await remoteDB.execute('''
+        BEGIN;
+        CREATE USER '$user'@'%' IDENTIFIED BY '$pwd';
+        GRANT INSERT, SELECT on `moyubie`.`msg_${room.uuid}` TO '$user'@'%';
+        COMMIT;
+        ''');
+
+        // Update the connection to use the new user.
+        roomConn.setConnect(myTiDBConn.host, myTiDBConn.port, user, pwd);
+        // Looks like TiDB Serverless need some time to prepare the new users' connection.
+        // And immediate connection will fail.
+      }
+
+      await remoteDB.execute(
+        '''
+        INSERT IGNORE INTO moyubie.$_tableChatRoom 
+        (`$_columnChatRoomUuid`, `$_columnChatRoomName`, `$_columnChatRoomCreateTime`, `$_columnChatRoomConnectionToken`, `$_columnChatRoomRole`) VALUES 
+        ('${room.uuid}', :name, '${room.createTime.toString()}', :token, '${room.role.name}');
+        ''',
+        {
+          "name": room.name,
+          "token": roomConn.toToken(),
+        },
+      );
+    }
+
+    // Use the user who is dedicated for this chat room to chat
+    room.connectionToken = roomConn.toToken();
+
     final db = await _getDb();
     await db.insert(
       _tableChatRoom,
-      chatRoom.toSQLMap(),
+      room.toSQLMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     await db.execute('''
-        CREATE TABLE IF NOT EXISTS `${chatRoom.uuid}` (
+        CREATE TABLE IF NOT EXISTS `msg_${room.uuid}` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
           $_columnMessageUserName TEXT,
           $_columnMessageCreateTime INTEGER,
@@ -280,27 +462,8 @@ class ChatRoomRepository {
           $_columnAskAI INTEGER
         )
         ''');
-    final remoteDB = await getRemoteDb();
-    if (remoteDB != null) {
-      await remoteDB.execute('''
-        BEGIN;
 
-        INSERT IGNORE INTO $_tableChatRoom 
-        (`$_columnChatRoomUuid`, `$_columnChatRoomName`, `$_columnChatRoomCreateTime`, `$_columnChatRoomConnectionToken`) VALUES 
-        ('${chatRoom.uuid}', :name, '${chatRoom.createTime.toString()}', :token);
-
-        CREATE TABLE IF NOT EXISTS `${chatRoom.uuid}` (
-          $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
-          $_columnMessageUserName TEXT,
-          $_columnMessageCreateTime DATETIME,
-          $_columnMessageMessage TEXT,
-          $_columnMessageSource TEXT,
-          $_columnAskAI INTEGER
-        );
-
-        COMMIT;
-        ''', {"name": chatRoom.name, "token": chatRoom.connectionToken});
-    }
+    return null;
   }
 
   Future<void> updateChatRoom(ChatRoom chatRoom) async {
@@ -311,19 +474,23 @@ class ChatRoomRepository {
       where: '$_columnChatRoomUuid = ?',
       whereArgs: [chatRoom.uuid],
     );
-    final remoteDB = await getRemoteDb();
-    if (remoteDB != null) {
-      await remoteDB.execute('''
-      UPDATE $_tableChatRoom SET
+
+    if (chatRoom.isHost()) {
+      final remoteDB = await getRemoteDb(myTiDBConn, true);
+      if (remoteDB != null) {
+        await remoteDB.execute('''
+        UPDATE moyubie.$_tableChatRoom SET
         $_columnChatRoomName = :name,
-        $_columnChatRoomCreateTime = unixepoch('${chatRoom.createTime.toString()}'),
+        $_columnChatRoomCreateTime = '${chatRoom.createTime.toString()}'),
         $_columnChatRoomConnectionToken = :token
-      WHERE $_columnChatRoomUuid = '${chatRoom.uuid}'
-    ''', {"name": chatRoom.name, "token": chatRoom.connectionToken});
+        WHERE $_columnChatRoomUuid = '${chatRoom.uuid}'
+        ''', {"name": chatRoom.name, "token": chatRoom.connectionToken});
+      }
     }
   }
 
-  Future<void> deleteChatRoom(String uuid) async {
+  Future<void> deleteChatRoom(ChatRoom room) async {
+    final uuid = room.uuid;
     final db = await _getDb();
     await db.transaction((txn) async {
       await txn.delete(
@@ -332,21 +499,29 @@ class ChatRoomRepository {
         whereArgs: [uuid],
       );
     });
-    await db.execute('DROP TABLE IF EXISTS `$uuid`');
+    await db.execute('DROP TABLE IF EXISTS `msg_$uuid`');
 
-    final remoteDB = await getRemoteDb();
-    if (remoteDB != null) {
-      await remoteDB.execute('''
-      DELETE FROM $_tableChatRoom WHERE $_columnChatRoomUuid = '$uuid'
-    ''');
-      await remoteDB.execute('DROP TABLE IF EXISTS `$uuid`');
+    final conn = TiDBConnection.fromToken(room.connectionToken);
+
+    if (conn.hasSet() && room.isHost()) {
+      final remoteDB = await getRemoteDb(myTiDBConn, true);
+      if (remoteDB != null) {
+        await remoteDB.execute(
+            "DELETE FROM moyubie.$_tableChatRoom WHERE $_columnChatRoomUuid = '$uuid'");
+        await remoteDB.execute("DROP TABLE IF EXISTS moyubie.`msg_$uuid`");
+        // Do some protection, in case bug cause the root user removed.
+        if (!(conn.userName.split(".").length == 2 &&
+            conn.userName.split(".")[1] == "root")) {
+          await remoteDB.execute("DROP USER IF EXISTS '${conn.userName}'");
+        }
+      }
     }
   }
 
-  Future<List<Message>> getMessagesByChatRoomUUid(String uuid,
+  Future<List<Message>> getMessagesByChatRoomUUid(ChatRoom room,
       {int limit = 500}) async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query('`$uuid`',
+    final List<Map<String, dynamic>> maps = await db.query('`msg_${room.uuid}`',
         orderBy: "$_columnMessageCreateTime desc", limit: limit);
     return List<Message>.from(maps.reversed.map((m) => Message(
         uuid: m[_columnMessageUuid],
@@ -361,19 +536,22 @@ class ChatRoomRepository {
   }
 
   Future<List<Message>> getNewMessagesByChatRoomUuidRemote(
-      String uuid, DateTime? from) async {
-    final db = await getRemoteDb();
+      ChatRoom room, DateTime? from) async {
+    final conn = ensureConnection(room.connectionToken);
+    final db =
+        await getRemoteDb(conn, false /* isHost should always be false */);
     if (db == null) {
       return Future(() => []);
     }
     String whereClause = "";
     if (from != null) {
-      whereClause = "WHERE UNIX_TIMESTAMP($_columnMessageCreateTime) > ${from.millisecondsSinceEpoch ~/ 1000}";
+      whereClause =
+          "WHERE UNIX_TIMESTAMP($_columnMessageCreateTime) > ${from.millisecondsSinceEpoch ~/ 1000}";
     }
     var res;
     try {
       res = await db.execute('''
-      SELECT * FROM `$uuid` $whereClause ORDER BY $_columnMessageCreateTime ASC;
+      SELECT * FROM `msg_${room.uuid}` $whereClause ORDER BY $_columnMessageCreateTime ASC;
     ''');
     } catch (e) {
       print("catch error");
@@ -394,16 +572,16 @@ class ChatRoomRepository {
     }).toList());
   }
 
-  Future<void> addMessage(String chatRoomUuid, Message message) async {
+  Future<void> addMessage(ChatRoom room, Message message) async {
     final db = await _getDb();
     await db.insert(
-      '`$chatRoomUuid`',
+      '`msg_${room.uuid}`',
       message.toSQLMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
     // Don't wait for remote message finish adding to TiDB.
-    var addRemote = addMessageRemote(chatRoomUuid, message);
+    var addRemote = addMessageRemote(room, message);
     addRemote
         .then((value) => {
               // todo
@@ -413,19 +591,20 @@ class ChatRoomRepository {
             });
   }
 
-  Future<String?> addMessageRemote(String chatRoomUuid, Message message) async {
+  Future<String?> addMessageRemote(ChatRoom room, Message message) async {
     try {
-      await insertMessageRemote(chatRoomUuid, message);
+      await insertMessageRemote(room, message);
     } catch (e) {
       if (e is MySQLServerException) {
         if (e.errorCode == 1146) {
           // Create the chat room. It is possible that user create chat room before adding mysql/TiDB connection.
           final rooms = await getChatRooms(
-              where: "$_columnChatRoomUuid = '$chatRoomUuid'");
+              where: "$_columnChatRoomUuid = '${room.uuid}}'");
           if (rooms.length == 1) {
             // Add chat room again.
-            await addChatRoom(rooms.first);
-            await insertMessageRemote(chatRoomUuid, message);
+            final newRoom = rooms.first;
+            await addChatRoom(newRoom);
+            await insertMessageRemote(newRoom, message);
           } else {
             // If it is not, then too weird. I give up!
           }
@@ -441,11 +620,12 @@ class ChatRoomRepository {
     return null;
   }
 
-  Future<void> insertMessageRemote(String chatRoomUuid, Message message) async {
-    var remoteDB = await getRemoteDb();
+  Future<void> insertMessageRemote(ChatRoom room, Message message) async {
+    final conn = ensureConnection(room.connectionToken);
+    final remoteDB = await getRemoteDb(conn, false);
     if (remoteDB != null) {
       // Must use SQL with param
-      await remoteDB.execute('''INSERT IGNORE INTO `$chatRoomUuid` 
+      await remoteDB.execute('''INSERT IGNORE INTO moyubie.`msg_${room.uuid}` 
       ($_columnMessageUuid, $_columnMessageUserName, $_columnMessageCreateTime, $_columnMessageMessage, $_columnMessageSource, $_columnAskAI) VALUES 
       (:uuid, :user, :createTime, :message, :source, :askAI)''', {
         "uuid": message.uuid,
@@ -455,21 +635,6 @@ class ChatRoomRepository {
         "source": message.source.name,
         "askAI": message.ask_ai ? 1 : 0
       });
-    }
-  }
-
-  Future<void> deleteMessage(String chatRoomUuid, String messageUuid) async {
-    final db = await _getDb();
-    await db.delete(
-      '`$chatRoomUuid`',
-      where: '$_columnMessageUuid = ?',
-      whereArgs: [messageUuid],
-    );
-
-    final remoteDB = await getRemoteDb();
-    if (remoteDB != null) {
-      await remoteDB.execute(
-          "DELETE FROM `$chatRoomUuid` WHERE $_columnMessageUuid = '$messageUuid'");
     }
   }
 }
