@@ -17,7 +17,10 @@ class MessageController extends GetxController {
     final messageListRemote = await ChatRoomRepository()
         .getNewMessagesByChatRoomUuidRemote(
             room, msgList.lastOrNull?.createTime);
+
+    await ChatRoomRepository().addMessageLocal(room, messageListRemote);
     messageList.value = [...msgList, ...messageListRemote];
+
     update();
   }
 
@@ -27,10 +30,8 @@ class MessageController extends GetxController {
         .getNewMessagesByChatRoomUuidRemote(room, lastMsgTime);
     bool needUpdate = false;
     for (var item in newMessages) {
-      if (messageList.where((m) => m.uuid == item.uuid).isEmpty) {
-        messageList.add(item);
-        needUpdate = true;
-      }
+      messageList.add(item);
+      needUpdate = true;
     }
     if (needUpdate) {
       update();

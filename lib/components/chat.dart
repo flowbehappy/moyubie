@@ -80,7 +80,11 @@ class _ChatWindowState extends State<ChatWindow> {
                     child: TextFormField(
                       style: const TextStyle(fontSize: 16),
                       controller: _controller,
-                      keyboardType: TextInputType.multiline,
+                      keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.send,
+                      onFieldSubmitted: (value) {
+                        _sendMessage();
+                      },
                       decoration: InputDecoration(
                         hintText: "@ai talk to AI",
                         floatingLabelBehavior: FloatingLabelBehavior.auto,
@@ -257,8 +261,9 @@ class _ChatWindowState extends State<ChatWindow> {
     }
   }
 
+  var polling = false;
+
   void _startPollingRemote() {
-    var polling = false;
     _timer = Timer.periodic(
       const Duration(seconds: 3),
       (Timer timer) {
