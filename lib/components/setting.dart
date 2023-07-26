@@ -14,12 +14,12 @@ class SettingPage extends StatefulWidget {
 }
 
 class _SettingPageState extends State<SettingPage> {
-  _popDone(String content) {
+  _popFinish(String title, String content) {
     if (context.mounted) {
       showDialog<String>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: const Text('Done!'),
+          title: Text(title),
           content: Text(content),
           actions: <Widget>[
             TextButton(
@@ -32,19 +32,49 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
-  _onClearLocalMessage() async {
-    await ChatRoomRepository().removeDatabase();
-    ChatRoomController controller = Get.find();
-    controller.reset();
-    _popDone("Cleared all local messages.");
+  Future<bool> _doRemoveMessage(bool isLocal) async {
+    if (isLocal) {
+      await ChatRoomRepository().removeDatabase();
+      return true;
+    } else {
+      return await ChatRoomRepository().removeDatabaseRemote();
+    }
   }
 
-  _onClearRemoteMessage() async {
-    final res = await ChatRoomRepository().removeDatabaseRemote();
-    if (res) {
-      _popDone("Cleared all remote messages.");
-    } else {
-      _popDone("Clear remote messages failed.");
+  _onClearMessage(bool isLocal) async {
+    ChatRoomController controller = Get.find();
+    controller.reset();
+    String location = isLocal ? "local" : "remote";
+    if (context.mounted) {
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          content: Text("Do really want to remove all $location messages?"),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () async {
+                final res = _doRemoveMessage(isLocal);
+                res.then((value) {
+                  if (value) {
+                    _popFinish("Done", "Remove all $location messages done!");
+                  } else {
+                    _popFinish("Failed", "Remove $location messages failed!");
+                  }
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(context, 'OK');
+                }
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -315,14 +345,19 @@ class _SettingPageState extends State<SettingPage> {
               divider,
               sizedBoxSpace,
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   ElevatedButton(
-                      onPressed: _onClearLocalMessage,
+                      onPressed: () => _onClearMessage(true),
                       child: const Text("Clear local messages")),
-                  const SizedBox(width: 8),
+                ],
+              ),
+              sizedBoxSpace,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
                   ElevatedButton(
-                      onPressed: _onClearRemoteMessage,
+                      onPressed: () => _onClearMessage(false),
                       child: const Text("Clear remote messages")),
                 ],
               ),

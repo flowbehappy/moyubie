@@ -1,5 +1,3 @@
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:moyubie/utils/tidb.dart';
@@ -22,7 +20,11 @@ class TiDBConnection {
   close() async {
     if (connection != null) {
       if (connection!.connected) {
-        await connection?.close();
+        try {
+          await connection?.close();
+        } catch (e) {
+          // Ignore.
+        }
       }
     }
     connection = null;
@@ -113,7 +115,7 @@ class ChatRoom {
     return {
       'uuid': uuid,
       'name': name,
-      'create_time': createTime.millisecondsSinceEpoch,
+      'create_time': createTime.toIso8601String(),
       'connection': connectionToken,
       'role': role.name,
     };
@@ -150,7 +152,7 @@ class Message {
     return {
       'uuid': uuid,
       'user_name': userName,
-      'create_time': createTime.millisecondsSinceEpoch,
+      'create_time': createTime.toIso8601String(),
       'message': message,
       'source': source.name,
       'ask_ai': ask_ai ? '1' : '0',
@@ -167,7 +169,7 @@ class ChatRoomRepository {
   static const String _tableChatRoom = 'chat_room';
   static const String _columnChatRoomUuid = 'uuid';
   static const String _columnChatRoomName = 'name';
-  // UTC time zone. SQLite: Integer(i.e. Unix Time), TiDB: DateTime
+  // UTC time zone. SQLite: Text, TiDB: DateTime
   static const String _columnChatRoomCreateTime = 'create_time';
   static const String _columnChatRoomConnectionToken = 'connection';
   // The user role of this chat room, could be 'host' or 'guest'
@@ -175,7 +177,7 @@ class ChatRoomRepository {
 
   static const String _columnMessageUuid = 'uuid';
   static const String _columnMessageUserName = 'user_name';
-  // UTC time zone. SQLite: Integer(i.e. Unix Time), TiDB: DateTime
+  // UTC time zone. SQLite: Text, TiDB: DateTime
   static const String _columnMessageCreateTime = 'create_time';
   static const String _columnMessageMessage = 'message';
   static const String _columnMessageSource = 'source';
@@ -209,7 +211,7 @@ class ChatRoomRepository {
           CREATE TABLE $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
-            $_columnChatRoomCreateTime INTEGER,
+            $_columnChatRoomCreateTime TEXT,
             $_columnChatRoomConnectionToken TEXT,
             $_columnChatRoomRole TEXT
           )
@@ -281,18 +283,13 @@ class ChatRoomRepository {
   static Future<MySQLConnection?> getRemoteDb(TiDBConnection conn, bool isHost,
       {bool forceInit = false}) async {
     bool shouldInit =
-        conn.connection == null || !conn.connection!.connected || forceInit;
-    if (conn.host.isEmpty ||
-        conn.port == 0 ||
-        conn.userName.isEmpty ||
-        conn.password.isEmpty) {
-      shouldInit = false;
-    }
+        (conn.connection == null || !conn.connection!.connected || forceInit) &&
+            conn.hasSet();
 
     try {
       if (shouldInit) {
         // Make sure the old connection has been close
-        conn.connection?.close();
+        conn.close();
 
         var dbConn = await MySQLConnection.createConnection(
             host: conn.host,
@@ -346,7 +343,7 @@ class ChatRoomRepository {
       return ChatRoom(
           uuid: maps[i][_columnChatRoomUuid],
           name: maps[i][_columnChatRoomName],
-          createTime: DateTime.fromMicrosecondsSinceEpoch(ct),
+          createTime: DateTime.parse(ct),
           connectionToken: maps[i][_columnChatRoomConnectionToken],
           role: Role.values
               .firstWhere((e) => e.name == maps[i][_columnChatRoomRole]));
@@ -362,7 +359,8 @@ class ChatRoomRepository {
       return ChatRoom(
         uuid: maps[_columnChatRoomUuid]!,
         name: maps[_columnChatRoomName]!,
-        createTime: DateTime.parse(maps[_columnChatRoomCreateTime]!),
+
+        createTime: DateTime.parse("${maps[_columnChatRoomCreateTime]!}Z"), //
         connectionToken: maps[_columnChatRoomConnectionToken]!,
         role:
             Role.values.firstWhere((e) => e.name == maps[_columnChatRoomRole]),
@@ -379,7 +377,7 @@ class ChatRoomRepository {
         CREATE TABLE IF NOT EXISTS `msg_${room.uuid}` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
           $_columnMessageUserName TEXT,
-          $_columnMessageCreateTime INTEGER,
+          $_columnMessageCreateTime TEXT,
           $_columnMessageMessage TEXT,
           $_columnMessageSource TEXT,
           $_columnAskAI INTEGER
@@ -521,14 +519,15 @@ class ChatRoomRepository {
   Future<List<Message>> getMessagesByChatRoomUUid(ChatRoom room,
       {int limit = 500}) async {
     final db = await _getDb();
-    final List<Map<String, dynamic>> maps = await db.query('`msg_${room.uuid}`',
-        orderBy: "$_columnMessageCreateTime desc", limit: limit);
+    final List<Map<String, dynamic>> maps = await db.query(
+      '`msg_${room.uuid}`',
+      orderBy: "julianday($_columnMessageCreateTime) desc",
+      limit: limit,
+    );
     return List<Message>.from(maps.reversed.map((m) => Message(
         uuid: m[_columnMessageUuid],
         userName: m[_columnMessageUserName],
-        createTime: DateTime.fromMillisecondsSinceEpoch(
-            m[_columnMessageCreateTime],
-            isUtc: true),
+        createTime: DateTime.parse(m[_columnMessageCreateTime]),
         message: m[_columnMessageMessage],
         source: MessageSource.values
             .firstWhere((e) => e.name == m[_columnMessageSource]),
@@ -545,17 +544,16 @@ class ChatRoomRepository {
     }
     String whereClause = "";
     if (from != null) {
-      whereClause =
-          "WHERE UNIX_TIMESTAMP($_columnMessageCreateTime) > ${from.millisecondsSinceEpoch ~/ 1000}";
+      whereClause = "WHERE $_columnMessageCreateTime > '${from.toString()}'";
     }
     var res;
+    var sql;
     try {
-      res = await db.execute('''
-      SELECT * FROM `msg_${room.uuid}` $whereClause ORDER BY $_columnMessageCreateTime ASC;
-    ''');
+      sql =
+          "SELECT * FROM moyubie.`msg_${room.uuid}` $whereClause ORDER BY $_columnMessageCreateTime ASC;";
+      res = await db.execute(sql);
     } catch (e) {
-      print("catch error");
-      print(e.toString());
+      print("catch error: $sql, error: ${e.toString()}");
       return Future(() => []);
     }
     return List<Message>.from(res.rows.map((e) {
@@ -563,7 +561,8 @@ class ChatRoomRepository {
       return Message(
         uuid: maps[_columnMessageUuid]!,
         userName: maps[_columnMessageUserName]!,
-        createTime: DateTime.parse(maps[_columnMessageCreateTime]!),
+        createTime: DateTime.parse(
+            "${maps[_columnMessageCreateTime]!}Z"), // Add a Z at the end to tell the parser that it is a utc DateTime
         message: maps[_columnMessageMessage]!,
         source: MessageSource.values
             .firstWhere((e) => e.name == maps[_columnMessageSource]!),
@@ -573,12 +572,7 @@ class ChatRoomRepository {
   }
 
   Future<void> addMessage(ChatRoom room, Message message) async {
-    final db = await _getDb();
-    await db.insert(
-      '`msg_${room.uuid}`',
-      message.toSQLMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    addMessageLocal(room, [message]);
 
     // Don't wait for remote message finish adding to TiDB.
     var addRemote = addMessageRemote(room, message);
@@ -591,9 +585,19 @@ class ChatRoomRepository {
             });
   }
 
+  Future<void> addMessageLocal(ChatRoom room, List<Message> messages) async {
+    final db = await _getDb();
+    final batch = db.batch();
+    for (final m in messages) {
+      batch.insert('`msg_${room.uuid}`', m.toSQLMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    batch.commit();
+  }
+
   Future<String?> addMessageRemote(ChatRoom room, Message message) async {
     try {
-      await insertMessageRemote(room, message);
+      await _insertMessageRemote(room, message);
     } catch (e) {
       if (e is MySQLServerException) {
         if (e.errorCode == 1146) {
@@ -604,7 +608,7 @@ class ChatRoomRepository {
             // Add chat room again.
             final newRoom = rooms.first;
             await addChatRoom(newRoom);
-            await insertMessageRemote(newRoom, message);
+            await _insertMessageRemote(newRoom, message);
           } else {
             // If it is not, then too weird. I give up!
           }
@@ -620,7 +624,7 @@ class ChatRoomRepository {
     return null;
   }
 
-  Future<void> insertMessageRemote(ChatRoom room, Message message) async {
+  Future<void> _insertMessageRemote(ChatRoom room, Message message) async {
     final conn = ensureConnection(room.connectionToken);
     final remoteDB = await getRemoteDb(conn, false);
     if (remoteDB != null) {
