@@ -6,6 +6,7 @@ import 'package:moyubie/controller/message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:get/get.dart';
+import 'package:moyubie/repository/message.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
@@ -23,12 +24,20 @@ class _ChatWindowState extends State<ChatWindow> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
+  late Timer _timer;
 
   final uuid = const Uuid();
 
   @override
   void initState() {
+    _startPollingRemote();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   @override
@@ -246,5 +255,28 @@ class _ChatWindowState extends State<ChatWindow> {
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
+  }
+
+  void _startPollingRemote() {
+    var polling = false;
+    _timer = Timer.periodic(
+      const Duration(seconds: 3),
+          (Timer timer) {
+        if (polling) {
+          return;
+        }
+        print("polling remote messages");
+        polling = true;
+        _loadMessagesRemote();
+        polling = false;
+      },
+    );
+  }
+
+  void _loadMessagesRemote() async {
+    final ChatRoomController chatRoomController = Get.find();
+    var chatRoomUuid = chatRoomController.currentChatRoomUuid.value;
+    final MessageController messageController = Get.find();
+    messageController.upsertRemoteMessages(chatRoomUuid);
   }
 }

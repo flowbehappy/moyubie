@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/repository/message.dart';
@@ -11,8 +12,27 @@ class MessageController extends GetxController {
   final uuid = const Uuid();
 
   void loadAllMessages(String chatRoomUuid) async {
-    messageList.value =
-        await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+    final msgList = await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
+    messageList.value = msgList;
+    final messageListRemote = await ChatRoomRepository().getNewMessagesByChatRoomUuidRemote(
+        chatRoomUuid, msgList.lastOrNull?.createTime);
+    messageList.value = [...msgList, ...messageListRemote];
+    update();
+  }
+
+  void upsertRemoteMessages(String roomUuid) async {
+    final lastMsgTime = messageList.lastOrNull?.createTime;
+    final newMessages =  await ChatRoomRepository().getNewMessagesByChatRoomUuidRemote(roomUuid, lastMsgTime);
+    bool needUpdate = false;
+    for (var item in newMessages) {
+      if (messageList.where((m) => m.uuid == item.uuid).isEmpty) {
+        messageList.add(item);
+        needUpdate = true;
+      }
+    }
+    if (needUpdate) {
+      update();
+    }
   }
 
   void addMessage(

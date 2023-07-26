@@ -245,6 +245,16 @@ class ChatRoomRepository {
     final db = await _getDb();
     // await db.execute("DELETE FROM $_tableChatRoom;");
     for (var room in rooms) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS `${room.uuid}` (
+          $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
+          $_columnMessageUserName TEXT,
+          $_columnMessageCreateTime INTEGER,
+          $_columnMessageMessage TEXT,
+          $_columnMessageSource TEXT,
+          $_columnAskAI INTEGER
+        )
+        ''');
       await db.insert(
         _tableChatRoom,
         room.toSQLMap(),
@@ -350,6 +360,40 @@ class ChatRoomRepository {
         ask_ai: m[_columnAskAI] == 1)));
   }
 
+  Future<List<Message>> getNewMessagesByChatRoomUuidRemote(
+      String uuid, DateTime? from) async {
+    final db = await getRemoteDb();
+    if (db == null) {
+      return Future(() => []);
+    }
+    String whereClause = "";
+    if (from != null) {
+      whereClause = "WHERE UNIX_TIMESTAMP($_columnMessageCreateTime) > ${from.millisecondsSinceEpoch ~/ 1000}";
+    }
+    var res;
+    try {
+      res = await db.execute('''
+      SELECT * FROM `$uuid` $whereClause ORDER BY $_columnMessageCreateTime ASC;
+    ''');
+    } catch (e) {
+      print("catch error");
+      print(e.toString());
+      return Future(() => []);
+    }
+    return List<Message>.from(res.rows.map((e) {
+      var maps = e.assoc();
+      return Message(
+        uuid: maps[_columnMessageUuid]!,
+        userName: maps[_columnMessageUserName]!,
+        createTime: DateTime.parse(maps[_columnMessageCreateTime]!),
+        message: maps[_columnMessageMessage]!,
+        source: MessageSource.values
+            .firstWhere((e) => e.name == maps[_columnMessageSource]!),
+        ask_ai: maps[_columnAskAI] == "1",
+      );
+    }).toList());
+  }
+
   Future<void> addMessage(String chatRoomUuid, Message message) async {
     final db = await _getDb();
     await db.insert(
@@ -408,7 +452,7 @@ class ChatRoomRepository {
         "user": message.userName,
         "createTime": message.createTime.toString(),
         "message": message.message,
-        "source": message.source,
+        "source": message.source.name,
         "askAI": message.ask_ai ? 1 : 0
       });
     }
