@@ -126,7 +126,7 @@ class SettingsController extends GetxController {
     switch (res) {
       case null:
         {
-          popMsg = "OK";
+          popMsg = "";
           break;
         }
       case "Empty":
