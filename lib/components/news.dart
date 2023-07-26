@@ -111,7 +111,7 @@ class AIFetchingTask {
 }
 
 class NewsController extends GetxController {
-  HashMap<Uuid, AIFetchingTask> _pending_tasks = HashMap();
+  HashMap<String, AIFetchingTask> _pending_tasks = HashMap();
 
   RxList<News> _$cached = <News>[].obs;
   RxList<PromotedRecord> _$record = <PromotedRecord>[].obs;
@@ -202,7 +202,7 @@ class NewsController extends GetxController {
 
   Future<PromotedRecord> recommendNews(List<News> news,
       {UserProfile? profile}) async {
-    final id = Uuid();
+    final id = Uuid().v4();
     _pending_tasks[id] = AIFetchingTask(source: news);
     try {
       final currentPromoted =

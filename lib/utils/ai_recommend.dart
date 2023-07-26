@@ -216,6 +216,7 @@ class NewsPromoter extends WithOpenAI {
         ],
         // Make the output more predictable.
         topP: 0.08,
+        presencePenalty: 1,
         functionCall: FunctionCall.forFunction(_fn_recommend_news.name),
         functions: [_fn_get_news, _fn_get_user_info, _fn_recommend_news]);
     final args = res.choices[0].message.functionCall?.arguments;

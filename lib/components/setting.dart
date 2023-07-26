@@ -1,8 +1,13 @@
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moyubie/controller/chat_room.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:get/get.dart';
 import 'package:moyubie/repository/chat_room.dart';
+import 'package:moyubie/repository/tags.dart';
+import 'package:uuid/uuid.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -361,6 +366,51 @@ class _SettingPageState extends State<SettingPage> {
                       child: const Text("Clear remote messages")),
                 ],
               ),
+              // DEBUGGER
+              if (kDebugMode) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Text("Debugger"),
+                    Tooltip(
+                      message: "You can see me?",
+                      child: IconButton(
+                        iconSize: 10.0,
+                        splashRadius: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                        onPressed: () {},
+                        icon: const Icon(Icons.question_mark),
+                      ),
+                    ),
+                  ],
+                ),
+                divider,
+                sizedBoxSpace,
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          final repo = Get.find<TagsRepository>();
+                          repo
+                              .addNewTags(List.generate(10, (index) => Uuid().v4()))
+                              .then((value) => log("DONE?", name: "moyubie::tags"))
+                              .catchError((err) => log("ERROR! [$err]", name: "moyubie::tags"));
+                        },
+                        child: const Text("Add some random tags for you!")),
+                    ElevatedButton(
+                        onPressed: () {
+                          final repo = Get.find<TagsRepository>();
+                          repo
+                              .fetchMostPopularTags(5)
+                              .then((value) => log("DONE? [$value]", name: "moyubie::tags"))
+                              .catchError((err) => log("ERROR! [$err]", name: "moyubie::tags"));
+                        },
+                        child: const Text("Fetch tags of you!")),
+                  ],
+                )
+              ]
             ],
           );
         }),

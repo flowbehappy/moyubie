@@ -8,6 +8,7 @@ import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/components/setting.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:moyubie/repository/tags.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:moyubie/configs/translations.dart';
@@ -88,6 +89,7 @@ class MyApp extends StatelessWidget {
     Get.put(MessageController());
     Get.put(PromptController());
     Get.put(ChatRoomController());
+    Get.put(TagsRepository.byConfig(settingsCtl));
     Get.put(NewsController(settingsCtl.openAiKey, settingsCtl.gptModel));
     final newsWinKey = GlobalKey();
     return MaterialApp(
