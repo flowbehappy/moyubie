@@ -460,8 +460,6 @@ class ChatRoomRepository {
           $_columnAskAI INTEGER
         )
         ''');
-
-    return null;
   }
 
   Future<void> updateChatRoom(ChatRoom chatRoom) async {

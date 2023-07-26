@@ -7,6 +7,7 @@ import 'package:moyubie/repository/chat_room.dart' as repo;
 import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/services.dart';
 
 enum ChatRoomType {
   // For simplicity, we only support 1 type
@@ -199,7 +200,7 @@ class NewChatButton extends StatelessWidget {
           ),
           PopupMenuItem(
             child: ListTile(
-              leading: const Icon(Icons.download),
+              leading: const Icon(Icons.sync),
               title: const Align(
                 alignment: Alignment(-1.2, 0),
                 child: Text("Sync Chat Room"),
@@ -251,6 +252,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     with RestorationMixin {
   late RestorableRouteFuture<String> _alertDismissDialogRoute;
   late RestorableRouteFuture<String> _alertRenameDialogRoute;
+  late RestorableRouteFuture<String> _alertShareDialogRoute;
 
   @override
   String get restorationId => 'confirm_dialog';
@@ -268,6 +270,11 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
         return navigator.restorablePush(_alertRenameRoute);
       },
     );
+    _alertShareDialogRoute = RestorableRouteFuture<String>(
+      onPresent: (navigator, arguments) {
+        return navigator.restorablePush(_alertShareRoute);
+      },
+    );
   }
 
   @override
@@ -279,6 +286,10 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     registerForRestoration(
       _alertRenameDialogRoute,
       'alert_rename_dialog_route',
+    );
+    registerForRestoration(
+      _alertShareDialogRoute,
+      'alert_share_dialog_route',
     );
   }
 
@@ -316,6 +327,19 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
               },
             ),
           ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.share),
+              title: const Align(
+                alignment: Alignment(-1.2, 0),
+                child: Text("Share Room"),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                _alertShareDialogRoute.present();
+              },
+            ),
+          ),
         ];
       },
     );
@@ -338,6 +362,24 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.renameChatRoom(newName);
     FirebaseAnalytics.instance.logEvent(name: "chat_room_rename");
+  }
+
+  static String _getCurrentRoomConnectionToken() {
+    final comp.ChatRoomController chatRoomController = Get.find();
+    final room = chatRoomController.getCurrentRoom();
+    final token = room.connectionToken;
+    return token;
+  }
+
+  static void _showInSnackBar(BuildContext context, String value) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          value,
+        ),
+      ),
+    );
   }
 
   static Route<String> _alertDismissRoute(
@@ -415,6 +457,37 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
             _DialogButton(
               text: "Cancel",
               onPressed: () {},
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static Route<String> _alertShareRoute(
+      BuildContext buildCtx,
+      Object? arguments,
+      ) {
+    final theme = Theme.of(buildCtx);
+    final dialogTextStyle = theme.textTheme.titleMedium!
+        .copyWith(color: theme.textTheme.bodySmall!.color);
+
+    return DialogRoute<String>(
+      context: buildCtx,
+      builder: (context) {
+        final connToken = _getCurrentRoomConnectionToken();
+        return AlertDialog(
+          content: Text(
+            connToken,
+            style: dialogTextStyle,
+          ),
+          actions: [
+            _DialogButton(
+              text: "Copy!",
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: connToken));
+                _showInSnackBar(buildCtx, "Copied to clipboard!");
+              },
             ),
           ],
         );

@@ -1,5 +1,5 @@
 // Return (host, port, user, password).
-// If port == 0, means "host" is the erorr message.
+// If port == 0, means "host" is the error message.
 (String, int, String, String) parseTiDBConnectionText(String text) {
   if (text.isEmpty) {
     return ("", 0, "", "");

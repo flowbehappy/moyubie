@@ -126,14 +126,14 @@ class SettingsController extends GetxController {
     switch (res) {
       case null:
         {
-          popMsg = "";
+          popMsg = "Settings saved.";
           break;
         }
       case "Empty":
         {
           ChatRoomRepository.myTiDBConn.clearConnect();
           popMsg =
-              "Warn: Chat messages are only saved to local if you don't specify TiDB Serverless connectin.";
+              "Warn: Chat messages are only saved to local if you don't specify TiDB Serverless connection.";
           break;
         }
       default:
@@ -144,19 +144,7 @@ class SettingsController extends GetxController {
     }
 
     if (context != null && context.mounted) {
-      showDialog<String>(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Done!'),
-          content: Text(popMsg),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context, 'OK'),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+      _showInSnackBar(context, popMsg);
     }
   }
 
@@ -308,5 +296,16 @@ class SettingsController extends GetxController {
       locale = Get.deviceLocale!;
     }
     setLocale(locale);
+  }
+
+  void _showInSnackBar(BuildContext context, String value) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          value,
+        ),
+      ),
+    );
   }
 }

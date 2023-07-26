@@ -39,7 +39,7 @@ class MessageController extends GetxController {
   }
 
   void addMessage(ChatRoom room, Message input, String ai_question) async {
-    // Add user intput to message list
+    // Add user input to message list
     await ChatRoomRepository().addMessage(room, input);
 
     final chatRoomUuid = room.uuid;
