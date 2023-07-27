@@ -32,7 +32,8 @@ class TagsRepository {
   factory TagsRepository.byConfig(SettingsController ctl,
       {bool forceInit = false}) {
     final stream = ctl.serverlessCmd.stream.switchMap((p0) {
-      final (host, port, user, password) = parseTiDBConnectionText(p0);
+      final (host, port, user, password, msgTable) =
+          parseTiDBConnectionText(p0);
       if (host.isEmpty || port == 0 || user.isEmpty) {
         return Stream<MySQLConnection>.error(Exception("Invalid DB"));
       }

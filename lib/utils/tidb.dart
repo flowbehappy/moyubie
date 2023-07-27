@@ -1,4 +1,14 @@
-// Return (host, port, user, password, msgTable).
+String toConnectionToken(
+  String host,
+  int port,
+  String userName,
+  String password,
+  String roomId,
+) {
+  return "mysql -u '$userName' -h $host -P 4000 -p$password --room $roomId";
+}
+
+// Return (host, port, user, password, tableId).
 // If port == 0, means "host" is the error message.
 (String, int, String, String, String) parseTiDBConnectionText(String text) {
   if (text.isEmpty) {
@@ -39,7 +49,7 @@
         case "--password":
           password = nextOpt;
           break;
-        case "--tb":
+        case "--room":
           msgTable = nextOpt;
         default:
       }

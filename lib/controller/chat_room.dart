@@ -1,11 +1,14 @@
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 class ChatRoomController extends GetxController {
   final roomList = <ChatRoom>[].obs;
 
   final currentChatRoomUuid = "".obs;
   final currentRoomIndex = IntegerWrapper(-1).obs;
+  final uuid = const Uuid();
 
   static ChatRoomController get to => Get.find();
   @override
@@ -48,8 +51,47 @@ class ChatRoomController extends GetxController {
     update();
   }
 
-  void joinChatRoom(String connToken) async {
-    final joinRoom = await ChatRoomRepository().joinChatRoom(connToken);
+  _popDialog(BuildContext context, String content) {
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        content: Text(content),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'OK'),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void joinChatRoom(BuildContext context, String connToken) async {
+    final (exists, joinRoom) =
+        await ChatRoomRepository().joinChatRoom(connToken);
+    if (exists) {
+      if (context.mounted) {
+        _popDialog(context, "Chat room already exists!");
+      }
+      return;
+    }
+
+    if (joinRoom == null) {
+      if (context.mounted) {
+        _popDialog(context, "Illegal chat room connection token!");
+      }
+      return;
+    }
+
+    var message = Message(
+        uuid: uuid.v1(),
+        message: "[New user joined!]",
+        userName: "New chater",
+        createTime: DateTime.now().toUtc(),
+        source: MessageSource.user);
+
+    await ChatRoomRepository().addMessage(joinRoom, message);
+
     roomList.add(joinRoom);
     currentRoomIndex.value = IntegerWrapper(roomList.length - 1);
     currentChatRoomUuid.value = joinRoom.uuid;

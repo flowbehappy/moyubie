@@ -18,7 +18,7 @@ class TiDBConnection {
   String userName = "";
   String userNamePrefix = "";
   String password = "";
-  String msgTable = "";
+  String roomId = "";
 
   close() async {
     if (connection != null) {
@@ -40,12 +40,13 @@ class TiDBConnection {
         password.isNotEmpty;
   }
 
-  setConnect(String host, int port, String userName, String password, String msgTableName) async {
+  setConnect(String host, int port, String userName, String password,
+      String roomId) async {
     this.host = host;
     this.port = port;
     this.userName = userName;
     this.password = password;
-    msgTable = msgTableName;
+    this.roomId = roomId;
     userNamePrefix = userName.split(".").first;
 
     close();
@@ -57,7 +58,7 @@ class TiDBConnection {
     userName = "";
     userNamePrefix = "";
     password = "";
-    msgTable = "";
+    roomId = "";
 
     close();
   }
@@ -69,9 +70,22 @@ class TiDBConnection {
 
   String toToken() {
     String connText = hasSet() //
-        ? "mysql -u '$userName' -h $host -P 4000 -p$password --tb $msgTable"
+        ? toConnectionToken(host, port, userName, password, roomId)
         : "";
     return base64.encode(utf8.encode(connText));
+  }
+
+  static TiDBConnection? fromToken(String token) {
+    try {
+      String str = utf8.decode(base64.decode(token));
+      var conn = TiDBConnection();
+      var (host, port, userName, password, roomId) =
+          parseTiDBConnectionText(str);
+      conn.setConnect(host, port, userName, password, roomId);
+      return conn;
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<String?> validateRemoteDB() async {
@@ -81,14 +95,6 @@ class TiDBConnection {
       return "Cannot connect to remote database with ${toString()}, ";
     }
     return null;
-  }
-
-  static TiDBConnection fromToken(String token) {
-    String str = utf8.decode(base64.decode(token));
-    var conn = TiDBConnection();
-    var (host, port, userName, password, msgTable) = parseTiDBConnectionText(str);
-    conn.setConnect(host, port, userName, password, msgTable);
-    return conn;
   }
 }
 
@@ -231,7 +237,7 @@ class ChatRoomRepository {
     if (conn != null) {
       return conn;
     }
-    conn = TiDBConnection.fromToken(token);
+    conn = TiDBConnection.fromToken(token)!;
     connMap[token] = conn;
     return conn;
   }
@@ -339,8 +345,9 @@ class ChatRoomRepository {
     return conn.connection;
   }
 
-  Future<List<ChatRoom>> getChatRooms({String? where}) async {
+  Future<List<ChatRoom>> getChatRooms({String? roomId}) async {
     final db = await _getDb();
+    String? where = roomId == null ? null : "$_columnChatRoomUuid = '$roomId'";
     final List<Map<String, dynamic>> maps =
         await db.query(_tableChatRoom, where: where);
     return List.generate(maps.length, (i) {
@@ -356,21 +363,25 @@ class ChatRoomRepository {
   }
 
   Future<List<ChatRoom>> getChatRoomsRemote() async {
-    final db = await getRemoteDb(myTiDBConn, true);
-    if (db == null) return Future(() => []);
-    var res = await db.execute("SELECT * FROM moyubie.$_tableChatRoom;");
-    return res.rows.map((e) {
-      var maps = e.assoc();
-      return ChatRoom(
-        uuid: maps[_columnChatRoomUuid]!,
-        name: maps[_columnChatRoomName]!,
+    try {
+      final db = await getRemoteDb(myTiDBConn, true);
+      if (db == null) return Future(() => []);
+      var res = await db.execute("SELECT * FROM moyubie.$_tableChatRoom;");
+      return res.rows.map((e) {
+        var maps = e.assoc();
+        return ChatRoom(
+          uuid: maps[_columnChatRoomUuid]!,
+          name: maps[_columnChatRoomName]!,
 
-        createTime: DateTime.parse("${maps[_columnChatRoomCreateTime]!}Z"), //
-        connectionToken: maps[_columnChatRoomConnectionToken]!,
-        role:
-            Role.values.firstWhere((e) => e.name == maps[_columnChatRoomRole]),
-      );
-    }).toList();
+          createTime: DateTime.parse("${maps[_columnChatRoomCreateTime]!}Z"), //
+          connectionToken: maps[_columnChatRoomConnectionToken]!,
+          role: Role.values
+              .firstWhere((e) => e.name == maps[_columnChatRoomRole]),
+        );
+      }).toList();
+    } catch (e) {
+      return Future(() => []);
+    }
   }
 
   Future<void> upsertLocalChatRooms(List<ChatRoom> rooms) async {
@@ -401,25 +412,41 @@ class ChatRoomRepository {
         length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
   }
 
-  Future<ChatRoom> joinChatRoom(String connToken) async {
+  // return: (isExists, Room)
+  Future<(bool, ChatRoom?)> joinChatRoom(String connToken) async {
     var roomConn = TiDBConnection.fromToken(connToken);
-    final room = ChatRoom(uuid: roomConn.msgTable, name: "Other Chat Room",
+    if (roomConn == null) {
+      return Future(() => (false, null));
+    }
+
+    final room = ChatRoom(
+        uuid: roomConn.roomId,
+        name: "Other Chat Room",
         createTime: DateTime.now().toUtc(),
-        connectionToken: connToken, role: Role.guest);
-    addChatRoom(room);
-    return room;
+        connectionToken: connToken,
+        role: Role.guest);
+
+    final rooms = await getChatRooms(roomId: room.uuid);
+    if (rooms.isNotEmpty) {
+      return (true, rooms.first);
+    }
+
+    await addChatRoom(room);
+
+    return (false, room);
   }
 
   Future<void> addChatRoom(ChatRoom room) async {
-    var roomConn = TiDBConnection.fromToken(room.connectionToken);
-
+    var roomConn = TiDBConnection.fromToken(room.connectionToken)!;
     final remoteDB = await getRemoteDb(myTiDBConn, true);
     if (remoteDB != null) {
       if (room.isHost()) {
         String user = "${myTiDBConn.userNamePrefix}.MYB_${genRandomString(10)}";
         String pwd = genRandomString(20);
+        String msgTable = "msg_${room.uuid}";
+
         await remoteDB.execute('''
-        CREATE TABLE IF NOT EXISTS moyubie.`msg_${room.uuid}` (
+        CREATE TABLE IF NOT EXISTS moyubie.`$msgTable` (
           $_columnMessageUuid VARCHAR(36) PRIMARY KEY,
           $_columnMessageUserName TEXT,
           $_columnMessageCreateTime DATETIME(6),
@@ -432,12 +459,13 @@ class ChatRoomRepository {
         await remoteDB.execute('''
         BEGIN;
         CREATE USER '$user'@'%' IDENTIFIED BY '$pwd';
-        GRANT INSERT, SELECT on `moyubie`.`msg_${room.uuid}` TO '$user'@'%';
+        GRANT INSERT, SELECT on `moyubie`.`$msgTable` TO '$user'@'%';
         COMMIT;
         ''');
 
         // Update the connection to use the new user.
-        roomConn.setConnect(myTiDBConn.host, myTiDBConn.port, user, pwd, "");
+        roomConn.setConnect(
+            myTiDBConn.host, myTiDBConn.port, user, pwd, room.uuid);
         // Looks like TiDB Serverless need some time to prepare the new users' connection.
         // And immediate connection will fail.
       }
@@ -511,7 +539,7 @@ class ChatRoomRepository {
     });
     await db.execute('DROP TABLE IF EXISTS `msg_$uuid`');
 
-    final conn = TiDBConnection.fromToken(room.connectionToken);
+    final conn = TiDBConnection.fromToken(room.connectionToken)!;
 
     if (conn.hasSet() && room.isHost()) {
       final remoteDB = await getRemoteDb(myTiDBConn, true);
@@ -587,14 +615,7 @@ class ChatRoomRepository {
     await addMessageLocal(room, [message]);
 
     // Don't wait for remote message finish adding to TiDB.
-    var addRemote = addMessageRemote(room, message);
-    addRemote
-        .then((value) => {
-              // todo
-            })
-        .onError((error, stackTrace) => {
-              // todo
-            });
+    addMessageRemote(room, message);
   }
 
   Future<void> addMessageLocal(ChatRoom room, List<Message> messages) async {
@@ -614,8 +635,7 @@ class ChatRoomRepository {
       if (e is MySQLServerException) {
         if (e.errorCode == 1146) {
           // Create the chat room. It is possible that user create chat room before adding mysql/TiDB connection.
-          final rooms = await getChatRooms(
-              where: "$_columnChatRoomUuid = '${room.uuid}}'");
+          final rooms = await getChatRooms(roomId: room.uuid);
           if (rooms.length == 1) {
             // Add chat room again.
             final newRoom = rooms.first;

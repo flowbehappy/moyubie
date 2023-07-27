@@ -241,50 +241,51 @@ class NewChatButton extends StatelessWidget {
     final theme = Theme.of(context);
     final dialogTextStyle = theme.textTheme.titleMedium!
         .copyWith(color: theme.textTheme.bodySmall!.color);
-    showDialog(context: context, builder: (BuildContext context) {
-      var connToken = "";
-      return AlertDialog(
-        content: TextFormField(
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter the connection token';
-            }
-            return null;
-          },
-          style: dialogTextStyle,
-          decoration: InputDecoration(
-            labelText: "Connection Token",
-            floatingLabelBehavior: FloatingLabelBehavior.auto,
-            contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(5),
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          var connToken = "";
+          return AlertDialog(
+            content: TextFormField(
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter the connection token';
+                }
+                return null;
+              },
+              style: dialogTextStyle,
+              decoration: InputDecoration(
+                labelText: "Connection Token",
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                filled: true,
+              ),
+              autovalidateMode: AutovalidateMode.always,
+              onChanged: (value) {
+                connToken = value;
+              },
             ),
-            filled: true,
-          ),
-          autovalidateMode: AutovalidateMode.always,
-          onChanged: (value) {
-            connToken = value;
-          },
-        ),
-        actions: [
-          _DialogButton(
-            text: "Join",
-            onPressed: () => _handleConnToken(context, connToken),
-          ),
-          _DialogButton(
-            text: "Cancel",
-            onPressed: () {},
-          ),
-        ],
-      );
-    });
+            actions: [
+              _DialogButton(
+                text: "Join",
+                onPressed: () => _handleConnToken(context, connToken),
+              ),
+              _DialogButton(
+                text: "Cancel",
+                onPressed: () {},
+              ),
+            ],
+          );
+        });
   }
-
 
   _handleConnToken(BuildContext context, String token) {
     final comp.ChatRoomController chatRoomController = Get.find();
-    chatRoomController.joinChatRoom(token);
+    chatRoomController.joinChatRoom(context, token);
     Navigator.pop(context);
   }
 
@@ -519,9 +520,9 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
   }
 
   static Route<String> _alertShareRoute(
-      BuildContext buildCtx,
-      Object? arguments,
-      ) {
+    BuildContext buildCtx,
+    Object? arguments,
+  ) {
     final theme = Theme.of(buildCtx);
     final dialogTextStyle = theme.textTheme.titleMedium!
         .copyWith(color: theme.textTheme.bodySmall!.color);
@@ -563,7 +564,7 @@ class _DialogButton extends StatelessWidget {
         if (onPressed != null) {
           onPressed!();
         }
-        Navigator.of(context).pop(text);
+        Navigator.pop(context);
       },
       child: Text(text),
     );
