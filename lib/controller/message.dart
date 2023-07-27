@@ -81,7 +81,7 @@ class MessageController extends GetxController {
         Message(
             uuid: uuid.v1(),
             message: e.toString(),
-            userName: "bot",
+            userName: input.userName,
             createTime: DateTime.now(),
             source: MessageSource.bot)
       ];
