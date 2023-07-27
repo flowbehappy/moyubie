@@ -84,7 +84,7 @@ class TagsRepository {
     final res = await _conn.value!.execute(
         "SELECT t1.NAME AS $_tagName FROM "
         "(SELECT COUNT($_tagName) AS CNT, $_tagName AS NAME FROM $_db.$_table GROUP BY $_tagName) AS t1"
-        " ORDER BY t1.CNT LIMIT :limit; ",
+        " ORDER BY t1.CNT DESC LIMIT :limit; ",
         {"limit": limit});
     final output = <String>[];
     for (final rs in res) {

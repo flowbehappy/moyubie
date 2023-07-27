@@ -9,6 +9,7 @@ import 'package:moyubie/components/setting.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/repository/tags.dart';
+import 'package:moyubie/utils/tag_collector.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:moyubie/configs/translations.dart';
@@ -85,12 +86,14 @@ class MyApp extends StatelessWidget {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
     final ChatRoomType type = ChatRoomType.phone;
     final settingsCtl = SettingsController();
+    final tagsRepo = TagsRepository.byConfig(settingsCtl);
     Get.put(settingsCtl);
     Get.put(MessageController());
     Get.put(PromptController());
     Get.put(ChatRoomController());
-    Get.put(TagsRepository.byConfig(settingsCtl));
+    Get.put(tagsRepo);
     Get.put(NewsController(settingsCtl.openAiKey, settingsCtl.gptModel));
+    Get.put(TagCollector.create(repo: tagsRepo, sctl: settingsCtl));
     final newsWinKey = GlobalKey();
     return MaterialApp(
       theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),

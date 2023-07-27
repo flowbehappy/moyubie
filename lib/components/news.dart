@@ -6,11 +6,12 @@ import 'package:dart_openai/dart_openai.dart';
 import 'package:dual_screen/dual_screen.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/components/chat_room.dart';
 import 'package:moyubie/controller/settings.dart';
+import 'package:moyubie/repository/tags.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -113,16 +114,16 @@ class AIFetchingTask {
 class NewsController extends GetxController {
   HashMap<String, AIFetchingTask> _pending_tasks = HashMap();
 
-  RxList<News> _$cached = <News>[].obs;
-  RxList<PromotedRecord> _$record = <PromotedRecord>[].obs;
-  RxString _$ai_key;
-  RxString _$ai_model;
-  RxString _$err = "".obs;
+  final RxList<News> _$cached = <News>[].obs;
+  final RxList<PromotedRecord> _$record = <PromotedRecord>[].obs;
+  final RxString _$aiKey;
+  final RxString _$aiModel;
+  final RxString _$err = "".obs;
 
-  NewsController(this._$ai_key, this._$ai_model);
+  NewsController(this._$aiKey, this._$aiModel);
 
   AIContext get _ai_ctx =>
-      AIContext(api_key: _$ai_key.value, model: _$ai_model.value);
+      AIContext(api_key: _$aiKey.value, model: _$aiModel.value);
 
   int lastTab = 0;
   final _concurrency = 8;
@@ -140,7 +141,7 @@ class NewsController extends GetxController {
   }
 
   Future<UserProfile> getUserTags() async {
-    return _TestData.prof_eng;
+    return UserProfile(tags: await Get.find<TagsRepository>().fetchMostPopularTags(5));
   }
 
   Future<void> refreshTopNews() async {
@@ -244,11 +245,6 @@ class NewsController extends GetxController {
   List<AIFetchingTask> pendingTasks() {
     return _pending_tasks.values.toList(growable: false);
   }
-}
-
-class _TestData {
-  static final prof = UserProfile(tags: ["炼金术", "魔法", "函数式编程", "气候"]);
-  static final prof_eng = UserProfile(tags: ["Database", "Computer Science", "Programming"]);
 }
 
 class Promoted {
@@ -365,7 +361,11 @@ class _NewsWindowState extends State<NewsWindow>
                           FirebaseAnalytics.instance
                               .logEvent(name: "promote_news");
                           await promoteNews();
-                        } catch (e) {
+                        } catch (e, stack) {
+                          if (kDebugMode ) {
+                            stack.printError(
+                                info: "promote_news::error::stacktrace");
+                          }
                           maybeShowBannerForError();
                           return IndicatorResult.fail;
                         }
@@ -640,12 +640,12 @@ class _PendingCard extends StatelessWidget {
     return Card(
         key: key,
         clipBehavior: Clip.antiAlias,
-        color: th.cardColor,
+        color: th.primaryColor,
         child: Container(
-            child: ListTile(subtitle: Container(child: const LinearProgressIndicator(), margin: EdgeInsets.only(top: 8),),
+            child: ListTile(subtitle: Container(child: LinearProgressIndicator(color: Colors.white, backgroundColor: th.primaryColor,), margin: EdgeInsets.only(top: 8),),
               title: Text(
                 "We are still longing for ${_task.length} response(s)...",
-                style: th.textTheme.labelLarge,
+                style: (th.textTheme.labelLarge ?? const TextStyle()).merge(const TextStyle(color: Colors.white)),
               ),
             )));
   }
@@ -698,7 +698,6 @@ class _PromotedCard extends StatelessWidget {
     return Card(
         key: key,
         clipBehavior: Clip.antiAlias,
-        color: th.primaryColor,
         child: InkWell(
           onTap: () => {},
           onTapUp: (details) => {onEnter?.call(_promoted)},
@@ -709,16 +708,14 @@ class _PromotedCard extends StatelessWidget {
                 isThreeLine: true,
                 leading: const Icon(
                   Icons.recommend,
-                  color: Colors.white,
                 ),
                 title: Text(
                   _promoted.news.title,
-                  style: const TextStyle(color: Colors.white),
                 ),
                 subtitle: Text(
                   _promoted.reason,
                   style: const TextStyle(
-                      color: Colors.white, fontStyle: FontStyle.italic),
+                      fontStyle: FontStyle.italic),
                 ),
               )),
         ));

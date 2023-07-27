@@ -5,6 +5,7 @@ import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/repository/message.dart';
 import 'package:get/get.dart';
+import 'package:moyubie/utils/tag_collector.dart';
 import 'package:uuid/uuid.dart';
 
 class MessageController extends GetxController {
@@ -48,6 +49,7 @@ class MessageController extends GetxController {
       messageList.value = messages;
       return;
     }
+    Get.find<TagCollector>().accept(input.message);
 
     // If this message is a question for AI, then send request to AI service.
     final completer = Completer();
