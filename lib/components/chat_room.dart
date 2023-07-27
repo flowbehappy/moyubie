@@ -235,7 +235,7 @@ class NewChatButton extends StatelessWidget {
         chatRoomNames.keys.elementAt(Random().nextInt(chatRoomNames.length));
     repo.ChatRoom chatRoom = repo.ChatRoom(
       uuid: uuid.v1(),
-      name: name,
+      name: toRoomName(name),
       createTime: createTime,
       connectionToken: repo.ChatRoomRepository.myTiDBConn.toToken(),
       role: repo.Role.host,

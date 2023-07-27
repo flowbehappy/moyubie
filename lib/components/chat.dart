@@ -7,7 +7,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:get/get.dart';
 import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/repository/message.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
@@ -63,20 +62,7 @@ class _ChatWindowState extends State<ChatWindow> {
                     },
                   );
                 } else {
-                  return Center(
-                    child: Center(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          disabledForegroundColor: Colors.red,
-                          side: const BorderSide(
-                            color: Colors.red,
-                          ),
-                        ),
-                        onPressed: _startChat,
-                        child: const Text("Let's chat!"),
-                      ),
-                    ),
-                  );
+                  return _buildStartRoomButton();
                 }
               },
             ),
@@ -142,13 +128,14 @@ class _ChatWindowState extends State<ChatWindow> {
     if (room == null) {
       return;
     }
-    final String? explanation = chatRoomNames[room.name];
+    final name = fromRoomName(room.name);
+    final String? explanation = chatRoomNames[name];
     if (explanation != null) {
       final demoMsg = Message(
         uuid: uuid.v1(),
         userName: 'User',
         createTime: DateTime.now().toUtc(),
-        message: "${room.name}: $explanation",
+        message: "$name: $explanation",
         source: MessageSource.sys,
         ask_ai: false,
       );
@@ -192,6 +179,29 @@ class _ChatWindowState extends State<ChatWindow> {
     _formKey.currentState!.reset();
   }
 
+  Widget _buildStartRoomButton() {
+    ChatRoomController chatRoomController = Get.find();
+    final room = chatRoomController.getCurrentRoom();
+    if (room == null) {
+      return const SizedBox.shrink();
+    }
+    if (DateTime.now().toUtc().difference(room.createTime).inMinutes >= 1) {
+      return const SizedBox.shrink();
+    }
+    return Center(
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          disabledForegroundColor: Colors.red,
+          side: const BorderSide(
+            color: Colors.red,
+          ),
+        ),
+        onPressed: _startChat,
+        child: const Text("Let's chat!"),
+      ),
+    );
+  }
+
   Widget _buildMessageCard(Message message) {
     IconData icon = FontAwesomeIcons.question;
     String name = "?";
@@ -204,7 +214,14 @@ class _ChatWindowState extends State<ChatWindow> {
       case MessageSource.user:
         icon = FontAwesomeIcons.fish;
         name = message.userName;
-        color = const Color.fromARGB(255, 156, 225, 111);
+        SettingsController settingsController = Get.find();
+        if (name == settingsController.nickname.value) {
+          color = const Color.fromARGB(255, 156, 225, 111);
+        } else {
+          color = isDark
+              ? const Color.fromARGB(255, 92, 89, 89)
+              : const Color.fromARGB(255, 255, 255, 255);
+        }
         msg_box = Padding(
           padding: const EdgeInsets.all(8.0),
           child: SelectableText(
@@ -227,7 +244,9 @@ class _ChatWindowState extends State<ChatWindow> {
       case MessageSource.sys:
         icon = FontAwesomeIcons.medal;
         name = "Moyubie";
-        color = const Color.fromARGB(255, 156, 225, 111);
+        color = isDark
+            ? const Color.fromARGB(255, 92, 89, 89)
+            : const Color.fromARGB(255, 255, 255, 255);
         msg_box = Padding(
           padding: const EdgeInsets.all(8.0),
           child: SelectableText(

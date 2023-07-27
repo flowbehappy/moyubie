@@ -1,3 +1,11 @@
+String fromRoomName(String roomName) {
+  return roomName.substring(6);
+}
+
+String toRoomName(String name) {
+  return "Room: $name";
+}
+
 var chatRoomNames = {
   "abacinate": "To blind by putting a hot copper basin near someone's eyes",
   "abderian": "Given to incessant or idiotic laughter",
