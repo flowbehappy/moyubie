@@ -228,7 +228,7 @@ class _ChatWindowState extends State<ChatWindow> {
             message.message,
             style: TextStyle(
               fontSize: 16,
-              color: isDark
+              color: isDark && name != settingsController.nickname.value
                   ? const Color.fromARGB(255, 255, 255, 255)
                   : const Color.fromARGB(255, 0, 0, 0),
             ),
