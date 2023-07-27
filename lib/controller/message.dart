@@ -39,7 +39,7 @@ class MessageController extends GetxController {
 
   void addMessage(ChatRoom room, Message input, String ai_question) async {
     // Add user input to message list
-    await ChatRoomRepository().addMessage(room, input);
+    await ChatRoomRepository().addMessage(room, [input]);
 
     final chatRoomUuid = room.uuid;
 
@@ -67,7 +67,7 @@ class MessageController extends GetxController {
       }, //
           (Message res) async {
         // if streaming is done ,load all the message
-        ChatRoomRepository().addMessage(room, res);
+        ChatRoomRepository().addMessage(room, [res]);
         final messages =
             await ChatRoomRepository().getMessagesByChatRoomUUid(room);
         messageList.value = messages;
