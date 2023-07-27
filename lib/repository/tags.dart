@@ -13,7 +13,8 @@ class _CachedConnection {
   _CachedConnection(Stream<MySQLConnection> stream) {
     stream.listen((event) {
       if (_last != null && _last != event) {
-        log("Update connection. [old=$_last, new=$event]", name: "moyubie::_CachedConnection");
+        log("Update connection. [old=$_last, new=$event]",
+            name: "moyubie::_CachedConnection");
         _last!.close();
       }
       _last = event;

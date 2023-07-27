@@ -477,7 +477,7 @@ class ChatRoomRepository {
         await remoteDB.execute('''
         UPDATE moyubie.$_tableChatRoom SET
         $_columnChatRoomName = :name,
-        $_columnChatRoomCreateTime = '${chatRoom.createTime.toString()}'),
+        $_columnChatRoomCreateTime = '${chatRoom.createTime.toString()}',
         $_columnChatRoomConnectionToken = :token
         WHERE $_columnChatRoomUuid = '${chatRoom.uuid}'
         ''', {"name": chatRoom.name, "token": chatRoom.connectionToken});
@@ -570,7 +570,7 @@ class ChatRoomRepository {
   }
 
   Future<void> addMessage(ChatRoom room, Message message) async {
-    addMessageLocal(room, [message]);
+    await addMessageLocal(room, [message]);
 
     // Don't wait for remote message finish adding to TiDB.
     var addRemote = addMessageRemote(room, message);
