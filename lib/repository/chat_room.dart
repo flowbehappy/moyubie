@@ -136,6 +136,7 @@ class ChatRoom {
 enum MessageSource {
   user,
   bot,
+  sys
 }
 
 // The context

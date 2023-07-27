@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
 
+import '../data/names.dart';
 import '../repository/chat_room.dart';
 
 class ChatWindow extends StatefulWidget {
@@ -61,8 +62,19 @@ class _ChatWindowState extends State<ChatWindow> {
                     },
                   );
                 } else {
-                  return const Center(
-                    child: Center(child: Text("Empty")),
+                  return Center(
+                    child: Center(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          disabledForegroundColor: Colors.red,
+                          side: const BorderSide(
+                            color: Colors.red,
+                          ),
+                        ),
+                        onPressed: _startChat,
+                        child: const Text("Let's chat!"),
+                      ),
+                    ),
                   );
                 }
               },
@@ -124,6 +136,24 @@ class _ChatWindowState extends State<ChatWindow> {
         ],
       ),
     );
+  }
+
+  void _startChat() {
+    final MessageController messageController = Get.find();
+    final ChatRoomController chatRoomController = Get.find();
+    final room = chatRoomController.getCurrentRoom();
+    final String? explanation = chatRoomNames[room.name];
+    if (explanation != null) {
+      final demoMsg = Message(
+        uuid: uuid.v1(),
+        userName: 'User',
+        createTime: DateTime.now().toUtc(),
+        message: "${room.name}: $explanation",
+        source: MessageSource.sys,
+        ask_ai: false,
+      );
+      messageController.addMessage(room, demoMsg, "");
+    }
   }
 
   void _sendMessage() {
@@ -189,6 +219,21 @@ class _ChatWindowState extends State<ChatWindow> {
             ? const Color.fromARGB(255, 92, 89, 89)
             : const Color.fromARGB(255, 255, 255, 255);
         msg_box = Markdown(text: message.message);
+        break;
+      case MessageSource.sys:
+        icon = FontAwesomeIcons.medal;
+        name = "Moyubie";
+        color = const Color.fromARGB(255, 156, 225, 111);
+        msg_box = Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SelectableText(
+            message.message,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Color.fromARGB(255, 0, 0, 0),
+            ),
+          ),
+        );
         break;
       default:
     }

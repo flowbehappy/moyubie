@@ -1,13 +1,19 @@
+import 'dart:math';
+
 import 'package:dual_screen/dual_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:moyubie/components/chat.dart';
 import 'package:moyubie/controller/message.dart';
+import 'package:moyubie/data/color.dart';
+import 'package:moyubie/data/names.dart';
 import 'package:moyubie/repository/chat_room.dart' as repo;
 import 'package:moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/services.dart';
+
+import '../repository/chat_room.dart';
 
 enum ChatRoomType {
   // For simplicity, we only support 1 type
@@ -98,6 +104,7 @@ class ListPane extends StatelessWidget {
               children: roomCtrl.roomList
                   .asMap()
                   .map((index, room) {
+                    final avatarColor = colors[Random().nextInt(colors.length)];
                     return MapEntry(
                         index,
                         ListTile(
@@ -106,7 +113,10 @@ class ListPane extends StatelessWidget {
                           },
                           selected: selectedIndex == index,
                           leading: ExcludeSemantics(
-                            child: CircleAvatar(child: Text(room.name[0])),
+                            child: CircleAvatar(
+                                backgroundColor: avatarColor,
+                                foregroundColor: Colors.white,
+                                child: Text(room.name[0])),
                           ),
                           title: Text(
                             room.name,
@@ -218,13 +228,16 @@ class NewChatButton extends StatelessWidget {
     );
   }
 
+  static const uuid = Uuid();
+
   _addNewChatRoom(BuildContext context) {
     final comp.ChatRoomController chatRoomController = Get.find();
-    const uuid = Uuid();
-    var createTime = DateTime.now().toUtc();
+    final createTime = DateTime.now().toUtc();
+    final name =
+        chatRoomNames.keys.elementAt(Random().nextInt(chatRoomNames.length));
     repo.ChatRoom chatRoom = repo.ChatRoom(
       uuid: uuid.v1(),
-      name: "New Chat Room",
+      name: name,
       createTime: createTime,
       connectionToken: repo.ChatRoomRepository.myTiDBConn.toToken(),
       role: repo.Role.host,
