@@ -6,6 +6,7 @@ import 'package:moyubie/controller/message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:get/get.dart';
+import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/message.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
@@ -162,6 +163,7 @@ class _ChatWindowState extends State<ChatWindow> {
 
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
+    final nickname = Get.find<SettingsController>().nickname.value;
     final room = chatRoomController.getCurrentRoom();
     var first_letters =
         message.substring(0, min(3, message.length)).toLowerCase();
@@ -174,7 +176,7 @@ class _ChatWindowState extends State<ChatWindow> {
     }
     final newMessage = Message(
       uuid: uuid.v1(),
-      userName: 'User',
+      userName: nickname,
       createTime: DateTime.now().toUtc(),
       message: message,
       source: MessageSource.user,

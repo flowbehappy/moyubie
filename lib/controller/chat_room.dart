@@ -1,3 +1,4 @@
+import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -88,10 +89,12 @@ class ChatRoomController extends GetxController {
         .getNewMessagesByChatRoomUuidRemote(joinRoom, null);
     await ChatRoomRepository().addMessageLocal(joinRoom, messages);
 
+    final nickname = Get.find<SettingsController>().nickname.value;
+
     var message = Message(
         uuid: uuid.v1(),
-        message: "[New user joined!]",
-        userName: "New chater",
+        message: "[$nickname joined!]",
+        userName: nickname,
         createTime: DateTime.now().toUtc(),
         source: MessageSource.user);
 

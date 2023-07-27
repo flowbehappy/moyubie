@@ -19,6 +19,9 @@ class SettingsController extends GetxController {
   final serverlessCmd = "".obs;
   final serverlessCmdTmp = "".obs;
 
+  final nickname = "".obs;
+  final nicknameTmp = "".obs;
+
   // final glmBaseUrl = "".obs;
 
   final openAiBaseUrl = "https://api.openai-proxy.com".obs;
@@ -52,6 +55,7 @@ class SettingsController extends GetxController {
     await getOpenAiBaseUrlFromPreferences();
     await getOpenAiKeyFromPreferences();
     await getServerlessCmdFromPreferences();
+    await getNicknameFromPreferences();
     await getLLMFromPreferences();
     await getGptModelFromPreferences();
     await getUseStreamFromPreferences();
@@ -92,6 +96,8 @@ class SettingsController extends GetxController {
     _box.write('openAiKey', openAiKey.value);
     serverlessCmd.value = serverlessCmdTmp.value;
     _box.write('serverlessCmd', serverlessCmd.value);
+    nickname.value = nicknameTmp.value;
+    _box.write('nickname', nickname.value);
 
     bool hasLLM = openAiKey.value.isNotEmpty && llm.value != "Echo";
     if (hasLLM) {
@@ -183,6 +189,12 @@ class SettingsController extends GetxController {
     GetStorage _box = GetStorage();
     String cmd = _box.read('serverlessCmd') ?? "";
     setServerlessCmd(cmd);
+  }
+
+  getNicknameFromPreferences() async {
+    GetStorage _box = GetStorage();
+    String nickname = _box.read('nickname') ?? "Moyu";
+    setNickname(nickname);
   }
 
   void setOpenAiBaseUrl(String baseUrl) {
@@ -307,5 +319,9 @@ class SettingsController extends GetxController {
         ),
       ),
     );
+  }
+
+  void setNickname(String text) {
+    nicknameTmp.value = text.trim();
   }
 }

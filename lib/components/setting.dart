@@ -123,6 +123,49 @@ class _SettingPageState extends State<SettingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
+                  const Text("Nickname"),
+                  Tooltip(
+                    message: "Set your nickname here.",
+                    child: IconButton(
+                      iconSize: 10.0,
+                      splashRadius: 10,
+                      color: Theme.of(context).colorScheme.primary,
+                      onPressed: () {},
+                      icon: const Icon(Icons.question_mark),
+                    ),
+                  ),
+                ],
+              ),
+              divider,
+              sizedBoxSpace,
+              SizedBox(
+                height: 50,
+                child: TextFormField(
+                  initialValue: controller.nickname.value,
+                  decoration: InputDecoration(
+                    hintMaxLines: 100,
+                    hintText: "Set your nickname here",
+                    floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(5),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                  ),
+                  autovalidateMode: AutovalidateMode.always,
+                  maxLines: 1,
+                  minLines: 1,
+                  onEditingComplete: () {},
+                  onChanged: (value) {
+                    controller.setNickname(value);
+                  },
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
                   const Text("AGI"),
                   Tooltip(
                     message:
@@ -394,9 +437,12 @@ class _SettingPageState extends State<SettingPage> {
                         onPressed: () {
                           final repo = Get.find<TagsRepository>();
                           repo
-                              .addNewTags(List.generate(10, (index) => Uuid().v4()))
-                              .then((value) => log("DONE?", name: "moyubie::tags"))
-                              .catchError((err) => log("ERROR! [$err]", name: "moyubie::tags"));
+                              .addNewTags(
+                                  List.generate(10, (index) => Uuid().v4()))
+                              .then((value) =>
+                                  log("DONE?", name: "moyubie::tags"))
+                              .catchError((err) =>
+                                  log("ERROR! [$err]", name: "moyubie::tags"));
                         },
                         child: const Text("Add some random tags for you!")),
                     ElevatedButton(
@@ -404,8 +450,10 @@ class _SettingPageState extends State<SettingPage> {
                           final repo = Get.find<TagsRepository>();
                           repo
                               .fetchMostPopularTags(5)
-                              .then((value) => log("DONE? [$value]", name: "moyubie::tags"))
-                              .catchError((err) => log("ERROR! [$err]", name: "moyubie::tags"));
+                              .then((value) =>
+                                  log("DONE? [$value]", name: "moyubie::tags"))
+                              .catchError((err) =>
+                                  log("ERROR! [$err]", name: "moyubie::tags"));
                         },
                         child: const Text("Fetch tags of you!")),
                   ],
