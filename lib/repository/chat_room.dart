@@ -8,6 +8,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:uuid/uuid.dart';
+
 class TiDBConnection {
   MySQLConnection? connection;
 
@@ -16,6 +18,7 @@ class TiDBConnection {
   String userName = "";
   String userNamePrefix = "";
   String password = "";
+  String msgTable = "";
 
   close() async {
     if (connection != null) {
@@ -37,11 +40,12 @@ class TiDBConnection {
         password.isNotEmpty;
   }
 
-  setConnect(String host, int port, String userName, String password) async {
+  setConnect(String host, int port, String userName, String password, String msgTableName) async {
     this.host = host;
     this.port = port;
     this.userName = userName;
     this.password = password;
+    msgTable = msgTableName;
     userNamePrefix = userName.split(".").first;
 
     close();
@@ -53,6 +57,7 @@ class TiDBConnection {
     userName = "";
     userNamePrefix = "";
     password = "";
+    msgTable = "";
 
     close();
   }
@@ -64,7 +69,7 @@ class TiDBConnection {
 
   String toToken() {
     String connText = hasSet() //
-        ? "mysql -u '$userName' -h $host -P 4000 -p$password"
+        ? "mysql -u '$userName' -h $host -P 4000 -p$password --tb $msgTable"
         : "";
     return base64.encode(utf8.encode(connText));
   }
@@ -81,8 +86,8 @@ class TiDBConnection {
   static TiDBConnection fromToken(String token) {
     String str = utf8.decode(base64.decode(token));
     var conn = TiDBConnection();
-    var (host, port, userName, password) = parseTiDBConnectionText(str);
-    conn.setConnect(host, port, userName, password);
+    var (host, port, userName, password, msgTable) = parseTiDBConnectionText(str);
+    conn.setConnect(host, port, userName, password, msgTable);
     return conn;
   }
 }
@@ -237,7 +242,7 @@ class ChatRoomRepository {
     String userName,
     String password,
   ) {
-    myTiDBConn.setConnect(host, port, userName, password);
+    myTiDBConn.setConnect(host, port, userName, password, "");
   }
 
   static Future<String?> validateRemoteDB(TiDBConnection conn) async {
@@ -396,6 +401,15 @@ class ChatRoomRepository {
         length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
   }
 
+  Future<ChatRoom> joinChatRoom(String connToken) async {
+    var roomConn = TiDBConnection.fromToken(connToken);
+    final room = ChatRoom(uuid: roomConn.msgTable, name: "Other Chat Room",
+        createTime: DateTime.now().toUtc(),
+        connectionToken: connToken, role: Role.guest);
+    addChatRoom(room);
+    return room;
+  }
+
   Future<void> addChatRoom(ChatRoom room) async {
     var roomConn = TiDBConnection.fromToken(room.connectionToken);
 
@@ -423,7 +437,7 @@ class ChatRoomRepository {
         ''');
 
         // Update the connection to use the new user.
-        roomConn.setConnect(myTiDBConn.host, myTiDBConn.port, user, pwd);
+        roomConn.setConnect(myTiDBConn.host, myTiDBConn.port, user, pwd, "");
         // Looks like TiDB Serverless need some time to prepare the new users' connection.
         // And immediate connection will fail.
       }

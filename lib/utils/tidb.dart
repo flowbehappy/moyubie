@@ -1,8 +1,8 @@
-// Return (host, port, user, password).
+// Return (host, port, user, password, msgTable).
 // If port == 0, means "host" is the error message.
-(String, int, String, String) parseTiDBConnectionText(String text) {
+(String, int, String, String, String) parseTiDBConnectionText(String text) {
   if (text.isEmpty) {
-    return ("", 0, "", "");
+    return ("", 0, "", "", "");
   }
 
   text = text.replaceFirst(" -p", " -p ");
@@ -14,6 +14,7 @@
   String host = "";
   int port = 0;
   String password = "";
+  String msgTable = "";
 
   try {
     for (int i = 0; i < options.length; i += 1) {
@@ -38,12 +39,14 @@
         case "--password":
           password = nextOpt;
           break;
+        case "--tb":
+          msgTable = nextOpt;
         default:
       }
     }
 
-    return (host, port, user, password);
+    return (host, port, user, password, msgTable);
   } catch (e) {
-    return (e.toString(), 0, "", "");
+    return (e.toString(), 0, "", "", "");
   }
 }

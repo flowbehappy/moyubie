@@ -48,6 +48,14 @@ class ChatRoomController extends GetxController {
     update();
   }
 
+  void joinChatRoom(String connToken) async {
+    final joinRoom = await ChatRoomRepository().joinChatRoom(connToken);
+    roomList.add(joinRoom);
+    currentRoomIndex.value = IntegerWrapper(roomList.length - 1);
+    currentChatRoomUuid.value = joinRoom.uuid;
+    update();
+  }
+
   void loadChatRooms() async {
     var remoteRooms = await ChatRoomRepository().getChatRoomsRemote();
     await ChatRoomRepository().upsertLocalChatRooms(remoteRooms);

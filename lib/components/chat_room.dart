@@ -189,13 +189,16 @@ class NewChatButton extends StatelessWidget {
               },
             ),
           ),
-          const PopupMenuItem(
+          PopupMenuItem(
             child: ListTile(
-              leading: Icon(Icons.group_add),
-              title: Align(
+              leading: const Icon(Icons.group_add),
+              title: const Align(
                 alignment: Alignment(-1.2, 0),
                 child: Text("Join Chat Room"),
               ),
+              onTap: () {
+                _joinChatRoom(context);
+              },
             ),
           ),
           PopupMenuItem(
@@ -231,6 +234,57 @@ class NewChatButton extends StatelessWidget {
 
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
+    Navigator.pop(context);
+  }
+
+  _joinChatRoom(BuildContext context) {
+    final theme = Theme.of(context);
+    final dialogTextStyle = theme.textTheme.titleMedium!
+        .copyWith(color: theme.textTheme.bodySmall!.color);
+    showDialog(context: context, builder: (BuildContext context) {
+      var connToken = "";
+      return AlertDialog(
+        content: TextFormField(
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter the connection token';
+            }
+            return null;
+          },
+          style: dialogTextStyle,
+          decoration: InputDecoration(
+            labelText: "Connection Token",
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+            filled: true,
+          ),
+          autovalidateMode: AutovalidateMode.always,
+          onChanged: (value) {
+            connToken = value;
+          },
+        ),
+        actions: [
+          _DialogButton(
+            text: "Join",
+            onPressed: () => _handleConnToken(context, connToken),
+          ),
+          _DialogButton(
+            text: "Cancel",
+            onPressed: () {},
+          ),
+        ],
+      );
+    });
+  }
+
+
+  _handleConnToken(BuildContext context, String token) {
+    final comp.ChatRoomController chatRoomController = Get.find();
+    chatRoomController.joinChatRoom(token);
     Navigator.pop(context);
   }
 
