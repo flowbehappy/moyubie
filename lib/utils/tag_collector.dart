@@ -6,14 +6,8 @@ import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/tags.dart';
 import 'package:moyubie/utils/ai_recommend.dart';
 
-enum TagCollState {
-  Running,
-  Stopped
-}
-
 class TagCollector extends DisposableInterface {
   final TagsRepository repo;
-  TagCollState state;
   SettingsController sctl;
 
   Future<void>? _bgTask;
@@ -21,19 +15,23 @@ class TagCollector extends DisposableInterface {
 
   RxList<Object> bgErrs = RxList([]);
   RxInt droppedMsgs = 0.obs;
+  RxBool enabled = true.obs;
 
   AIContext get _ai_ctx => AIContext(api_key: sctl.openAiKey.value, model: sctl.gptModel.value);
 
-  TagCollector({required this.state, required this.repo, required this.sctl});
+  TagCollector({required this.repo, required this.sctl});
 
   factory TagCollector.create({ TagsRepository? repo, SettingsController? sctl }) {
     final theRepo = repo ?? Get.find<TagsRepository>();
     final theSctl = sctl ?? Get.find<SettingsController>();
-    var coll = TagCollector(state: TagCollState.Running, repo: theRepo, sctl: theSctl);
+    var coll = TagCollector(repo: theRepo, sctl: theSctl);
     return coll;
   }
 
   void accept(String s) {
+    if (enabled.isFalse) {
+      return;
+    }
     log("Getting message $s from user.", name: "TagCollector");
     _batching.add(s);
     if (_bgTask != null) {

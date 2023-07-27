@@ -18,8 +18,12 @@ class ChatRoomController extends GetxController {
     super.onInit();
   }
 
-  ChatRoom getCurrentRoom() {
-    return roomList[currentRoomIndex.value.value];
+  ChatRoom? getCurrentRoom() {
+    final idx = currentRoomIndex.value.value;
+    if (idx < 0) {
+      return null;
+    }
+    return roomList[idx];
   }
 
   void setCurrentRoom(int index) async {

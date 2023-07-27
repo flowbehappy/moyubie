@@ -38,8 +38,8 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
-  String path = join(await getDatabasesPath(), 'moyubie.db');
-  await deleteDatabase(path);
+  // String path = join(await getDatabasesPath(), 'moyubie.db');
+  // await deleteDatabase(path);
 
   runApp(const MyApp());
 }

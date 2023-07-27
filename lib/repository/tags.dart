@@ -68,7 +68,7 @@ class TagsRepository {
     });
   }
 
-  Future<List<String>> fetchMostPopularTags(int limit) async {
+  Future<List<String>> fetchMostPopularTags(int limit, {bool waitSync = false}) async {
     // Firt return what we have in local
     final db = await ChatRoomRepository().getLocalDb();
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
@@ -84,7 +84,7 @@ class TagsRepository {
 
     // Then start async task to synchronize remote to local
     final remoteDB = ChatRoomRepository().getMyRemoteDb();
-    remoteDB.then((remoteDB_) async {
+    final fut = remoteDB.then((remoteDB_) async {
       if (remoteDB_ == null) {
         return;
       }
@@ -110,6 +110,11 @@ class TagsRepository {
 
       await _addNewTags(remoteTags);
     });
+
+    if (waitSync) {
+      await fut;
+      return fetchMostPopularTags(limit);
+    }
 
     return localTags;
   }
