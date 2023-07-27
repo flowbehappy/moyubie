@@ -40,6 +40,7 @@ class TagsInfo extends StatelessWidget {
                 });
               }
             },
+            expandedAlignment: Alignment.topLeft,
             children: [
               Obx(() => _$tags.value == null
                   ? Center(
