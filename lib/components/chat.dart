@@ -92,11 +92,7 @@ class _ChatWindowState extends State<ChatWindow> {
                     child: TextFormField(
                       style: const TextStyle(fontSize: 16),
                       controller: _controller,
-                      keyboardType: TextInputType.text,
-                      textInputAction: TextInputAction.send,
-                      onFieldSubmitted: (value) {
-                        _sendMessage();
-                      },
+                      keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
                         hintText: "@ai talk to AI",
                         floatingLabelBehavior: FloatingLabelBehavior.auto,
