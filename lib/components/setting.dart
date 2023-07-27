@@ -2,11 +2,13 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:moyubie/components/tags_info.dart';
 import 'package:moyubie/controller/chat_room.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:get/get.dart';
 import 'package:moyubie/repository/chat_room.dart';
 import 'package:moyubie/repository/tags.dart';
+import 'package:moyubie/utils/tag_collector.dart';
 import 'package:uuid/uuid.dart';
 
 class SettingPage extends StatefulWidget {
@@ -366,6 +368,26 @@ class _SettingPageState extends State<SettingPage> {
                       child: const Text("Clear remote messages")),
                 ],
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text("AI Recommendation"),
+                  Tooltip(
+                    message: "Control how LLM try to guess things you love.",
+                    child: IconButton(
+                      iconSize: 10.0,
+                      splashRadius: 10,
+                      color: Theme.of(context).colorScheme.primary,
+                      onPressed: () {},
+                      icon: const Icon(Icons.question_mark),
+                    ),
+                  ),
+                ],
+              ),
+              divider,
+              sizedBoxSpace,
+              TagsInfo(Get.find<TagCollector>()),
+
               // DEBUGGER
               if (kDebugMode) ...[
                 Row(
@@ -394,18 +416,23 @@ class _SettingPageState extends State<SettingPage> {
                         onPressed: () {
                           final repo = Get.find<TagsRepository>();
                           repo
-                              .addNewTags(List.generate(10, (index) => Uuid().v4()))
-                              .then((value) => log("DONE?", name: "moyubie::tags"))
-                              .catchError((err) => log("ERROR! [$err]", name: "moyubie::tags"));
+                              .addNewTags(
+                                  List.generate(10, (index) => Uuid().v4()))
+                              .then((value) =>
+                                  log("DONE?", name: "moyubie::tags"))
+                              .catchError((err) =>
+                                  log("ERROR! [$err]", name: "moyubie::tags"));
                         },
                         child: const Text("Add some random tags for you!")),
                     ElevatedButton(
                         onPressed: () {
                           final repo = Get.find<TagsRepository>();
                           repo
-                              .fetchMostPopularTags(5)
-                              .then((value) => log("DONE? [$value]", name: "moyubie::tags"))
-                              .catchError((err) => log("ERROR! [$err]", name: "moyubie::tags"));
+                              .fetchMostPopularTags(10)
+                              .then((value) =>
+                                  log("DONE? [$value]", name: "moyubie::tags"))
+                              .catchError((err) =>
+                                  log("ERROR! [$err]", name: "moyubie::tags"));
                         },
                         child: const Text("Fetch tags of you!")),
                   ],
