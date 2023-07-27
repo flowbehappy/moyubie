@@ -22,12 +22,13 @@ class TagsInfo extends StatelessWidget {
                   : const Text("Tag collector is disabled."),
               subtitle: _coll.enabled.value
                   ? const Text(
-                      "Once you are asking AI, we will try to get things you love, for recommending more interesting news for you.")
+                      "Once you are asking AI, we will try to guess what you love.")
                   : const Text("We won't try to collect your interest point."),
               value: _coll.enabled.value,
               onChanged: (open) {
                 _coll.enabled.value = open;
               },
+          activeColor: Theme.of(context).primaryColor,
             )),
         const SizedBox(height: 4,),
         ExpansionTile(

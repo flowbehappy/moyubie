@@ -200,6 +200,14 @@ class ChatRoomRepository {
   static const String _columnMessageSource = 'source';
   static const String _columnAskAI = 'ask_ai';
 
+  static const String _tablePromotes = "promotes";
+  static const String _columnPromotedTime = "time";
+  static const String _columnPromotedNewsContent = "content";
+
+  static const String _tableStatistics = "statistics";
+  static const String _columnStatisticsKey = "key";
+  static const String _columnStatisticsValue = "value";
+
   static var myTiDBConn = TiDBConnection();
   // TODO: We haven't implement connection GC yet!!!
   static var connMap = <String, TiDBConnection>{};
@@ -241,6 +249,12 @@ class ChatRoomRepository {
             $_columnTagsAddedAt TEXT,
             "INDEX sand_of_time(added_at)"
           )
+        ''');
+        batch.execute('''
+          CREATE TABLE IF NOT EXISTS $_tablePromotes (
+            $_columnPromotedTime TEXT,
+            $_columnPromotedNewsContent TEXT
+          );
         ''');
 
         await batch.commit();

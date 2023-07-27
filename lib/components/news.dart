@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dart_openai/dart_openai.dart';
@@ -9,6 +10,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:moyubie/components/chat_room.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/repository/tags.dart';
@@ -20,11 +22,19 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../utils/ai_recommend.dart';
 
+part 'news.g.dart';
+
+@JsonSerializable()
 class PromotedRecord {
   DateTime at;
   List<Promoted> records;
 
   PromotedRecord(this.at, this.records);
+
+  factory PromotedRecord.fromJson(Map<String, dynamic> json) =>
+      _$PromotedRecordFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PromotedRecordToJson(this);
 }
 
 mixin BgTaskIndicatorExt<T extends StatefulWidget> on State<T> {
@@ -86,6 +96,7 @@ mixin BgTaskIndicatorExt<T extends StatefulWidget> on State<T> {
 
 enum _NewsSource { HackerNews }
 
+@JsonSerializable()
 class News {
   _NewsSource source;
   int id;
@@ -94,6 +105,10 @@ class News {
   String url;
 
   News(this.source, this.id, this.url, this.title, this.content);
+
+  factory News.fromJson(Map<String, dynamic> json) => _$NewsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$NewsToJson(this);
 
   Map<String, dynamic> convertToJsonForRecommend() {
     return {
@@ -112,13 +127,15 @@ class AIFetchingTask {
 }
 
 class NewsController extends GetxController {
-  HashMap<String, AIFetchingTask> _pending_tasks = HashMap();
+  final RxMap<String, AIFetchingTask> _pendingTasks = RxMap(HashMap());
 
   final RxList<News> _$cached = <News>[].obs;
   final RxList<PromotedRecord> _$record = <PromotedRecord>[].obs;
   final RxString _$aiKey;
   final RxString _$aiModel;
   final RxString _$err = "".obs;
+
+  final _repo = Get.find<TagsRepository>();
 
   NewsController(this._$aiKey, this._$aiModel);
 
@@ -129,8 +146,14 @@ class NewsController extends GetxController {
   final _concurrency = 8;
   final _limit = 50;
 
+  Future<void> init() async {
+    final items = await _repo.fetchPromoted();
+    _$record.value = items.toList();
+  }
+
   Future<void> savePromoted(PromotedRecord rec) async {
     _$record.add(rec);
+    await _repo.savePromoted(rec);
   }
 
   List<PromotedRecord> get promoted {
@@ -141,7 +164,8 @@ class NewsController extends GetxController {
   }
 
   Future<UserProfile> getUserTags() async {
-    return UserProfile(tags: await Get.find<TagsRepository>().fetchMostPopularTags(5));
+    return UserProfile(
+        tags: await Get.find<TagsRepository>().fetchMostPopularTags(5));
   }
 
   Future<void> refreshTopNews() async {
@@ -204,7 +228,7 @@ class NewsController extends GetxController {
   Future<PromotedRecord> recommendNews(List<News> news,
       {UserProfile? profile}) async {
     final id = Uuid().v4();
-    _pending_tasks[id] = AIFetchingTask(source: news);
+    _pendingTasks[id] = AIFetchingTask(source: news);
     try {
       final currentPromoted =
           this.promoted.mapMany((e) => e.records.map((e) => e.news.id)).toSet();
@@ -234,7 +258,7 @@ class NewsController extends GetxController {
       }
       rethrow;
     } finally {
-      _pending_tasks.remove(id);
+      _pendingTasks.remove(id);
     }
   }
 
@@ -243,15 +267,21 @@ class NewsController extends GetxController {
   }
 
   List<AIFetchingTask> pendingTasks() {
-    return _pending_tasks.values.toList(growable: false);
+    return _pendingTasks.values.toList(growable: false);
   }
 }
 
+@JsonSerializable()
 class Promoted {
   News news;
   String reason;
 
   Promoted(this.news, this.reason);
+
+  factory Promoted.fromJson(Map<String, dynamic> json) =>
+      _$PromotedFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PromotedToJson(this);
 }
 
 class NewsWindow extends StatefulWidget {
@@ -306,6 +336,7 @@ class _NewsWindowState extends State<NewsWindow>
   void initState() {
     _tab_key = Iterable.generate(2, (i) => GlobalKey()).toList();
     _srv = Get.find<NewsController>();
+    _srv.init();
     _webctl?.setNavigationDelegate(NavigationDelegate(onProgress: (i) {
       if (mounted && _opened_link != null) {
         setState(() {
@@ -362,7 +393,7 @@ class _NewsWindowState extends State<NewsWindow>
                               .logEvent(name: "promote_news");
                           await promoteNews();
                         } catch (e, stack) {
-                          if (kDebugMode ) {
+                          if (kDebugMode) {
                             stack.printError(
                                 info: "promote_news::error::stacktrace");
                           }
@@ -384,7 +415,8 @@ class _NewsWindowState extends State<NewsWindow>
                             : ListView(
                                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                                 children: [
-                                  if (_srv.pendingTasks().isNotEmpty) _PendingCard(_srv.pendingTasks()),
+                                  if (_srv.pendingTasks().isNotEmpty && _rfrctl.headerState?.mode == IndicatorMode.inactive)
+                                    _PendingCard(_srv.pendingTasks()),
                                   ..._srv.promoted.map((e) => _PromotedGroup(
                                       record: e,
                                       onEnter: (promoted) =>
@@ -596,7 +628,7 @@ class _NewsWindowState extends State<NewsWindow>
       return;
     }
     _srv.lastTab = _tabctl.index;
-    if (_tabctl.index == 0) {
+    if (_tabctl.index == 0 && !bgTaskRunning) {
       runOneShotTask(() async {
         await _srv.cachedOrFetchTopNews();
       }());
@@ -642,12 +674,20 @@ class _PendingCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         color: th.primaryColor,
         child: Container(
-            child: ListTile(subtitle: Container(child: LinearProgressIndicator(color: Colors.white, backgroundColor: th.primaryColor,), margin: EdgeInsets.only(top: 8),),
-              title: Text(
-                "We are still longing for ${_task.length} response(s)...",
-                style: (th.textTheme.labelLarge ?? const TextStyle()).merge(const TextStyle(color: Colors.white)),
-              ),
-            )));
+            child: ListTile(
+          subtitle: Container(
+            child: LinearProgressIndicator(
+              color: Colors.white,
+              backgroundColor: th.primaryColor,
+            ),
+            margin: EdgeInsets.only(top: 8),
+          ),
+          title: Text(
+            "We are still longing for ${_task.length} response(s)...",
+            style: (th.textTheme.labelLarge ?? const TextStyle())
+                .merge(const TextStyle(color: Colors.white)),
+          ),
+        )));
   }
 }
 
@@ -714,8 +754,7 @@ class _PromotedCard extends StatelessWidget {
                 ),
                 subtitle: Text(
                   _promoted.reason,
-                  style: const TextStyle(
-                      fontStyle: FontStyle.italic),
+                  style: const TextStyle(fontStyle: FontStyle.italic),
                 ),
               )),
         ));
