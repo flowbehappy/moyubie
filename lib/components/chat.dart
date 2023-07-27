@@ -226,9 +226,11 @@ class _ChatWindowState extends State<ChatWindow> {
           padding: const EdgeInsets.all(8.0),
           child: SelectableText(
             message.message,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: Color.fromARGB(255, 0, 0, 0),
+              color: isDark
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 0, 0, 0),
             ),
           ),
         );
