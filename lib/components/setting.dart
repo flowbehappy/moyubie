@@ -121,7 +121,55 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              // sizedBoxSpace,
+              sizedBoxSpace,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 55,
+                    child:
+                      Row(
+                        children: [
+                          const Text("Name"),
+                          Tooltip(
+                            message:
+                            "You can come up with funny names for yourself.",
+                            child: IconButton(
+                              iconSize: 10.0,
+                              splashRadius: 10,
+                              color: Theme.of(context).colorScheme.primary,
+                              onPressed: () {},
+                              icon: const Icon(Icons.question_mark),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ),
+                  const SizedBox(width: 30),
+                  Expanded(
+                    child: SizedBox(
+                        height: 50.0,
+                        width: 200.0,
+                        child: TextFormField(
+                          initialValue: controller.openAiKey.value,
+                          decoration: InputDecoration(
+                            floatingLabelBehavior: FloatingLabelBehavior.auto,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                          ),
+                          maxLines: 1,
+                          onChanged: (value) {
+                          },
+                          obscureText: controller.isObscure.value,
+                        )),
+                  ),
+                ],
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -194,7 +242,7 @@ class _SettingPageState extends State<SettingPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 50,
+                    width: 55,
                     child: Text("Model"),
                   ),
                   const SizedBox(width: 30),
@@ -244,7 +292,7 @@ class _SettingPageState extends State<SettingPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 50,
+                    width: 55,
                     child: Text("Token"),
                   ),
                   const SizedBox(width: 30),

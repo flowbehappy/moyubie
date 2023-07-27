@@ -13,8 +13,6 @@ import 'package:uuid/uuid.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/services.dart';
 
-import '../repository/chat_room.dart';
-
 enum ChatRoomType {
   // For simplicity, we only support 1 type
   // tablet,
@@ -66,7 +64,7 @@ class _ChatRoomState extends State<ChatRoom> {
     chatRoomController.setCurrentRoom(index);
     if (index >= 0) {
       final room = chatRoomController.getCurrentRoom();
-      chatRoomController.currentChatRoomUuid(room.uuid);
+      chatRoomController.currentChatRoomUuid(room!.uuid);
       MessageController controllerMessage = Get.find();
       controllerMessage.loadAllMessages(room);
     }
@@ -418,6 +416,9 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     final MessageController messageController = Get.find();
     messageController.messageList.value = [];
     final room = chatRoomController.getCurrentRoom();
+    if (room == null) {
+      return;
+    }
     chatRoomController.setCurrentRoom(-1);
     chatRoomController.deleteChatRoom(room);
     FirebaseAnalytics.instance.logEvent(name: "chat_room_delete");
@@ -435,7 +436,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
   static String _getCurrentRoomConnectionToken() {
     final comp.ChatRoomController chatRoomController = Get.find();
     final room = chatRoomController.getCurrentRoom();
-    final token = room.connectionToken;
+    final token = room!.connectionToken;
     return token;
   }
 

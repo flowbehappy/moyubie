@@ -138,6 +138,9 @@ class _ChatWindowState extends State<ChatWindow> {
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
     final room = chatRoomController.getCurrentRoom();
+    if (room == null) {
+      return;
+    }
     final String? explanation = chatRoomNames[room.name];
     if (explanation != null) {
       final demoMsg = Message(
@@ -163,6 +166,9 @@ class _ChatWindowState extends State<ChatWindow> {
     final MessageController messageController = Get.find();
     final ChatRoomController chatRoomController = Get.find();
     final room = chatRoomController.getCurrentRoom();
+    if (room == null) {
+      return;
+    }
     var first_letters =
         message.substring(0, min(3, message.length)).toLowerCase();
     var ask_ai = first_letters == "@ai";
@@ -322,6 +328,9 @@ class _ChatWindowState extends State<ChatWindow> {
   void _loadMessagesRemote() async {
     final ChatRoomController chatRoomController = Get.find();
     final room = chatRoomController.getCurrentRoom();
+    if (room == null) {
+      return;
+    }
     final MessageController messageController = Get.find();
     messageController.upsertRemoteMessages(room);
   }
