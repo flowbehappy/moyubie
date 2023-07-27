@@ -176,7 +176,7 @@ class SettingsController extends GetxController {
   }
 
   void setServerlessCmd(String text) {
-    serverlessCmdTmp.value = text;
+    serverlessCmdTmp.value = text.trim();
   }
 
   getServerlessCmdFromPreferences() async {
