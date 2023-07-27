@@ -26,14 +26,14 @@ class UserProfile {
 
   Map<String, dynamic> toJson() {
     var res = <String, dynamic>{};
-    if (!job.isEmpty) {
-      res[_PromptStrings._job] = job;
+    if (job.isNotEmpty) {
+      res[_PromptStringsEn._job] = job;
     }
-    if (!language.isEmpty) {
-      res[_PromptStrings._lang] = language;
+    if (language.isNotEmpty) {
+      res[_PromptStringsEn._lang] = language;
     }
     if (tags.isNotEmpty) {
-      res[_PromptStrings._interesting_fields] = tags;
+      res[_PromptStringsEn._interesting_fields] = tags;
     }
     return res;
   }
@@ -83,7 +83,7 @@ class WithOpenAI {
   }
 }
 
-class TagCollector extends WithOpenAI {
+class UserProfiler extends WithOpenAI {
   static const _sys_prompt = "你是一个用户画像服务，你通过 `fetch_message` 获得用户最近的问题。"
       "请通过这些问题（不要带上其它任何来源）猜测用户关注的领域，以及如果要推送新闻内容，什么主题的内容那样的人会感兴趣？"
       "请把这些信息发送给“send_report”函数，如果有些属性猜不出来，那么请不要带上那些东西。";
@@ -105,9 +105,9 @@ class TagCollector extends WithOpenAI {
             "type": "array",
             "items": {"type": "string"}
           },
-          _PromptStrings._lang: {"type": "string"},
-          _PromptStrings._country: {"type": "string"},
-          _PromptStrings._job: {"type": "string"}
+          _PromptStringsEn._lang: {"type": "string"},
+          _PromptStringsEn._country: {"type": "string"},
+          _PromptStringsEn._job: {"type": "string"}
         },
         "required": [
           _PromptStringsEn._interesting_fields,
@@ -124,7 +124,7 @@ class TagCollector extends WithOpenAI {
     },
   );
 
-  TagCollector(super._context);
+  UserProfiler(super._context);
 
   Future<UserProfile> messageToTags(List<String> msgs) async {
     final res = await OpenAI.instance.chat.create(
@@ -145,13 +145,13 @@ class TagCollector extends WithOpenAI {
       frequencyPenalty: 0.5,
     );
     final args = res.choices[0].message.functionCall?.arguments;
-    final lang = args?[_PromptStrings._lang] ?? "";
+    final lang = args?[_PromptStringsEn._lang] ?? "";
     final tags = [
-      ...args?[_PromptStrings._interesting_fields] ?? [],
-      ...args?[_PromptStrings._interesting_topic] ?? []
+      ...args?[_PromptStringsEn._interesting_fields] ?? [],
+      ...args?[_PromptStringsEn._interesting_topic] ?? []
     ];
     return UserProfile(
-        job: args?[_PromptStrings._job] ?? "",
+        job: args?[_PromptStringsEn._job] ?? "",
         language: lang,
         tags: tags.cast<String>());
   }
