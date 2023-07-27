@@ -195,7 +195,7 @@ class _ChatWindowState extends State<ChatWindow> {
     switch (message.source) {
       case MessageSource.user:
         icon = FontAwesomeIcons.fish;
-        name = "User";
+        name = message.userName;
         color = const Color.fromARGB(255, 156, 225, 111);
         msg_box = Padding(
           padding: const EdgeInsets.all(8.0),
@@ -210,7 +210,7 @@ class _ChatWindowState extends State<ChatWindow> {
         break;
       case MessageSource.bot:
         icon = FontAwesomeIcons.robot;
-        name = "Bot";
+        name = "Bot#${message.userName}";
         color = isDark
             ? const Color.fromARGB(255, 92, 89, 89)
             : const Color.fromARGB(255, 255, 255, 255);
