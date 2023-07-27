@@ -121,6 +121,50 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
+              sizedBoxSpace,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text("Nickname"),
+                  Tooltip(
+                    message: "Set your nickname here.",
+                    child: IconButton(
+                      iconSize: 10.0,
+                      splashRadius: 10,
+                      color: Theme.of(context).colorScheme.primary,
+                      onPressed: () {},
+                      icon: const Icon(Icons.question_mark),
+                    ),
+                  ),
+                ],
+              ),
+              divider,
+              sizedBoxSpace,
+              SizedBox(
+                height: 50,
+                child: TextFormField(
+                  initialValue: controller.nickname.value,
+                  decoration: InputDecoration(
+                    hintMaxLines: 100,
+                    hintText: "Set your nickname here",
+                    floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(5),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                  ),
+                  autovalidateMode: AutovalidateMode.always,
+                  maxLines: 1,
+                  minLines: 1,
+                  onEditingComplete: () {},
+                  onChanged: (value) {
+                    controller.setNickname(value);
+                  },
+                ),
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
