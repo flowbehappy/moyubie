@@ -6,20 +6,18 @@ import 'package:moyubie/controller/message.dart';
 import 'package:moyubie/controller/prompt.dart';
 import 'package:moyubie/controller/settings.dart';
 import 'package:moyubie/components/setting.dart';
+import 'package:moyubie/repository/tags.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:moyubie/repository/tags.dart';
 import 'package:moyubie/utils/tag_collector.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:moyubie/configs/translations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:io' show Platform;
 import 'package:path/path.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 
 import 'components/chat_room.dart';
 import 'controller/chat_room.dart';
@@ -86,7 +84,7 @@ class MyApp extends StatelessWidget {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
     final ChatRoomType type = ChatRoomType.phone;
     final settingsCtl = SettingsController();
-    final tagsRepo = TagsRepository.byConfig(settingsCtl);
+    final tagsRepo = TagsRepository();
     Get.put(settingsCtl);
     Get.put(MessageController());
     Get.put(PromptController());
@@ -111,7 +109,10 @@ class MyApp extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             children: [
               ChatRoom(restorationId: "chat_room", type: type),
-              NewsWindow(ty: type, key: newsWinKey,),
+              NewsWindow(
+                ty: type,
+                key: newsWinKey,
+              ),
               const SettingPage(),
             ],
           ),

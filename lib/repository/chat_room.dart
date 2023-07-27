@@ -186,6 +186,11 @@ class ChatRoomRepository {
   // The user role of this chat room, could be 'host' or 'guest'
   static const String _columnChatRoomRole = 'role';
 
+  static const _tableTags = "tags";
+  static const _columnTagsName = "name";
+  // UTC time zone. SQLite: Text, TiDB: DateTime
+  static const _columnTagsAddedAt = "added_at";
+
   static const String _columnMessageUuid = 'uuid';
   static const String _columnMessageUserName = 'user_name';
   // UTC time zone. SQLite: Text, TiDB: DateTime
@@ -212,14 +217,16 @@ class ChatRoomRepository {
     return _instance!;
   }
 
-  Future<Database> _getDb() async {
+  Future<Database> getLocalDb() async {
     if (_database == null) {
       final String path = join(await getDatabasesPath(), 'moyubie.db');
       _database = await openDatabase(path, version: 1,
           onCreate: (Database db, int version) async {
         print("on create!");
-        await db.execute('''
-          CREATE TABLE $_tableChatRoom (
+        final batch = db.batch();
+
+        batch.execute('''
+          CREATE TABLE IF NOT EXISTS $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
             $_columnChatRoomCreateTime TEXT,
@@ -227,6 +234,15 @@ class ChatRoomRepository {
             $_columnChatRoomRole TEXT
           )
         ''');
+        batch.execute('''
+          CREATE TABLE IF NOT EXISTS $_tableTags (
+            $_columnTagsName TEXT,
+            $_columnTagsAddedAt TEXT,
+            "INDEX sand_of_time(added_at)"
+          )
+        ''');
+
+        await batch.commit();
       });
     }
     return _database!;
@@ -291,6 +307,10 @@ class ChatRoomRepository {
     return "hose: ${myTiDBConn.host}, port: ${myTiDBConn.port}, userName: ${myTiDBConn.userName}, password: ${myTiDBConn.password}";
   }
 
+  Future<MySQLConnection?> getMyRemoteDb() {
+    return getRemoteDb(myTiDBConn, true);
+  }
+
   static Future<MySQLConnection?> getRemoteDb(TiDBConnection conn, bool isHost,
       {bool forceInit = false}) async {
     bool shouldInit =
@@ -324,9 +344,7 @@ class ChatRoomRepository {
             await dbConn.execute("CREATE DATABASE IF NOT EXISTS moyubie;");
           }
           await dbConn.execute("USE moyubie;");
-          res = await dbConn.execute("SHOW TABLES LIKE 'chat_room';");
-          if (res.rows.isEmpty) {
-            await dbConn.execute('''
+          await dbConn.execute('''
             CREATE TABLE IF NOT EXISTS $_tableChatRoom (
             $_columnChatRoomUuid VARCHAR(36) PRIMARY KEY,
             $_columnChatRoomName TEXT,
@@ -335,7 +353,12 @@ class ChatRoomRepository {
             $_columnChatRoomRole TEXT
             )
             ''');
-          }
+          await dbConn.execute('''
+            CREATE TABLE IF NOT EXISTS $_tableTags (
+            $_columnTagsName TEXT,
+            $_columnTagsAddedAt DATETIME(6)
+            )
+            ''');
         }
       }
     } catch (e) {
@@ -346,7 +369,7 @@ class ChatRoomRepository {
   }
 
   Future<List<ChatRoom>> getChatRooms({String? roomId}) async {
-    final db = await _getDb();
+    final db = await getLocalDb();
     String? where = roomId == null ? null : "$_columnChatRoomUuid = '$roomId'";
     final List<Map<String, dynamic>> maps =
         await db.query(_tableChatRoom, where: where);
@@ -385,7 +408,7 @@ class ChatRoomRepository {
   }
 
   Future<void> upsertLocalChatRooms(List<ChatRoom> rooms) async {
-    final db = await _getDb();
+    final db = await getLocalDb();
     // await db.execute("DELETE FROM $_tableChatRoom;");
     for (var room in rooms) {
       // TODO Remote this
@@ -486,7 +509,7 @@ class ChatRoomRepository {
     // Use the user who is dedicated for this chat room to chat
     room.connectionToken = roomConn.toToken();
 
-    final db = await _getDb();
+    final db = await getLocalDb();
     await db.insert(
       _tableChatRoom,
       room.toSQLMap(),
@@ -505,7 +528,7 @@ class ChatRoomRepository {
   }
 
   Future<void> updateChatRoom(ChatRoom chatRoom) async {
-    final db = await _getDb();
+    final db = await getLocalDb();
     await db.update(
       _tableChatRoom,
       chatRoom.toSQLMap(),
@@ -529,7 +552,7 @@ class ChatRoomRepository {
 
   Future<void> deleteChatRoom(ChatRoom room) async {
     final uuid = room.uuid;
-    final db = await _getDb();
+    final db = await getLocalDb();
     await db.transaction((txn) async {
       await txn.delete(
         _tableChatRoom,
@@ -558,7 +581,7 @@ class ChatRoomRepository {
 
   Future<List<Message>> getMessagesByChatRoomUUid(ChatRoom room,
       {int limit = 500}) async {
-    final db = await _getDb();
+    final db = await getLocalDb();
     final List<Map<String, dynamic>> maps = await db.query(
       '`msg_${room.uuid}`',
       orderBy: "julianday($_columnMessageCreateTime) desc",
@@ -621,7 +644,7 @@ class ChatRoomRepository {
   }
 
   Future<void> addMessageLocal(ChatRoom room, List<Message> messages) async {
-    final db = await _getDb();
+    final db = await getLocalDb();
     final batch = db.batch();
     for (final m in messages) {
       batch.insert('`msg_${room.uuid}`', m.toSQLMap(),
