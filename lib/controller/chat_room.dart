@@ -83,6 +83,11 @@ class ChatRoomController extends GetxController {
       return;
     }
 
+    // Download history messages
+    final messages = await ChatRoomRepository()
+        .getNewMessagesByChatRoomUuidRemote(joinRoom, null);
+    await ChatRoomRepository().addMessageLocal(joinRoom, messages);
+
     var message = Message(
         uuid: uuid.v1(),
         message: "[New user joined!]",
@@ -90,7 +95,7 @@ class ChatRoomController extends GetxController {
         createTime: DateTime.now().toUtc(),
         source: MessageSource.user);
 
-    await ChatRoomRepository().addMessage(joinRoom, message);
+    await ChatRoomRepository().addMessage(joinRoom, [message]);
 
     roomList.add(joinRoom);
     currentRoomIndex.value = IntegerWrapper(roomList.length - 1);

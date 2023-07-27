@@ -27,8 +27,6 @@ class MessageRepository {
       ValueChanged<Message> onResponse,
       ValueChanged<Message> onError,
       ValueChanged<Message> onSuccess) async {
-    // List<Message> messages =
-    // await ChatRoomRepository().getMessagesByChatRoomUUid(chatRoomUuid);
     _getResponseFromLLM(chatRoomUuid, userName, question, convContext,
         onResponse, onError, onSuccess);
   }

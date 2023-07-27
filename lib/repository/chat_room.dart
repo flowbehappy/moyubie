@@ -575,7 +575,8 @@ class ChatRoomRepository {
   }
 
   Future<List<Message>> getNewMessagesByChatRoomUuidRemote(
-      ChatRoom room, DateTime? from) async {
+      ChatRoom room, DateTime? from,
+      {int limit = 500}) async {
     final conn = ensureConnection(room.connectionToken);
     final db =
         await getRemoteDb(conn, false /* isHost should always be false */);
@@ -590,13 +591,13 @@ class ChatRoomRepository {
     var sql;
     try {
       sql =
-          "SELECT * FROM moyubie.`msg_${room.uuid}` $whereClause ORDER BY $_columnMessageCreateTime ASC;";
+          "SELECT * FROM moyubie.`msg_${room.uuid}` $whereClause ORDER BY $_columnMessageCreateTime desc limit $limit;";
       res = await db.execute(sql);
     } catch (e) {
       print("catch error: $sql, error: ${e.toString()}");
       return Future(() => []);
     }
-    return List<Message>.from(res.rows.map((e) {
+    var list = List<Message>.from(res.rows.map((e) {
       var maps = e.assoc();
       return Message(
         uuid: maps[_columnMessageUuid]!,
@@ -609,13 +610,14 @@ class ChatRoomRepository {
         ask_ai: maps[_columnAskAI] == "1",
       );
     }).toList());
+    return list.reversed.toList();
   }
 
-  Future<void> addMessage(ChatRoom room, Message message) async {
-    await addMessageLocal(room, [message]);
+  Future<void> addMessage(ChatRoom room, List<Message> messages) async {
+    await addMessageLocal(room, messages);
 
     // Don't wait for remote message finish adding to TiDB.
-    addMessageRemote(room, message);
+    addMessageRemote(room, messages);
   }
 
   Future<void> addMessageLocal(ChatRoom room, List<Message> messages) async {
@@ -628,9 +630,10 @@ class ChatRoomRepository {
     batch.commit();
   }
 
-  Future<String?> addMessageRemote(ChatRoom room, Message message) async {
+  Future<String?> addMessageRemote(
+      ChatRoom room, List<Message> messages) async {
     try {
-      await _insertMessageRemote(room, message);
+      await _insertMessageRemote(room, messages);
     } catch (e) {
       if (e is MySQLServerException) {
         if (e.errorCode == 1146) {
@@ -640,7 +643,7 @@ class ChatRoomRepository {
             // Add chat room again.
             final newRoom = rooms.first;
             await addChatRoom(newRoom);
-            await _insertMessageRemote(newRoom, message);
+            await _insertMessageRemote(newRoom, messages);
           } else {
             // If it is not, then too weird. I give up!
           }
@@ -656,21 +659,25 @@ class ChatRoomRepository {
     return null;
   }
 
-  Future<void> _insertMessageRemote(ChatRoom room, Message message) async {
+  Future<void> _insertMessageRemote(
+      ChatRoom room, List<Message> messages) async {
     final conn = ensureConnection(room.connectionToken);
     final remoteDB = await getRemoteDb(conn, false);
     if (remoteDB != null) {
       // Must use SQL with param
-      await remoteDB.execute('''INSERT IGNORE INTO moyubie.`msg_${room.uuid}` 
+      // TODO This mysql client does not support batch?
+      for (final m in messages) {
+        await remoteDB.execute('''INSERT IGNORE INTO moyubie.`msg_${room.uuid}` 
       ($_columnMessageUuid, $_columnMessageUserName, $_columnMessageCreateTime, $_columnMessageMessage, $_columnMessageSource, $_columnAskAI) VALUES 
       (:uuid, :user, :createTime, :message, :source, :askAI)''', {
-        "uuid": message.uuid,
-        "user": message.userName,
-        "createTime": message.createTime.toString(),
-        "message": message.message,
-        "source": message.source.name,
-        "askAI": message.ask_ai ? 1 : 0
-      });
+          "uuid": m.uuid,
+          "user": m.userName,
+          "createTime": m.createTime.toString(),
+          "message": m.message,
+          "source": m.source.name,
+          "askAI": m.ask_ai ? 1 : 0
+        });
+      }
     }
   }
 }
