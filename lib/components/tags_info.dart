@@ -17,19 +17,30 @@ class TagsInfo extends StatelessWidget {
     return Column(
       children: [
         Obx(() => SwitchListTile(
-              title: _coll.enabled.value
-                  ? const Text("Tag collector is enabled.")
-                  : const Text("Tag collector is disabled."),
-              subtitle: _coll.enabled.value
+              title: !_coll.available
+                  ? const Text("Tag collector is unavailable.")
+                  : (_coll.enabled.value
+                      ? const Text("Tag collector is enabled.")
+                      : const Text("Tag collector is disabled.")),
+              subtitle: !_coll.available
                   ? const Text(
-                      "Once you are asking AI, we will try to guess what you love.")
-                  : const Text("We won't try to collect your interest point."),
-              value: _coll.enabled.value,
-              onChanged: (open) {
-                _coll.enabled.value = open;
-              },
+                      "Please try to config the OpenAI API key firstly.")
+                  : (_coll.enabled.value
+                      ? const Text(
+                          "Once you are asking AI, we will try to guess what you love.")
+                      : const Text(
+                          "We won't try to collect your interest point.")),
+              value: _coll.enabled.value && _coll.available,
+              onChanged: _coll.available
+                  ? (open) {
+                      _coll.enabled.value = open;
+                    }
+                  : null,
               activeColor: Theme.of(context).primaryColor,
             )),
+        Obx(() => _coll.bgErrs.isNotEmpty ? MaterialBanner(content: Text("There are ${_coll.bgErrs.length} background errors."), actions: [
+          TextButton(onPressed: () {_coll.bgErrs.clear();  }, child: const Text("DISMISS")),
+        ]) : Container() ),
         const SizedBox(
           height: 4,
         ),

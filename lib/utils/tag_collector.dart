@@ -19,6 +19,7 @@ class TagCollector extends DisposableInterface {
 
   AIContext get _ai_ctx =>
       AIContext(api_key: sctl.openAiKey.value, model: sctl.gptModel.value);
+  bool get available => sctl.openAiKey.isNotEmpty;
 
   TagCollector({required this.repo, required this.sctl});
 
@@ -31,7 +32,7 @@ class TagCollector extends DisposableInterface {
   }
 
   void accept(String s) {
-    if (enabled.isFalse) {
+    if (enabled.isFalse || !available) {
       return;
     }
     log("Getting message $s from user.", name: "TagCollector");
