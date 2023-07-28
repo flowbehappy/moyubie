@@ -1,5 +1,5 @@
-import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/repository/chat_room.dart';
+import 'package:Moyubie/controller/settings.dart';
+import 'package:Moyubie/repository/chat_room.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';

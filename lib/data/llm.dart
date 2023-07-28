@@ -1,6 +1,6 @@
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
-import 'package:moyubie/controller/settings.dart';
+import 'package:Moyubie/controller/settings.dart';
 import 'package:uuid/uuid.dart';
 
 import '../repository/chat_room.dart';

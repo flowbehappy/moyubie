@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:moyubie/components/markdown.dart';
-import 'package:moyubie/controller/chat_room.dart';
-import 'package:moyubie/controller/message.dart';
+import 'package:Moyubie/components/markdown.dart';
+import 'package:Moyubie/controller/chat_room.dart';
+import 'package:Moyubie/controller/message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:get/get.dart';
-import 'package:moyubie/controller/settings.dart';
+import 'package:Moyubie/controller/settings.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';

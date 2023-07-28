@@ -11,9 +11,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:moyubie/components/chat_room.dart';
-import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/repository/tags.dart';
+import 'package:Moyubie/components/chat_room.dart';
+import 'package:Moyubie/controller/settings.dart';
+import 'package:Moyubie/repository/tags.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -415,7 +415,9 @@ class _NewsWindowState extends State<NewsWindow>
                             : ListView(
                                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                                 children: [
-                                  if (_srv.pendingTasks().isNotEmpty && _rfrctl.headerState?.mode == IndicatorMode.inactive)
+                                  if (_srv.pendingTasks().isNotEmpty &&
+                                      _rfrctl.headerState?.mode ==
+                                          IndicatorMode.inactive)
                                     _PendingCard(_srv.pendingTasks()),
                                   ..._srv.promoted.map((e) => _PromotedGroup(
                                       record: e,

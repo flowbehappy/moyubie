@@ -1,4 +1,4 @@
-import 'package:moyubie/utils/prompt.dart';
+import 'package:Moyubie/utils/prompt.dart';
 import 'package:get/get.dart';
 
 class PromptController extends GetxController {

@@ -1,6 +1,6 @@
 import 'package:mysql_client/exception.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:moyubie/utils/tidb.dart';
+import 'package:Moyubie/utils/tidb.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:path/path.dart';
 import 'package:mysql_client/mysql_client.dart';
@@ -133,11 +133,7 @@ class ChatRoom {
   }
 }
 
-enum MessageSource {
-  user,
-  bot,
-  sys
-}
+enum MessageSource { user, bot, sys }
 
 // The context
 class AIConversationContext {

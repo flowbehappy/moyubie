@@ -2,13 +2,13 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:moyubie/components/tags_info.dart';
-import 'package:moyubie/controller/chat_room.dart';
-import 'package:moyubie/controller/settings.dart';
+import 'package:Moyubie/components/tags_info.dart';
+import 'package:Moyubie/controller/chat_room.dart';
+import 'package:Moyubie/controller/settings.dart';
 import 'package:get/get.dart';
-import 'package:moyubie/repository/chat_room.dart';
-import 'package:moyubie/repository/tags.dart';
-import 'package:moyubie/utils/tag_collector.dart';
+import 'package:Moyubie/repository/chat_room.dart';
+import 'package:Moyubie/repository/tags.dart';
+import 'package:Moyubie/utils/tag_collector.dart';
 import 'package:uuid/uuid.dart';
 
 class SettingPage extends StatefulWidget {

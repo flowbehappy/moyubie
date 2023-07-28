@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:moyubie/utils/tag_collector.dart';
+import 'package:Moyubie/utils/tag_collector.dart';
 
 class TagsInfo extends StatelessWidget {
   final TagCollector _coll;
@@ -28,14 +28,18 @@ class TagsInfo extends StatelessWidget {
               onChanged: (open) {
                 _coll.enabled.value = open;
               },
-          activeColor: Theme.of(context).primaryColor,
+              activeColor: Theme.of(context).primaryColor,
             )),
-        const SizedBox(height: 4,),
+        const SizedBox(
+          height: 4,
+        ),
         ExpansionTile(
             title: const Text("Your Interests"),
             onExpansionChanged: (exp) {
               if (exp && _$tags.value == null) {
-                _coll.repo.fetchMostPopularTags(10, waitSync: true).then((value) {
+                _coll.repo
+                    .fetchMostPopularTags(10, waitSync: true)
+                    .then((value) {
                   _$tags.value = value;
                 });
               }

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:moyubie/controller/prompt.dart';
+import 'package:Moyubie/controller/prompt.dart';
 import 'package:http/http.dart' as http;
 
 const RAW_FILE_URL = "https://raw.githubusercontent.com/";

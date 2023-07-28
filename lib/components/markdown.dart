@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:moyubie/components/code_wrapper.dart';
-import 'package:moyubie/components/latex.dart';
+import 'package:Moyubie/components/code_wrapper.dart';
+import 'package:Moyubie/components/latex.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 
 class Markdown extends StatelessWidget {

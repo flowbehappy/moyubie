@@ -1,7 +1,7 @@
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
-import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/data/llm.dart';
+import 'package:Moyubie/controller/settings.dart';
+import 'package:Moyubie/data/llm.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 

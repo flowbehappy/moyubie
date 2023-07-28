@@ -2,9 +2,9 @@ import 'package:dart_openai/dart_openai.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:moyubie/repository/chat_room.dart';
-import 'package:moyubie/utils/package.dart';
-import 'package:moyubie/utils/tidb.dart';
+import 'package:Moyubie/repository/chat_room.dart';
+import 'package:Moyubie/utils/package.dart';
+import 'package:Moyubie/utils/tidb.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 

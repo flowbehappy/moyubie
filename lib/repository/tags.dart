@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/widgets.dart';
-import 'package:moyubie/components/news.dart';
+import 'package:Moyubie/components/news.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:get/get.dart';
 import 'package:get/get_rx/get_rx.dart';
-import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/utils/tidb.dart';
-import 'package:moyubie/repository/chat_room.dart';
+import 'package:Moyubie/controller/settings.dart';
+import 'package:Moyubie/utils/tidb.dart';
+import 'package:Moyubie/repository/chat_room.dart';
 import 'package:mysql_client/mysql_client.dart';
 import 'package:stream_transform/stream_transform.dart';
 

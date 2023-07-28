@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_openai/dart_openai.dart';
-import 'package:moyubie/utils/log.dart';
+import 'package:Moyubie/utils/log.dart';
 
 class Recommend {
   final int id;
@@ -72,7 +72,8 @@ class _PromptStringsEn {
 
   static const get_user_info_desc = "Obtain the user's analysis report.";
   static const get_news_desc = "Get the list of news.";
-  static const recommend_news_desc = "Recommend specified news articles to the user with accompanying reasons.";
+  static const recommend_news_desc =
+      "Recommend specified news articles to the user with accompanying reasons.";
 }
 
 class WithOpenAI {

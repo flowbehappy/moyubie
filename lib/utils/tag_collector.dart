@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:get/get.dart';
-import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/repository/tags.dart';
-import 'package:moyubie/utils/ai_recommend.dart';
+import 'package:Moyubie/controller/settings.dart';
+import 'package:Moyubie/repository/tags.dart';
+import 'package:Moyubie/utils/ai_recommend.dart';
 
 class TagCollector extends DisposableInterface {
   final TagsRepository repo;
@@ -17,11 +17,13 @@ class TagCollector extends DisposableInterface {
   RxInt droppedMsgs = 0.obs;
   RxBool enabled = true.obs;
 
-  AIContext get _ai_ctx => AIContext(api_key: sctl.openAiKey.value, model: sctl.gptModel.value);
+  AIContext get _ai_ctx =>
+      AIContext(api_key: sctl.openAiKey.value, model: sctl.gptModel.value);
 
   TagCollector({required this.repo, required this.sctl});
 
-  factory TagCollector.create({ TagsRepository? repo, SettingsController? sctl }) {
+  factory TagCollector.create(
+      {TagsRepository? repo, SettingsController? sctl}) {
     final theRepo = repo ?? Get.find<TagsRepository>();
     final theSctl = sctl ?? Get.find<SettingsController>();
     var coll = TagCollector(repo: theRepo, sctl: theSctl);
@@ -44,7 +46,7 @@ class TagCollector extends DisposableInterface {
       try {
         log("Sending batch $batch to GPT.", name: "TagCollector");
         await sendBatch(batch);
-      } catch(e) {
+      } catch (e) {
         bgErrs.add(e);
         // Retry, or drop this batch of messages.
         if (_batching.length <= 20) {

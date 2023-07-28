@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:moyubie/controller/settings.dart';
-import 'package:moyubie/repository/chat_room.dart';
-import 'package:moyubie/repository/message.dart';
+import 'package:Moyubie/controller/settings.dart';
+import 'package:Moyubie/repository/chat_room.dart';
+import 'package:Moyubie/repository/message.dart';
 import 'package:get/get.dart';
-import 'package:moyubie/utils/tag_collector.dart';
+import 'package:Moyubie/utils/tag_collector.dart';
 import 'package:uuid/uuid.dart';
 
 class MessageController extends GetxController {
