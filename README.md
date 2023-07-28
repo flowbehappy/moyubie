@@ -9,7 +9,7 @@ Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
   * There is no server side required. Chat messages are secure and completely owned by users.
 * A news list powered by AI
 * Supported platforms
-  * iOS, Android, MacOS, Windows, Linux, Web
+  * iOS, Android, MacOS, Windows, Linux
 
 ## Powered By
 
