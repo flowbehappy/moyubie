@@ -30,7 +30,11 @@ class MessageController extends GetxController {
     final newMessages = await ChatRoomRepository()
         .getNewMessagesByChatRoomUuidRemote(room, lastMsgTime);
     for (var item in newMessages) {
-      messageList.add(item);
+      if (lastMsgTime == null ||
+          lastMsgTime.microsecondsSinceEpoch <
+              item.createTime.microsecondsSinceEpoch) {
+        messageList.add(item);
+      }
     }
     if (newMessages.isNotEmpty) {
       update();
