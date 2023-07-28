@@ -158,7 +158,7 @@ class SettingsController extends GetxController {
   String? updateTiDBCmdToRepo(String cmd) {
     if (cmd.isEmpty) return "Empty";
 
-    var (host, port, user, password, _) = parseTiDBConnectionText(cmd);
+    var (host, port, user, password, _, _) = parseTiDBConnectionToken(cmd);
     if (port == 0) {
       return user;
     }

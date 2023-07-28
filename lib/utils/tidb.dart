@@ -4,15 +4,17 @@ String toConnectionToken(
   String userName,
   String password,
   String roomId,
+  String roomName,
 ) {
-  return "mysql -u '$userName' -h $host -P 4000 -p$password --room $roomId";
+  return "mysql -u '$userName' -h $host -P 4000 -p$password --room $roomId --room_name $roomName";
 }
 
 // Return (host, port, user, password, tableId).
 // If port == 0, means "host" is the error message.
-(String, int, String, String, String) parseTiDBConnectionText(String text) {
+(String, int, String, String, String, String) parseTiDBConnectionToken(
+    String text) {
   if (text.isEmpty) {
-    return ("", 0, "", "", "");
+    return ("", 0, "", "", "", "");
   }
 
   text = text.replaceFirst(" -p", " -p ");
@@ -24,7 +26,8 @@ String toConnectionToken(
   String host = "";
   int port = 0;
   String password = "";
-  String msgTable = "";
+  String msgRoom = "";
+  String msgRoomName = "";
 
   try {
     for (int i = 0; i < options.length; i += 1) {
@@ -50,13 +53,15 @@ String toConnectionToken(
           password = nextOpt;
           break;
         case "--room":
-          msgTable = nextOpt;
+          msgRoom = nextOpt;
+        case "--room_name":
+          msgRoomName = nextOpt;
         default:
       }
     }
 
-    return (host, port, user, password, msgTable);
+    return (host, port, user, password, msgRoom, msgRoomName);
   } catch (e) {
-    return (e.toString(), 0, "", "", "");
+    return (e.toString(), 0, "", "", "", "");
   }
 }

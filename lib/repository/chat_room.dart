@@ -19,6 +19,7 @@ class TiDBConnection {
   String userNamePrefix = "";
   String password = "";
   String roomId = "";
+  String roomName = "";
 
   close() async {
     if (connection != null) {
@@ -41,12 +42,14 @@ class TiDBConnection {
   }
 
   setConnect(String host, int port, String userName, String password,
-      String roomId) async {
+      String roomId, String roomName) async {
     this.host = host;
     this.port = port;
     this.userName = userName;
     this.password = password;
     this.roomId = roomId;
+    this.roomName = roomName;
+
     userNamePrefix = userName.split(".").first;
 
     close();
@@ -59,18 +62,19 @@ class TiDBConnection {
     userNamePrefix = "";
     password = "";
     roomId = "";
+    roomName = "";
 
     close();
   }
 
   @override
   String toString() {
-    return "hose: $host, port: $port, userName: $userName, password: $password";
+    return "hose: $host, port: $port, userName: $userName, password: $password, roomId: $roomId, roomName: $roomName";
   }
 
   String toToken() {
     String connText = hasSet() //
-        ? toConnectionToken(host, port, userName, password, roomId)
+        ? toConnectionToken(host, port, userName, password, roomId, roomName)
         : "";
     return base64.encode(utf8.encode(connText));
   }
@@ -79,9 +83,9 @@ class TiDBConnection {
     try {
       String str = utf8.decode(base64.decode(token));
       var conn = TiDBConnection();
-      var (host, port, userName, password, roomId) =
-          parseTiDBConnectionText(str);
-      conn.setConnect(host, port, userName, password, roomId);
+      var (host, port, userName, password, roomId, roomName) =
+          parseTiDBConnectionToken(str);
+      conn.setConnect(host, port, userName, password, roomId, roomName);
       return conn;
     } catch (e) {
       return null;
@@ -130,6 +134,13 @@ class ChatRoom {
       'connection': connectionToken,
       'role': role.name,
     };
+  }
+
+  String getCurrentConnectToken() {
+    // Make sure the current room name is used
+    var conn = TiDBConnection.fromToken(connectionToken)!;
+    conn.roomName = name;
+    return conn.toToken();
   }
 }
 
@@ -275,7 +286,7 @@ class ChatRoomRepository {
     String userName,
     String password,
   ) {
-    myTiDBConn.setConnect(host, port, userName, password, "");
+    myTiDBConn.setConnect(host, port, userName, password, "", "");
   }
 
   static Future<String?> validateRemoteDB(TiDBConnection conn) async {
@@ -453,11 +464,15 @@ class ChatRoomRepository {
       return Future(() => (false, null));
     }
 
+    if (roomConn.roomName.isEmpty) {
+      roomConn.roomName = "Other Chat Room";
+    }
+
     final room = ChatRoom(
         uuid: roomConn.roomId,
-        name: "Other Chat Room",
+        name: roomConn.roomName,
         createTime: DateTime.now().toUtc(),
-        connectionToken: connToken,
+        connectionToken: roomConn.toToken(),
         role: Role.guest);
 
     final rooms = await getChatRooms(roomId: room.uuid);
@@ -499,7 +514,7 @@ class ChatRoomRepository {
 
         // Update the connection to use the new user.
         roomConn.setConnect(
-            myTiDBConn.host, myTiDBConn.port, user, pwd, room.uuid);
+            myTiDBConn.host, myTiDBConn.port, user, pwd, room.uuid, room.name);
         // Looks like TiDB Serverless need some time to prepare the new users' connection.
         // And immediate connection will fail.
       }

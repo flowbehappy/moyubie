@@ -436,7 +436,7 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
   static String _getCurrentRoomConnectionToken() {
     final comp.ChatRoomController chatRoomController = Get.find();
     final room = chatRoomController.getCurrentRoom();
-    final token = room!.connectionToken;
+    final token = room!.getCurrentConnectToken();
     return token;
   }
 
