@@ -351,11 +351,10 @@ class _SettingPageState extends State<SettingPage> {
               divider,
               sizedBoxSpace,
               SizedBox(
-                height: 200,
                 child: TextFormField(
                   initialValue: controller.serverlessCmd.value,
                   decoration: InputDecoration(
-                    hintMaxLines: 100,
+                    hintMaxLines: controller.isTiDBCmdObscure.value ? 1 : 10,
                     hintText:
                         "Go to www.tidbcloud.com, create a TiDB cluster of free Serverless Tier. Copy the connection text of your cluster and paste here. For example: \n\nmysql --connect-timeout 15 -u 'xxxxxx.root' -h gateway01.us-west-2.prod.aws.tidbcloud.com -P 4000 -D test --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/ssl/cert.pem -pxxxxxx",
                     floatingLabelBehavior: FloatingLabelBehavior.auto,
@@ -366,14 +365,27 @@ class _SettingPageState extends State<SettingPage> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
+                    suffixIcon: IconButton(
+                      splashRadius: 10,
+                      icon: Icon(
+                        Icons.remove_red_eye,
+                        color: controller.isTiDBCmdObscure.value
+                            ? Colors.grey
+                            : Colors.blue,
+                      ),
+                      onPressed: () {
+                        controller.isTiDBCmdObscure.value =
+                        !controller.isTiDBCmdObscure.value;
+                      },
+                    ),
                   ),
                   autovalidateMode: AutovalidateMode.always,
-                  maxLines: null,
-                  minLines: 10,
+                  maxLines: controller.isTiDBCmdObscure.value ? 1 : null,
                   onEditingComplete: () {},
                   onChanged: (value) {
                     controller.setServerlessCmd(value);
                   },
+                  obscureText: controller.isTiDBCmdObscure.value,
                 ),
               ),
               Row(

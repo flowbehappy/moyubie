@@ -1,5 +1,4 @@
 import 'package:dart_openai/dart_openai.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:Moyubie/repository/chat_room.dart';
@@ -10,6 +9,7 @@ import 'package:get_storage/get_storage.dart';
 
 class SettingsController extends GetxController {
   final isObscure = true.obs;
+  final isTiDBCmdObscure = false.obs;
 
   bool isLLMReady = false;
 
