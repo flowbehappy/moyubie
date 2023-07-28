@@ -379,41 +379,6 @@ class _SettingPageState extends State<SettingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const Text("Dangerous Zone"),
-                  Tooltip(
-                    message: "Don't use it!",
-                    child: IconButton(
-                      iconSize: 10.0,
-                      splashRadius: 10,
-                      color: Theme.of(context).colorScheme.primary,
-                      onPressed: () {},
-                      icon: const Icon(Icons.question_mark),
-                    ),
-                  ),
-                ],
-              ),
-              divider,
-              sizedBoxSpace,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  ElevatedButton(
-                      onPressed: () => _onClearMessage(true),
-                      child: const Text("Clear local messages")),
-                ],
-              ),
-              sizedBoxSpace,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  ElevatedButton(
-                      onPressed: () => _onClearMessage(false),
-                      child: const Text("Clear remote messages")),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
                   const Text("AI Recommendation"),
                   Tooltip(
                     message: "Control how LLM try to guess things you love.",
@@ -479,7 +444,42 @@ class _SettingPageState extends State<SettingPage> {
                         },
                         child: const Text("Fetch tags of you!")),
                   ],
-                )
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Text("Dangerous Zone"),
+                    Tooltip(
+                      message: "Don't use it!",
+                      child: IconButton(
+                        iconSize: 10.0,
+                        splashRadius: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                        onPressed: () {},
+                        icon: const Icon(Icons.question_mark),
+                      ),
+                    ),
+                  ],
+                ),
+                divider,
+                sizedBoxSpace,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () => _onClearMessage(true),
+                        child: const Text("Clear local messages")),
+                  ],
+                ),
+                sizedBoxSpace,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () => _onClearMessage(false),
+                        child: const Text("Clear remote messages")),
+                  ],
+                ),
               ]
             ],
           );

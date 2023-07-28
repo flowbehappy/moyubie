@@ -58,7 +58,7 @@ class MessageController extends GetxController {
     try {
       MessageRepository().postMessage(
           chatRoomUuid, //
-          "",
+          input.userName,
           ai_question,
           AIConversationContext(), //
           (Message res) {
