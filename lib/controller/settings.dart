@@ -11,7 +11,7 @@ import 'package:get_storage/get_storage.dart';
 
 class SettingsController extends GetxController {
   final isObscure = true.obs;
-  final isTiDBCmdObscure = false.obs;
+  final isTiDBCmdObscure = true.obs;
 
   bool isLLMReady = false;
 
@@ -23,8 +23,6 @@ class SettingsController extends GetxController {
 
   final nickname = "".obs;
   final nicknameTmp = "".obs;
-
-  // final glmBaseUrl = "".obs;
 
   final openAiBaseUrl = "https://api.openai-proxy.com".obs;
 

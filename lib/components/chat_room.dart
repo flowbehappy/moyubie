@@ -102,7 +102,8 @@ class ListPane extends StatelessWidget {
               children: roomCtrl.roomList
                   .asMap()
                   .map((index, room) {
-                    final avatarColor = colors[Random().nextInt(colors.length)];
+                    final colorSeed = room.createTime.millisecondsSinceEpoch;
+                    final avatarColor = getColor(colorSeed);
                     return MapEntry(
                         index,
                         ListTile(
@@ -419,8 +420,8 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     if (room == null) {
       return;
     }
-    chatRoomController.setCurrentRoom(-1);
-    chatRoomController.deleteChatRoom(room);
+    chatRoomController.deleteChatRoom(room).then(
+            (value) => chatRoomController.setCurrentRoom(-1));
     FirebaseAnalytics.instance.logEvent(name: "chat_room_delete");
   }
 

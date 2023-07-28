@@ -1,6 +1,10 @@
 import 'dart:ui';
 
-const List<Color> colors = [
+Color getColor(int seed) {
+  return _colors[seed % _colors.length];
+}
+
+const List<Color> _colors = [
   Color(0xffc22c1e),
   Color(0xffd2372b),
   Color(0xffdf3d32),

@@ -34,10 +34,10 @@ class ChatRoomController extends GetxController {
     update();
   }
 
-  void deleteChatRoom(ChatRoom room) async {
+  Future<void> deleteChatRoom(ChatRoom room) async {
     await ChatRoomRepository().deleteChatRoom(room);
     roomList.value = await ChatRoomRepository().getChatRooms();
-    update();
+    // Please call update() after calling this function.
   }
 
   void renameChatRoom(String newName) async {

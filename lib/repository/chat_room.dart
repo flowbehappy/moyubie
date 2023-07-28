@@ -588,18 +588,17 @@ class ChatRoomRepository {
     });
     await db.execute('DROP TABLE IF EXISTS `msg_$uuid`');
 
-    final conn = TiDBConnection.fromToken(room.connectionToken)!;
-
-    if (conn.hasSet() && room.isHost()) {
-      final remoteDB = await getRemoteDb(myTiDBConn, true);
-      if (remoteDB != null) {
-        await remoteDB.execute(
-            "DELETE FROM moyubie.$_tableChatRoom WHERE $_columnChatRoomUuid = '$uuid'");
-        await remoteDB.execute("DROP TABLE IF EXISTS moyubie.`msg_$uuid`");
+    final myRemoteDB = await getMyRemoteDb();
+    if (myRemoteDB != null) {
+      await myRemoteDB.execute(
+          "DELETE FROM moyubie.$_tableChatRoom WHERE $_columnChatRoomUuid = '$uuid'");
+      if (room.isHost()) {
+        await myRemoteDB.execute("DROP TABLE IF EXISTS moyubie.`msg_$uuid`");
+        final conn = TiDBConnection.fromToken(room.connectionToken)!;
         // Do some protection, in case bug cause the root user removed.
         if (!(conn.userName.split(".").length == 2 &&
             conn.userName.split(".")[1] == "root")) {
-          await remoteDB.execute("DROP USER IF EXISTS '${conn.userName}'");
+          await myRemoteDB.execute("DROP USER IF EXISTS '${conn.userName}'");
         }
       }
     }

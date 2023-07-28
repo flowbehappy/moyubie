@@ -185,7 +185,8 @@ class _ChatWindowState extends State<ChatWindow> {
     if (room == null) {
       return const SizedBox.shrink();
     }
-    if (DateTime.now().toUtc().difference(room.createTime).inMinutes >= 1) {
+    if (!room.isHost() || DateTime.now().toUtc().difference(
+        room.createTime).inMinutes >= 1) {
       return const SizedBox.shrink();
     }
     return Center(
