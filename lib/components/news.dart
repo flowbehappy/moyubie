@@ -1,6 +1,5 @@
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:dart_openai/dart_openai.dart';
@@ -49,7 +48,7 @@ mixin BgTaskIndicatorExt<T extends StatefulWidget> on State<T> {
       throw Exception("the progress isn't running!");
     }
     if (_max == null) {
-      return CircularProgressIndicator();
+      return const CircularProgressIndicator();
     }
     return LinearProgressIndicator(value: (_current as double) / _max!);
   }
@@ -137,6 +136,9 @@ class NewsController extends GetxController {
 
   final _repo = Get.find<TagsRepository>();
 
+  bool _inited = false;
+  bool _loading = false;
+
   NewsController(this._$aiKey, this._$aiModel);
 
   AIContext get _ai_ctx =>
@@ -147,8 +149,12 @@ class NewsController extends GetxController {
   final _limit = 50;
 
   Future<void> init() async {
+    if (_inited) {
+      return;
+    }
     final items = await _repo.fetchPromoted();
     _$record.value = items.toList();
+    _inited = true;
   }
 
   Future<void> savePromoted(PromotedRecord rec) async {
@@ -219,15 +225,20 @@ class NewsController extends GetxController {
   }
 
   Future<List<News>> cachedOrFetchTopNews() async {
-    if (_$cached.length < _limit) {
-      await refreshTopNews();
+    if (_$cached.length < _limit && !_loading) {
+      _loading = true;
+      try {
+        await refreshTopNews();
+      } finally {
+        _loading = false;
+      }
     }
     return _$cached;
   }
 
   Future<PromotedRecord> recommendNews(List<News> news,
       {UserProfile? profile}) async {
-    final id = Uuid().v4();
+    final id = const Uuid().v4();
     _pendingTasks[id] = AIFetchingTask(source: news);
     try {
       final currentPromoted =
@@ -461,7 +472,7 @@ class _NewsWindowState extends State<NewsWindow>
           readyText: "Nothing will happen.",
           processedText: "Ya see?",
           failedText: "Oops...",
-          textStyle: TextStyle(overflow: TextOverflow.ellipsis),
+          textStyle: const TextStyle(overflow: TextOverflow.ellipsis),
           pullIconBuilder: (ctx, state, offs) => const Icon(Icons.block),
         );
 
@@ -521,7 +532,7 @@ class _NewsWindowState extends State<NewsWindow>
         leading: goBack,
         toolbarHeight: 40,
         foregroundColor: Colors.white,
-        backgroundColor: Color.fromARGB(255, 70, 70, 70),
+        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
         actions: actions,
         bottom: bottom);
   }
@@ -538,7 +549,7 @@ class _NewsWindowState extends State<NewsWindow>
         title: const Text("News"),
         toolbarHeight: 40,
         foregroundColor: Colors.white,
-        backgroundColor: Color.fromARGB(255, 70, 70, 70),
+        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
         bottom: bottom);
   }
 
@@ -555,9 +566,42 @@ class _NewsWindowState extends State<NewsWindow>
                   style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold))));
     }
-    return const Center(
-        child: Text(
-            "Webview not supported. The URL will be open at external browser."));
+    return Center(
+        child: Container(
+      width: 480,
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+           Text(
+              "WebView not supported in this platform. The URL will be opened in external browser.", style: Theme.of(context).textTheme.titleMedium),
+          Container(
+            margin: EdgeInsets.symmetric(vertical: 8),
+            child: TextFormField(
+              initialValue: _opened_link ?? "",
+              readOnly: true,
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton(
+                  onPressed: () {
+                    setState(() {
+                      _opened_link = null;
+                      _err = null;
+                    });
+                  },
+                  child: Text(
+                    "GO BACK",
+                    style: Theme.of(context).textTheme.labelMedium,
+                  )),
+            ],
+          )
+        ],
+      ),
+    ));
   }
 
   Future<void> openUrl(String link) async {
@@ -579,8 +623,8 @@ class _NewsWindowState extends State<NewsWindow>
       return;
     }
     final banner = MaterialBanner(
-        leading: Icon(Icons.error, color: Colors.white),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const Icon(Icons.error, color: Colors.white),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         content: Text(
           _srv._$err.value,
           style: const TextStyle(color: Colors.white),
@@ -591,7 +635,7 @@ class _NewsWindowState extends State<NewsWindow>
               _srv.dismissError();
               maybeShowBannerForError();
             },
-            icon: Icon(
+            icon: const Icon(
               Icons.check,
               color: Colors.white,
             ),
@@ -682,7 +726,7 @@ class _PendingCard extends StatelessWidget {
               color: Colors.white,
               backgroundColor: th.primaryColor,
             ),
-            margin: EdgeInsets.only(top: 8),
+            margin: const EdgeInsets.only(top: 8),
           ),
           title: Text(
             "We are still longing for ${_task.length} response(s)...",
