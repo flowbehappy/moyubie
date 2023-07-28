@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -191,10 +193,20 @@ class SettingsController extends GetxController {
     setServerlessCmd(cmd);
   }
 
+  String generateRandomNickname() {
+    var random = Random();
+    var index = random.nextInt(999999);
+    final indexStr = index.toString().padLeft(6, '0');
+    return "Moyu-$indexStr";
+  }
+
   getNicknameFromPreferences() async {
     GetStorage _box = GetStorage();
-    String nickname = _box.read('nickname') ?? "Moyu";
-    setNickname(nickname);
+    var name = _box.read('nickname');
+    if (name == null || name.isEmpty) {
+      name = generateRandomNickname();
+    }
+    setNickname(name);
   }
 
   void setOpenAiBaseUrl(String baseUrl) {
