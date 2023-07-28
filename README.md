@@ -31,9 +31,5 @@ Moyubie is a cross-platform AI powered IM (Instant Messaging) APP.
   ```
 
 ## Downloads
-* iOS (TODO)
-* Android (TODO)
-* [MacOS](./release/Moyubie-Installer.dmg)
-* Windows (TODO)
-* Linux (TODO)
+[v1.0.0](https://github.com/flowbehappy/moyubie/releases/tag/v1.0.0)
 
