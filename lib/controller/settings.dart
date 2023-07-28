@@ -11,7 +11,7 @@ import 'package:get_storage/get_storage.dart';
 
 class SettingsController extends GetxController {
   final isObscure = true.obs;
-  final isTiDBCmdObscure = true.obs;
+  final isTiDBCmdObscure = false.obs;
 
   bool isLLMReady = false;
 
