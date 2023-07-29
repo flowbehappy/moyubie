@@ -64,6 +64,7 @@ dependencies:
   timeago: ^3.5.0
   stream_transform: ^2.1.0
   json_annotation: ^4.8.1
+  args: ^2.4.2
 
 dev_dependencies:
   flutter_test:
