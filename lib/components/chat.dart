@@ -43,32 +43,33 @@ class _ChatWindowState extends State<ChatWindow> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Expanded(
-            child: GetX<MessageController>(
-              builder: (controller) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToNewMessage();
-                });
-                if (controller.messageList.isNotEmpty) {
-                  return ListView.builder(
-                    controller: _scrollController,
-                    itemCount: controller.messageList.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessageCard(controller.messageList[index]);
-                    },
-                  );
-                } else {
-                  return _buildStartRoomButton();
-                }
-              },
-            ),
+    return Column(
+      children: [
+        Expanded(
+          child: GetX<MessageController>(
+            builder: (controller) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollToNewMessage();
+              });
+              if (controller.messageList.isNotEmpty) {
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(8,8,8,0),
+                  controller: _scrollController,
+                  itemCount: controller.messageList.length,
+                  itemBuilder: (context, index) {
+                    return _buildMessageCard(controller.messageList[index]);
+                  },
+                );
+              } else {
+                return _buildStartRoomButton();
+              }
+            },
           ),
-          const SizedBox(height: 16),
-          Form(
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Form(
             key: _formKey, // 将 GlobalKey 赋值给 Form 组件的 key 属性
             child: RawKeyboardListener(
               focusNode: FocusNode(),
@@ -115,9 +116,9 @@ class _ChatWindowState extends State<ChatWindow> {
               ),
             ),
           ),
-          const SizedBox(height: 25),
-        ],
-      ),
+        ),
+        const SizedBox(height: 25),
+      ],
     );
   }
 
@@ -185,8 +186,8 @@ class _ChatWindowState extends State<ChatWindow> {
     if (room == null) {
       return const SizedBox.shrink();
     }
-    if (!room.isHost() || DateTime.now().toUtc().difference(
-        room.createTime).inMinutes >= 1) {
+    if (!room.isHost() ||
+        DateTime.now().toUtc().difference(room.createTime).inMinutes >= 1) {
       return const SizedBox.shrink();
     }
     return Center(
@@ -264,56 +265,52 @@ class _ChatWindowState extends State<ChatWindow> {
       default:
     }
 
-    Widget? nameBox = Text(
-      name,
+    final nameBox = TextSpan(
+      text:name,
       style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.normal,
       ),
     );
 
-    Widget? timeBox = Container(
-      padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
-      alignment: Alignment.bottomLeft,
-      child: Text(
-        timeStr,
-        style: const TextStyle(
-          fontSize: 10,
-        ),
+    final timeBox = TextSpan(
+      text:timeStr,
+      style: const TextStyle(
+        fontSize: 10,
       ),
     );
 
-    return Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const SizedBox(
-              width: 10,
-            ),
-            FaIcon(icon),
-            const SizedBox(
-              width: 5,
-            ),
-            nameBox,
-            const SizedBox(
-              width: 5,
-            ),
-            timeBox,
-          ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 0, 8, 8),
+          child: CircleAvatar(child: FaIcon(icon, size: 16)),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Card(
-                color: color,
-                margin: const EdgeInsets.all(8),
-                child: msg_box,
-              ),
-            ),
-          ],
-        ),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text.rich(TextSpan(children: [nameBox, TextSpan(text: " "),timeBox])),
+              Card(
+                margin: EdgeInsets.only(top: 4, bottom: 8),
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(2))),
+                color: color!,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                  child: SelectableText(
+                    message.message,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      textBaseline: TextBaseline.alphabetic,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        )
       ],
     );
   }
