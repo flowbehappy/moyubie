@@ -86,6 +86,12 @@ class ListPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        systemOverlayStyle:
+            SystemUiOverlayStyle(statusBarBrightness: Theme.of(context).brightness),
+        backgroundColor: Theme.of(context).colorScheme.background,
+      ),
+      primary: false,
       floatingActionButton: Obx(() => NewChatButton(
             pctl: pctl,
           )),
@@ -306,7 +312,7 @@ class NewChatButton extends StatelessWidget {
     final ctl = Scaffold.of(context);
     return FloatingActionButton(
       backgroundColor: Theme.of(context).primaryColor,
-      onPressed: _opened 
+      onPressed: _opened
           ? () {
               pctl.value!.close();
             }
@@ -315,8 +321,7 @@ class NewChatButton extends StatelessWidget {
                   ctl.showBottomSheet((context) => const _ChatRoomActions());
               pctl.value!.closed.then((value) => pctl.value = null);
             },
-      child:
-          _opened ? const Icon(Icons.close) : const Icon(Icons.add),
+      child: _opened ? const Icon(Icons.close) : const Icon(Icons.add),
     );
   }
 }

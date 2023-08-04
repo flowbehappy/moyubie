@@ -317,6 +317,8 @@ class _NewsWindowState extends State<NewsWindow>
   String? _opened_link;
   String? _err;
 
+  bool _calledPromote = false;
+
   _NewsWindowState();
 
   late NewsController _srv;
@@ -426,9 +428,7 @@ class _NewsWindowState extends State<NewsWindow>
                             : ListView(
                                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                                 children: [
-                                  if (_srv.pendingTasks().isNotEmpty &&
-                                      _rfrctl.headerState?.mode ==
-                                          IndicatorMode.inactive)
+                                  if (_srv._pendingTasks.isNotEmpty && !_calledPromote)
                                     _PendingCard(_srv.pendingTasks()),
                                   ..._srv.promoted.map((e) => _PromotedGroup(
                                       record: e,
@@ -442,6 +442,12 @@ class _NewsWindowState extends State<NewsWindow>
       endPane: contentForWeb(),
       panePriority: panePriority,
     );
+  }
+
+  @override
+  void deactivate() {
+    _calledPromote = false;
+    super.deactivate();
   }
 
   bool get agiAccessible => _ai_ctx.api_key.isNotEmpty;
@@ -618,6 +624,9 @@ class _NewsWindowState extends State<NewsWindow>
 
   void maybeShowBannerForError() {
     final mgr = _scaffoldKey;
+    if (_scaffoldKey.currentWidget == null) {
+      return;
+    }
     if (_srv._$err.isEmpty) {
       mgr.currentState?.clearMaterialBanners();
       return;
@@ -660,6 +669,7 @@ class _NewsWindowState extends State<NewsWindow>
   }
 
   Future<void> promoteNews() async {
+    _calledPromote = true;
     await _srv.recommendNews(_srv._$cached);
     maybeShowBannerForError();
   }
