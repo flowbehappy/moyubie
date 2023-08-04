@@ -75,6 +75,7 @@ class ListPane extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final int selectedIndex;
   final _scrollController = ScrollController();
+  Rx<PersistentBottomSheetController?> pctl = Rx(null);
 
   ListPane({
     super.key,
@@ -84,49 +85,45 @@ class ListPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetX<comp.ChatRoomController>(builder: (roomCtrl) {
-      return Scaffold(
-          appBar: AppBar(
-              title: const Text("Chat Room"),
-              foregroundColor: Colors.white,
-              backgroundColor: const Color.fromARGB(255, 70, 70, 70),
-              toolbarHeight: 40,
-              automaticallyImplyLeading: false,
-              actions: const [NewChatButton()]),
-          body: Scrollbar(
+    return Scaffold(
+      floatingActionButton: Obx(() => NewChatButton(
+            pctl: pctl,
+          )),
+      body: SafeArea(
+        child: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
+          return ListView(
             controller: _scrollController,
-            child: ListView(
-              controller: _scrollController,
-              restorationId: 'chat_room_list_view',
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: roomCtrl.roomList
-                  .asMap()
-                  .map((index, room) {
-                    final colorSeed = room.createTime.millisecondsSinceEpoch;
-                    final avatarColor = getColor(colorSeed);
-                    return MapEntry(
-                        index,
-                        ListTile(
-                          onTap: () {
-                            onSelect(index);
-                          },
-                          selected: selectedIndex == index,
-                          leading: ExcludeSemantics(
-                            child: CircleAvatar(
-                                backgroundColor: avatarColor,
-                                foregroundColor: Colors.white,
-                                child: Text(room.name[0])),
-                          ),
-                          title: Text(
-                            room.name,
-                          ),
-                        ));
-                  })
-                  .values
-                  .toList(),
-            ),
-          ));
-    });
+            restorationId: 'chat_room_list_view',
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: roomCtrl.roomList
+                .asMap()
+                .map((index, room) {
+                  final colorSeed = room.createTime.millisecondsSinceEpoch;
+                  final avatarColor = getColor(colorSeed);
+                  return MapEntry(
+                      index,
+                      ListTile(
+                        onTap: () {
+                          onSelect(index);
+                        },
+                        selected: selectedIndex == index,
+                        leading: ExcludeSemantics(
+                          child: CircleAvatar(
+                              backgroundColor: avatarColor,
+                              foregroundColor: Colors.white,
+                              child: Text(room.name[0])),
+                        ),
+                        title: Text(
+                          room.name,
+                        ),
+                      ));
+                })
+                .values
+                .toList(),
+          );
+        }),
+      ),
+    );
   }
 }
 
@@ -174,60 +171,50 @@ class DetailsPane extends StatelessWidget {
   }
 }
 
-class NewChatButton extends StatelessWidget {
-  const NewChatButton({
+class _ChatRoomActions extends StatelessWidget {
+  const _ChatRoomActions({
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<Text>(
-      padding: const EdgeInsets.only(right: 32),
-      icon: const Icon(Icons.add),
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.add),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("New Chat Room"),
-              ),
-              onTap: () {
-                _addNewChatRoom(context);
-              },
-            ),
+    return SizedBox(
+      height: 200,
+      child: Column(children: [
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.add),
+          title: const Align(
+            alignment: Alignment(-1.2, 0),
+            child: Text("New Chat Room"),
           ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.group_add),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("Join Chat Room"),
-              ),
-              onTap: () {
-                _joinChatRoom(context);
-              },
-            ),
+          onTap: () {
+            _addNewChatRoom(context);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.group_add),
+          title: const Align(
+            alignment: Alignment(-1.2, 0),
+            child: Text("Join Chat Room"),
           ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.sync),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("Sync Chat Room"),
-              ),
-              onTap: () {
-                _loadChatRooms(context);
-              },
-            ),
+          onTap: () {
+            _joinChatRoom(context);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.sync),
+          title: const Align(
+            alignment: Alignment(-1.2, 0),
+            child: Text("Sync Chat Room"),
           ),
-        ];
-      },
+          onTap: () {
+            _loadChatRooms(context);
+          },
+        ),
+      ]),
     );
   }
-
-  static const uuid = Uuid();
 
   _addNewChatRoom(BuildContext context) {
     final comp.ChatRoomController chatRoomController = Get.find();
@@ -235,7 +222,7 @@ class NewChatButton extends StatelessWidget {
     final name =
         chatRoomNames.keys.elementAt(Random().nextInt(chatRoomNames.length));
     repo.ChatRoom chatRoom = repo.ChatRoom(
-      uuid: uuid.v1(),
+      uuid: const Uuid().v1(),
       name: toRoomName(name),
       createTime: createTime,
       connectionToken: repo.ChatRoomRepository.myTiDBConn.toToken(),
@@ -305,6 +292,32 @@ class NewChatButton extends StatelessWidget {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.loadChatRooms();
     Navigator.pop(context);
+  }
+}
+
+class NewChatButton extends StatelessWidget {
+  Rx<PersistentBottomSheetController?> pctl;
+  bool _opened;
+
+  NewChatButton({super.key, required this.pctl}) : _opened = pctl.value != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final ctl = Scaffold.of(context);
+    return FloatingActionButton(
+      backgroundColor: Theme.of(context).primaryColor,
+      onPressed: _opened 
+          ? () {
+              pctl.value!.close();
+            }
+          : () {
+              pctl.value =
+                  ctl.showBottomSheet((context) => const _ChatRoomActions());
+              pctl.value!.closed.then((value) => pctl.value = null);
+            },
+      child:
+          _opened ? const Icon(Icons.close) : const Icon(Icons.add),
+    );
   }
 }
 
@@ -420,8 +433,9 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     if (room == null) {
       return;
     }
-    chatRoomController.deleteChatRoom(room).then(
-            (value) => chatRoomController.setCurrentRoom(-1));
+    chatRoomController
+        .deleteChatRoom(room)
+        .then((value) => chatRoomController.setCurrentRoom(-1));
     FirebaseAnalytics.instance.logEvent(name: "chat_room_delete");
   }
 
