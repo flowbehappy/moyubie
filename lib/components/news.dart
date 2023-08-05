@@ -219,7 +219,7 @@ class NewsController extends GetxController {
     }
   }
 
-  Future<void> refreshTopNewsFirstScreen(int firstScreenLimit) async {
+  Future<void> refreshTopNewsOptimized(int firstScreenLimit) async {
     await refreshTopNews(firstScreenLimit);
     refreshTopNews(_limit - firstScreenLimit, append: true);
   }
@@ -277,7 +277,7 @@ class NewsController extends GetxController {
     if (_$cached.length < firstScreenLimit && !_loading) {
       _loading = true;
       try {
-        await refreshTopNewsFirstScreen(firstScreenLimit);
+        await refreshTopNewsOptimized(firstScreenLimit);
       } finally {
         _loading = false;
       }
@@ -728,7 +728,7 @@ class _NewsWindowState extends State<NewsWindow>
   }
 
   Future<void> refreshNews(int firstScreenLimit) async {
-    await _srv.refreshTopNewsFirstScreen(firstScreenLimit);
+    await _srv.refreshTopNewsOptimized(firstScreenLimit);
     maybeShowBannerForError();
   }
 
