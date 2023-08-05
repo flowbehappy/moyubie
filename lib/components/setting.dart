@@ -90,13 +90,6 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     const SizedBox sizedBoxSpace = SizedBox(height: 24);
-    const divider = Divider(
-      color: Colors.grey,
-      height: 10,
-      thickness: 1,
-      indent: 0,
-      endIndent: 0,
-    );
     return GetX<SettingsController>(builder: (controller) {
       return GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -137,8 +130,6 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              divider,
-              sizedBoxSpace,
               SizedBox(
                 height: 50,
                 child: TextFormField(
@@ -181,13 +172,11 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              divider,
-              sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 55,
+                    width: 50,
                     child: Text("Service"),
                   ),
                   const SizedBox(width: 30),
@@ -231,12 +220,11 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 55,
+                    width: 50,
                     child: Text("Model"),
                   ),
                   const SizedBox(width: 30),
@@ -281,12 +269,11 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 55,
+                    width: 50,
                     child: Text("Token"),
                   ),
                   const SizedBox(width: 30),
@@ -329,7 +316,6 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -347,8 +333,6 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              divider,
-              sizedBoxSpace,
               SizedBox(
                 child: TextFormField(
                   initialValue: controller.serverlessCmd.value,
@@ -403,8 +387,6 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              divider,
-              sizedBoxSpace,
               TagsInfo(Get.find<TagCollector>()),
 
               // DEBUGGER
@@ -425,8 +407,6 @@ class _SettingPageState extends State<SettingPage> {
                     ),
                   ],
                 ),
-                divider,
-                sizedBoxSpace,
                 Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,8 +452,6 @@ class _SettingPageState extends State<SettingPage> {
                     ),
                   ],
                 ),
-                divider,
-                sizedBoxSpace,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -482,7 +460,6 @@ class _SettingPageState extends State<SettingPage> {
                         child: const Text("Clear local messages")),
                   ],
                 ),
-                sizedBoxSpace,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
