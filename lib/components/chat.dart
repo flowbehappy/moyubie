@@ -26,6 +26,7 @@ class _ChatWindowState extends State<ChatWindow> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   late Timer _timer;
+  bool textIsEmpty = true;
 
   final uuid = const Uuid();
 
@@ -38,8 +39,11 @@ class _ChatWindowState extends State<ChatWindow> {
   @override
   void dispose() {
     _timer.cancel();
+    focusNode.dispose();
     super.dispose();
   }
+
+  var focusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +57,7 @@ class _ChatWindowState extends State<ChatWindow> {
               });
               if (controller.messageList.isNotEmpty) {
                 return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(8,8,8,0),
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                   controller: _scrollController,
                   itemCount: controller.messageList.length,
                   itemBuilder: (context, index) {
@@ -61,18 +65,37 @@ class _ChatWindowState extends State<ChatWindow> {
                   },
                 );
               } else {
-                return _buildStartRoomButton();
+                return const SizedBox.shrink();
               }
             },
           ),
         ),
         const SizedBox(height: 16),
+        if (focusNode.hasFocus && textIsEmpty)
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.only(left: 8),
+                child: ActionChip(
+                  onPressed: () {
+                    _controller.text = "@ai ";
+                    _controller.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _controller.text.length));
+                    setState(() {
+                      textIsEmpty = false;
+                    });
+                  },
+                  label: const Text("@AI", style: TextStyle(fontSize: 20),),
+                ),
+              ),
+            ],
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Form(
             key: _formKey, // 将 GlobalKey 赋值给 Form 组件的 key 属性
             child: RawKeyboardListener(
-              focusNode: FocusNode(),
+              focusNode: focusNode,
               onKey: _handleKeyEvent,
               child: Row(
                 children: [
@@ -94,6 +117,9 @@ class _ChatWindowState extends State<ChatWindow> {
                       ),
                       autovalidateMode: AutovalidateMode.always,
                       maxLines: null,
+                      onChanged: (value) => setState(() {
+                        textIsEmpty = value.isEmpty;
+                      }),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -266,7 +292,7 @@ class _ChatWindowState extends State<ChatWindow> {
     }
 
     final nameBox = TextSpan(
-      text:name,
+      text: name,
       style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.normal,
@@ -274,7 +300,7 @@ class _ChatWindowState extends State<ChatWindow> {
     );
 
     final timeBox = TextSpan(
-      text:timeStr,
+      text: timeStr,
       style: const TextStyle(
         fontSize: 10,
       ),
@@ -291,7 +317,8 @@ class _ChatWindowState extends State<ChatWindow> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text.rich(TextSpan(children: [nameBox, TextSpan(text: " "),timeBox])),
+              Text.rich(
+                  TextSpan(children: [nameBox, TextSpan(text: " "), timeBox])),
               Card(
                 margin: EdgeInsets.only(top: 4, bottom: 8),
                 shape: const RoundedRectangleBorder(

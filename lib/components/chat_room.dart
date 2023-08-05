@@ -14,8 +14,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/services.dart';
 
 enum ChatRoomType {
-  // For simplicity, we only support 1 type
-  // tablet,
+  tablet,
   phone,
 }
 
