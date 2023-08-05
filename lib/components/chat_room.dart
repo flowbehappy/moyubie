@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dual_screen/dual_screen.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:Moyubie/components/chat.dart';
@@ -33,6 +34,11 @@ class ChatRoom extends StatefulWidget {
 }
 
 class _ChatRoomState extends State<ChatRoom> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetX<comp.ChatRoomController>(builder: (controller) {
@@ -96,52 +102,55 @@ class ListPane extends StatelessWidget {
           )),
       body: SafeArea(
         child: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
-          return ListView(
-            controller: _scrollController,
-            restorationId: 'chat_room_list_view',
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: roomCtrl.roomList
-                .asMap()
-                .map((index, room) {
-                  final colorSeed = room.createTime.millisecondsSinceEpoch;
-                  final avatarColor = getColor(colorSeed);
-                  return MapEntry(
-                      index,
-                      ListTile(
-                        isThreeLine: false,
-                        subtitle: room.firstMessage != null
-                            ? Text.rich(
-                                TextSpan(children: [
-                                  TextSpan(
-                                      text: "${room.firstMessage!.userName}: ",
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  TextSpan(
-                                      text: room.firstMessage!.message,
-                                      style: const TextStyle(
-                                          overflow: TextOverflow.ellipsis))
-                                ]),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            : null,
-                        onTap: () {
-                          onSelect(index);
-                        },
-                        selected: selectedIndex == index,
-                        leading: ExcludeSemantics(
-                          child: CircleAvatar(
-                              backgroundColor: avatarColor,
-                              foregroundColor: Colors.white,
-                              child: Text(room.name[0])),
-                        ),
-                        title: Text(
-                          room.name,
-                        ),
-                      ));
-                })
-                .values
-                .toList(),
+          return EasyRefresh(
+            refreshOnStart: true,
+            onRefresh: () => roomCtrl.loadChatRooms(),
+            child: ListView(
+              restorationId: 'chat_room_list_view',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: roomCtrl.roomList
+                  .asMap()
+                  .map((index, room) {
+                    final colorSeed = room.createTime.millisecondsSinceEpoch;
+                    final avatarColor = getColor(colorSeed);
+                    return MapEntry(
+                        index,
+                        ListTile(
+                          isThreeLine: false,
+                          subtitle: room.firstMessage != null
+                              ? Text.rich(
+                                  TextSpan(children: [
+                                    TextSpan(
+                                        text: "${room.firstMessage!.userName}: ",
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                    TextSpan(
+                                        text: room.firstMessage!.message,
+                                        style: const TextStyle(
+                                            overflow: TextOverflow.ellipsis))
+                                  ]),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : null,
+                          onTap: () {
+                            onSelect(index);
+                          },
+                          selected: selectedIndex == index,
+                          leading: ExcludeSemantics(
+                            child: CircleAvatar(
+                                backgroundColor: avatarColor,
+                                foregroundColor: Colors.white,
+                                child: Text(room.name[0])),
+                          ),
+                          title: Text(
+                            room.name,
+                          ),
+                        ));
+                  })
+                  .values
+                  .toList(),
+            ),
           );
         }),
       ),
@@ -307,13 +316,11 @@ class _ChatRoomActions extends StatelessWidget {
   _handleConnToken(BuildContext context, String token) {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.joinChatRoom(context, token);
-    Navigator.pop(context);
   }
 
   _loadChatRooms(BuildContext context) {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.loadChatRooms();
-    Navigator.pop(context);
   }
 }
 

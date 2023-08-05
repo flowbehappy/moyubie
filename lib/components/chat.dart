@@ -203,6 +203,7 @@ class _ChatWindowState extends State<ChatWindow> {
       ask_ai: ask_ai,
     );
     messageController.addMessage(room, newMessage, ai_question);
+    room.firstMessage = newMessage;
     _formKey.currentState!.reset();
   }
 

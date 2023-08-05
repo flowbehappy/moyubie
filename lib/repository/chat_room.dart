@@ -698,6 +698,7 @@ class ChatRoomRepository {
       batch.insert('`msg_${room.uuid}`', m.toSQLMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
     }
+    room.firstMessage = messages.lastOrNull ?? room.firstMessage;
     batch.commit();
   }
 
