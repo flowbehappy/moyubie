@@ -91,76 +91,78 @@ class ListPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-              systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarBrightness: Theme.of(context).brightness),
-              backgroundColor: Theme.of(context).colorScheme.background,
-              toolbarHeight: 0,
-            ),
-      primary: false,
-      floatingActionButton: Obx(() => NewChatButton(
-            pctl: pctl,
-          )),
-      body: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
-        return EasyRefresh(
-          refreshOnStart: true,
-          onRefresh: () => roomCtrl.loadChatRooms(),
-          child: ListView(
-            restorationId: 'chat_room_list_view',
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: roomCtrl.roomList
-                .asMap()
-                .map((index, room) {
-                  final colorSeed = room.createTime.millisecondsSinceEpoch;
-                  final avatarColor = getColor(colorSeed);
-                  return MapEntry(
-                      index,
-                      ListTile(
-                        isThreeLine: false,
-                        subtitle: room.firstMessage != null
-                            ? Text.rich(
-                                TextSpan(children: [
-                                  TextSpan(
-                                      text: "${room.firstMessage!.userName}: ",
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          )),
-                                  TextSpan(
-                                      text: room.firstMessage!.message,
-                                      style: const TextStyle(
-                                         fontSize: 18,
-                                        overflow: TextOverflow.ellipsis,
-                                      ))
-                                ]),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            : null,
-                        onTap: () {
-                          onSelect(index);
-                        },
-                        selected: selectedIndex == index,
-                        leading: ExcludeSemantics(
-                          child: CircleAvatar(
-                              backgroundColor: avatarColor,
-                              foregroundColor: Colors.white,
-                              child: Text(room.name[0])),
-                        ),
-                        title: Text(
-                          room.name,
-                          style: const TextStyle(
-                            // fontWeight: FontWeight.bold,
-                            fontSize: 18,
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarBrightness: Theme.of(context).brightness),
+                backgroundColor: Theme.of(context).colorScheme.background,
+                toolbarHeight: 0,
+              ),
+        primary: false,
+        floatingActionButton: Obx(() => NewChatButton(
+              pctl: pctl,
+            )),
+        body: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
+          return EasyRefresh(
+            refreshOnStart: true,
+            onRefresh: () => roomCtrl.loadChatRooms(),
+            child: ListView(
+              restorationId: 'chat_room_list_view',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: roomCtrl.roomList
+                  .asMap()
+                  .map((index, room) {
+                    final colorSeed = room.createTime.millisecondsSinceEpoch;
+                    final avatarColor = getColor(colorSeed);
+                    return MapEntry(
+                        index,
+                        ListTile(
+                          isThreeLine: false,
+                          subtitle: room.firstMessage != null
+                              ? Text.rich(
+                                  TextSpan(children: [
+                                    TextSpan(
+                                        text: "${room.firstMessage!.userName}: ",
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            )),
+                                    TextSpan(
+                                        text: room.firstMessage!.message,
+                                        style: const TextStyle(
+                                           fontSize: 18,
+                                          overflow: TextOverflow.ellipsis,
+                                        ))
+                                  ]),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : null,
+                          onTap: () {
+                            onSelect(index);
+                          },
+                          selected: selectedIndex == index,
+                          leading: ExcludeSemantics(
+                            child: CircleAvatar(
+                                backgroundColor: avatarColor,
+                                foregroundColor: Colors.white,
+                                child: Text(room.name[0])),
                           ),
-                        ),
-                      ));
-                })
-                .values
-                .toList(),
-          ),
-        );
-      }),
+                          title: Text(
+                            room.name,
+                            style: const TextStyle(
+                              // fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ));
+                  })
+                  .values
+                  .toList(),
+            ),
+          );
+        }),
+      ),
     );
   }
 }
