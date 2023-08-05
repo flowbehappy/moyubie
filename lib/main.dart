@@ -49,6 +49,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  static bool prefetched = false;
 
   Widget menu() {
     return GetX<ChatRoomController>(builder: (controller) {
@@ -94,8 +95,9 @@ class MyApp extends StatelessWidget {
     Get.put(PromptController());
     Get.put(ChatRoomController());
     Get.put(tagsRepo);
-    Get.put(NewsController(settingsCtl.openAiKey, settingsCtl.gptModel));
+    Get.put(NewsController(settingsCtl.openAiKey, settingsCtl.gptModel, !prefetched));
     Get.put(TagCollector.create(repo: tagsRepo, sctl: settingsCtl));
+    prefetched = true;
     final newsWinKey = GlobalKey();
     return MaterialApp(
       theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),

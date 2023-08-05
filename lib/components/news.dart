@@ -140,8 +140,10 @@ class NewsController extends GetxController {
   bool _inited = false;
   bool _loading = false;
 
-  NewsController(this._$aiKey, this._$aiModel) {
-    prefetch();
+  NewsController(this._$aiKey, this._$aiModel, bool needPrefetch) {
+    if (needPrefetch) {
+      prefetch();
+    }
   }
 
   AIContext get _ai_ctx =>
