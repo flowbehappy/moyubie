@@ -148,7 +148,7 @@ class NewsController extends GetxController {
       AIContext(api_key: _$aiKey.value, model: _$aiModel.value);
 
   int lastTab = 0;
-  final _concurrency = 8;
+  final _concurrency = 12;
   final _limit = 32;
   final _topStoriesId = Queue();
 
@@ -368,7 +368,7 @@ class _NewsWindowState extends State<NewsWindow>
 
   bool _calledPromote = false;
   final _firstScreenNewsLimit =
-      8; // TODO: get the limit according to screen height.
+      12; // TODO: get the limit according to screen height.
 
   _NewsWindowState();
 
