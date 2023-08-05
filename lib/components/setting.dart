@@ -1,10 +1,12 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:Moyubie/components/tags_info.dart';
 import 'package:Moyubie/controller/chat_room.dart';
 import 'package:Moyubie/controller/settings.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:Moyubie/repository/chat_room.dart';
 import 'package:Moyubie/repository/tags.dart';
@@ -99,6 +101,14 @@ class _SettingPageState extends State<SettingPage> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
+        primary: false,
+        appBar: Platform.isIOS
+            ? AppBar(
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarBrightness: Theme.of(context).brightness),
+                backgroundColor: Theme.of(context).colorScheme.background,
+              )
+            : null,
         body: GetX<SettingsController>(builder: (controller) {
           return ListView(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0),
@@ -369,7 +379,7 @@ class _SettingPageState extends State<SettingPage> {
                       ),
                       onPressed: () {
                         controller.isTiDBCmdObscure.value =
-                        !controller.isTiDBCmdObscure.value;
+                            !controller.isTiDBCmdObscure.value;
                       },
                     ),
                   ),

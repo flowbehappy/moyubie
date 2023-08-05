@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:dual_screen/dual_screen.dart';
@@ -91,78 +92,76 @@ class ListPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: Platform.isIOS ? AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
             statusBarBrightness: Theme.of(context).brightness),
         backgroundColor: Theme.of(context).colorScheme.background,
-      ),
+      ) : null,
       primary: false,
       floatingActionButton: Obx(() => NewChatButton(
             pctl: pctl,
           )),
-      body: SafeArea(
-        child: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
-          return EasyRefresh(
-            refreshOnStart: true,
-            onRefresh: () => roomCtrl.loadChatRooms(),
-            child: ListView(
-              restorationId: 'chat_room_list_view',
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: roomCtrl.roomList
-                  .asMap()
-                  .map((index, room) {
-                    final colorSeed = room.createTime.millisecondsSinceEpoch;
-                    final avatarColor = getColor(colorSeed);
-                    return MapEntry(
-                        index,
-                        ListTile(
-                          isThreeLine: false,
-                          subtitle: room.firstMessage != null
-                              ? Text.rich(
-                                  TextSpan(children: [
-                                    TextSpan(
-                                        text:
+      body: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
+        return EasyRefresh(
+          refreshOnStart: true,
+          onRefresh: () => roomCtrl.loadChatRooms(),
+          child: ListView(
+            restorationId: 'chat_room_list_view',
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: roomCtrl.roomList
+                .asMap()
+                .map((index, room) {
+                  final colorSeed = room.createTime.millisecondsSinceEpoch;
+                  final avatarColor = getColor(colorSeed);
+                  return MapEntry(
+                      index,
+                      ListTile(
+                        isThreeLine: false,
+                        subtitle: room.firstMessage != null
+                            ? Text.rich(
+                                TextSpan(children: [
+                                  TextSpan(
+                                      text:
                                             "${room.firstMessage!.userName}: ",
-                                        style: const TextStyle(
-                                          // fontWeight: FontWeight.bold,
+                                      style: const TextStyle(
+                                        // fontWeight: FontWeight.bold,
                                           fontSize: 12,
                                         )),
-                                    TextSpan(
-                                        text: room.firstMessage!.message,
-                                        style: const TextStyle(
-                                          fontSize: 12,
+                                  TextSpan(
+                                      text: room.firstMessage!.message,
+                                      style: const TextStyle(
+                                        fontSize: 12,
                                           overflow: TextOverflow.ellipsis,
                                         ))
-                                  ]),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                )
-                              : null,
-                          onTap: () {
-                            onSelect(index);
-                          },
-                          selected: selectedIndex == index,
-                          leading: ExcludeSemantics(
-                            child: CircleAvatar(
-                                backgroundColor: avatarColor,
-                                foregroundColor: Colors.white,
-                                child: Text(room.name[0])),
-                          ),
-                          title: Text(
-                            room.name,
+                                ]),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : null,
+                        onTap: () {
+                          onSelect(index);
+                        },
+                        selected: selectedIndex == index,
+                        leading: ExcludeSemantics(
+                          child: CircleAvatar(
+                              backgroundColor: avatarColor,
+                              foregroundColor: Colors.white,
+                              child: Text(room.name[0])),
+                        ),
+                        title: Text(
+                          room.name,
                             style: const TextStyle(
                               // fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
-                          ),
-                        ));
-                  })
-                  .values
-                  .toList(),
-            ),
-          );
-        }),
-      ),
+                        ),
+                      ));
+                })
+                .values
+                .toList(),
+          ),
+        );
+      }),
     );
   }
 }
@@ -219,25 +218,19 @@ class _ChatRoomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 200,
+      height: 140,
       child: Column(children: [
         const Divider(),
         ListTile(
           leading: const Icon(Icons.add),
-          title: const Align(
-            alignment: Alignment(-1.2, 0),
-            child: Text("New Chat Room"),
-          ),
+          title: Text("New Chat Room"),
           onTap: () {
             _addNewChatRoom(context);
           },
         ),
         ListTile(
           leading: const Icon(Icons.group_add),
-          title: const Align(
-            alignment: Alignment(-1.2, 0),
-            child: Text("Join Chat Room"),
-          ),
+          title: Text("Join Chat Room"),
           onTap: () {
             _joinChatRoom(context);
           },
