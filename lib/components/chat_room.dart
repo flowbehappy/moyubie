@@ -86,8 +86,8 @@ class ListPane extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        systemOverlayStyle:
-            SystemUiOverlayStyle(statusBarBrightness: Theme.of(context).brightness),
+        systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarBrightness: Theme.of(context).brightness),
         backgroundColor: Theme.of(context).colorScheme.background,
       ),
       primary: false,
@@ -108,6 +108,23 @@ class ListPane extends StatelessWidget {
                   return MapEntry(
                       index,
                       ListTile(
+                        isThreeLine: false,
+                        subtitle: room.firstMessage != null
+                            ? Text.rich(
+                                TextSpan(children: [
+                                  TextSpan(
+                                      text: "${room.firstMessage!.userName}: ",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  TextSpan(
+                                      text: room.firstMessage!.message,
+                                      style: const TextStyle(
+                                          overflow: TextOverflow.ellipsis))
+                                ]),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : null,
                         onTap: () {
                           onSelect(index);
                         },

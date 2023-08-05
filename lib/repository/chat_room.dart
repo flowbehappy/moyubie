@@ -113,6 +113,7 @@ class ChatRoom {
   DateTime createTime; // UTC time zone.
   String connectionToken;
   Role role;
+  Message? firstMessage;
 
   ChatRoom({
     required this.uuid,
@@ -120,6 +121,7 @@ class ChatRoom {
     required this.createTime,
     required this.connectionToken,
     required this.role,
+    this.firstMessage,
   });
 
   bool isHost() {
@@ -395,7 +397,27 @@ class ChatRoomRepository {
     String? where = roomId == null ? null : "$_columnChatRoomUuid = '$roomId'";
     final List<Map<String, dynamic>> maps =
         await db.query(_tableChatRoom, where: where);
+    final messages = <String, Message>{};
+    await Future.wait(maps.map((room) async {
+      final String roomId = room[_columnChatRoomUuid];
+      final soleMsg = await db.query("`msg_$roomId`",
+          orderBy: "$_columnMessageCreateTime DESC", limit: 1);
+      if (soleMsg.isEmpty) {
+        return;
+      }
+      final Map<String, dynamic> m = soleMsg[0];
+      final msg = Message(
+          uuid: m[_columnMessageUuid],
+          userName: m[_columnMessageUserName],
+          createTime: DateTime.parse(m[_columnMessageCreateTime]),
+          message: m[_columnMessageMessage],
+          source: MessageSource.values
+              .firstWhere((e) => e.name == m[_columnMessageSource]),
+          ask_ai: m[_columnAskAI] == 1);
+      messages[roomId] = msg;
+    }));
     return List.generate(maps.length, (i) {
+      final msg = messages[maps[i][_columnChatRoomUuid]];
       var ct = maps[i][_columnChatRoomCreateTime];
       return ChatRoom(
           uuid: maps[i][_columnChatRoomUuid],
@@ -403,7 +425,8 @@ class ChatRoomRepository {
           createTime: DateTime.parse(ct),
           connectionToken: maps[i][_columnChatRoomConnectionToken],
           role: Role.values
-              .firstWhere((e) => e.name == maps[i][_columnChatRoomRole]));
+              .firstWhere((e) => e.name == maps[i][_columnChatRoomRole]),
+          firstMessage: msg);
     });
   }
 
