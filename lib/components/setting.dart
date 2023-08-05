@@ -99,12 +99,6 @@ class _SettingPageState extends State<SettingPage> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Settings"),
-          foregroundColor: Colors.white,
-          backgroundColor: const Color.fromARGB(255, 70, 70, 70),
-          toolbarHeight: 40,
-        ),
         body: GetX<SettingsController>(builder: (controller) {
           return ListView(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0),

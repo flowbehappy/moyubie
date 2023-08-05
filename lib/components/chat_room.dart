@@ -233,16 +233,6 @@ class _ChatRoomActions extends StatelessWidget {
             _joinChatRoom(context);
           },
         ),
-        ListTile(
-          leading: const Icon(Icons.sync),
-          title: const Align(
-            alignment: Alignment(-1.2, 0),
-            child: Text("Sync Chat Room"),
-          ),
-          onTap: () {
-            _loadChatRooms(context);
-          },
-        ),
       ]),
     );
   }
@@ -316,11 +306,6 @@ class _ChatRoomActions extends StatelessWidget {
   _handleConnToken(BuildContext context, String token) {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.joinChatRoom(context, token);
-  }
-
-  _loadChatRooms(BuildContext context) {
-    final comp.ChatRoomController chatRoomController = Get.find();
-    chatRoomController.loadChatRooms();
   }
 }
 

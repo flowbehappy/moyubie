@@ -636,11 +636,13 @@ class _NewsWindowState extends State<NewsWindow>
       controller: _tabctl,
     );
     return AppBar(
-        title: const Text("News"),
-        toolbarHeight: 40,
-        foregroundColor: Colors.white,
-        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
-        bottom: bottom);
+        flexibleSpace: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            bottom,
+          ],
+        ),
+    );
   }
 
   Widget contentForWeb() {
