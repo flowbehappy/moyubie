@@ -15,6 +15,8 @@ import 'package:uuid/uuid.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/services.dart';
 
+import '../repository/chat_room.dart';
+
 enum ChatRoomType {
   tablet,
   phone,
@@ -94,11 +96,11 @@ class ListPane extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-                systemOverlayStyle: SystemUiOverlayStyle(
-                    statusBarBrightness: Theme.of(context).brightness),
-                backgroundColor: Theme.of(context).colorScheme.background,
-                toolbarHeight: 0,
-              ),
+          systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarBrightness: Theme.of(context).brightness),
+          backgroundColor: Theme.of(context).colorScheme.background,
+          toolbarHeight: 0,
+        ),
         primary: false,
         floatingActionButton: Obx(() => NewChatButton(
               pctl: pctl,
@@ -113,6 +115,15 @@ class ListPane extends StatelessWidget {
               children: roomCtrl.roomList
                   .asMap()
                   .map((index, room) {
+                    fmt(Message m) {
+                      final pfx = m.source == MessageSource.bot
+                          ? "bot#${m.userName}"
+                          : m.source == MessageSource.user
+                              ? m.userName
+                              : "<SYS>";
+                      return "$pfx: ${m.message}";
+                    }
+
                     final colorSeed = room.createTime.millisecondsSinceEpoch;
                     final avatarColor = getColor(colorSeed);
                     return MapEntry(
@@ -120,20 +131,8 @@ class ListPane extends StatelessWidget {
                         ListTile(
                           isThreeLine: false,
                           subtitle: room.firstMessage != null
-                              ? Text.rich(
-                                  TextSpan(children: [
-                                    TextSpan(
-                                        text: "${room.firstMessage!.userName}: ",
-                                        style: const TextStyle(
-                                            fontSize: 18,
-                                            )),
-                                    TextSpan(
-                                        text: room.firstMessage!.message,
-                                        style: const TextStyle(
-                                           fontSize: 18,
-                                          overflow: TextOverflow.ellipsis,
-                                        ))
-                                  ]),
+                              ? Text(
+                                  fmt(room.firstMessage!),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 )
