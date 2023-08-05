@@ -92,13 +92,12 @@ class ListPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Platform.isIOS
-          ? AppBar(
+      appBar: AppBar(
               systemOverlayStyle: SystemUiOverlayStyle(
                   statusBarBrightness: Theme.of(context).brightness),
               backgroundColor: Theme.of(context).colorScheme.background,
-            )
-          : null,
+              toolbarHeight: 0,
+            ),
       primary: false,
       floatingActionButton: Obx(() => NewChatButton(
             pctl: pctl,
@@ -125,10 +124,12 @@ class ListPane extends StatelessWidget {
                                   TextSpan(
                                       text: "${room.firstMessage!.userName}: ",
                                       style: const TextStyle(
+                                          fontSize: 18,
                                           )),
                                   TextSpan(
                                       text: room.firstMessage!.message,
                                       style: const TextStyle(
+                                         fontSize: 18,
                                         overflow: TextOverflow.ellipsis,
                                       ))
                                 ]),
