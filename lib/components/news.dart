@@ -151,6 +151,7 @@ class NewsController extends GetxController {
   final _concurrency = 12;
   final _limit = 32;
   final _topStoriesId = Queue();
+  final Map<int, News> _newsCache = HashMap(); // TODO： use LRU cache.
 
   Future<void> init() async {
     if (_inited) {
@@ -179,7 +180,21 @@ class NewsController extends GetxController {
   }
 
   Future<void> prefetch() async {
-    pullTopNewsList(false);
+    await pullTopNewsList(false);
+    await prefetchNews(_limit);
+  }
+
+  Future<void> prefetchNews(int limit) async {
+    var stories = _topStoriesId.take(limit);
+    for (var id in stories) {
+      if (_newsCache.containsKey(id)) {
+        continue;
+      }
+      var news = await getNewsById(id);
+      if (news != null) {
+        _newsCache[id] = news;
+      }
+    }
   }
 
   Future<List<dynamic>> getTopNewsList(int limit) async {
@@ -225,51 +240,68 @@ class NewsController extends GetxController {
   }
 
   Future<void> refreshTopNews(int limit, {bool append = false}) async {
-    var topStoriesId = await getTopNewsList(limit);
-    var news = <News>[];
+    var news_list = <News>[];
     var futs = ListQueue();
 
-    handleJson(newsJson) {
-      if (newsJson == null || newsJson['url'] == null) {
-        return;
-      }
-      news.add(News(
-          _NewsSource.HackerNews,
-          newsJson['id'],
-          newsJson['url'],
-          newsJson['title'],
-          "${newsJson["score"]} scores by ${newsJson["by"]}"));
-    }
-
+    var topStoriesId = await getTopNewsList(limit);
     for (var id in topStoriesId) {
+      var cachedNews = _newsCache[id];
+      if (cachedNews != null) {
+        news_list.add(cachedNews);
+        continue;
+      }
+
       if (futs.length > _concurrency) {
-        final newsJson = await futs.removeFirst();
-        handleJson(newsJson);
+        final news = await futs.removeFirst();
+        if (news != null) {
+          news_list.add(news);
+        }
       }
 
       futs.add(() async {
-        var url = 'https://hacker-news.firebaseio.com/v0/item/$id.json';
-        var uri = Uri.parse(url);
-        var response = await http.get(
-          uri,
-          headers: {"Content-Type": "application/json"},
-        );
-        if (response.statusCode == 200) {
-          var newsJson = json.decode(response.body);
-          return newsJson;
-        }
+        return await getNewsById(id);
       }());
     }
 
     for (var fut in futs) {
-      final newsJson = await fut;
-      handleJson(newsJson);
+      final news = await fut;
+      if (news != null) {
+        news_list.add(news);
+      }
     }
 
     if (append) {
-      _$cached.value = [..._$cached, ...news];
+      _$cached.value = [..._$cached, ...news_list];
     } else {
-      _$cached.value = news;
+      _$cached.value = news_list;
+    }
+
+    prefetchNews(_limit);
+  }
+
+  Future<News?> getNewsById(int id) async {
+    var url = 'https://hacker-news.firebaseio.com/v0/item/$id.json';
+    var uri = Uri.parse(url);
+    var response = await http.get(
+      uri,
+      headers: {"Content-Type": "application/json"},
+    );
+    if (response.statusCode == 200) {
+      var newsJson = json.decode(response.body);
+      if (newsJson == null || newsJson['url'] == null) {
+        return null;
+      }
+      var id = newsJson['id'];
+      log("Get news by id: $id", name: "NewsController");
+      return News(
+          _NewsSource.HackerNews,
+          newsJson['id'],
+          newsJson['url'],
+          newsJson['title'],
+          "${newsJson["score"]} scores by ${newsJson["by"]}");
+    } else {
+      // log("Failed to get news by id: $id", name: "NewsController");
+      return null;
     }
   }
 
