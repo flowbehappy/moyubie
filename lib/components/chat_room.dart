@@ -92,11 +92,13 @@ class ListPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Platform.isIOS ? AppBar(
-        systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarBrightness: Theme.of(context).brightness),
-        backgroundColor: Theme.of(context).colorScheme.background,
-      ) : null,
+      appBar: Platform.isIOS
+          ? AppBar(
+              systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarBrightness: Theme.of(context).brightness),
+              backgroundColor: Theme.of(context).colorScheme.background,
+            )
+          : null,
       primary: false,
       floatingActionButton: Obx(() => NewChatButton(
             pctl: pctl,
@@ -121,18 +123,17 @@ class ListPane extends StatelessWidget {
                             ? Text.rich(
                                 TextSpan(children: [
                                   TextSpan(
-                                      text:
-                                            "${room.firstMessage!.userName}: ",
+                                      text: "${room.firstMessage!.userName}: ",
                                       style: const TextStyle(
-                                        // fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        )),
+                                          // fontWeight: FontWeight.bold,
+                                          // fontSize: 15,
+                                          )),
                                   TextSpan(
                                       text: room.firstMessage!.message,
                                       style: const TextStyle(
-                                        fontSize: 12,
-                                          overflow: TextOverflow.ellipsis,
-                                        ))
+                                        // fontSize: 15,
+                                        overflow: TextOverflow.ellipsis,
+                                      ))
                                 ]),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -150,10 +151,10 @@ class ListPane extends StatelessWidget {
                         ),
                         title: Text(
                           room.name,
-                            style: const TextStyle(
-                              // fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                          style: const TextStyle(
+                            // fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
                       ));
                 })
