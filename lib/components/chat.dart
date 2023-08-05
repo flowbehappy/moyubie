@@ -1,3 +1,4 @@
+import 'package:Moyubie/data/tips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Moyubie/components/markdown.dart';
@@ -10,8 +11,9 @@ import 'package:Moyubie/controller/settings.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
-import '../data/names.dart';
+import '../data/sample.dart';
 import '../repository/chat_room.dart';
 
 class ChatWindow extends StatefulWidget {
@@ -39,11 +41,8 @@ class _ChatWindowState extends State<ChatWindow> {
   @override
   void dispose() {
     _timer.cancel();
-    focusNode.dispose();
     super.dispose();
   }
-
-  var focusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -55,47 +54,54 @@ class _ChatWindowState extends State<ChatWindow> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _scrollToNewMessage();
               });
-              if (controller.messageList.isNotEmpty) {
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                  controller: _scrollController,
-                  itemCount: controller.messageList.length,
-                  itemBuilder: (context, index) {
-                    return _buildMessageCard(controller.messageList[index]);
-                  },
-                );
-              } else {
-                return const SizedBox.shrink();
+              List<Message> list = controller.messageList;
+              if (list.isEmpty) {
+                SettingsController settingsController = Get.find();
+                list = sampleMessages(settingsController.nickname.value);
               }
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                controller: _scrollController,
+                itemCount: list.length,
+                itemBuilder: (context, index) {
+                  return _buildMessageCard(list[index]);
+                },
+              );
             },
           ),
         ),
         const SizedBox(height: 16),
-        if (focusNode.hasFocus && textIsEmpty)
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.only(left: 8),
-                child: ActionChip(
-                  onPressed: () {
-                    _controller.text = "@ai ";
-                    _controller.selection = TextSelection.fromPosition(
-                        TextPosition(offset: _controller.text.length));
-                    setState(() {
-                      textIsEmpty = false;
-                    });
-                  },
-                  label: const Text("@ai", style: TextStyle(fontSize: 20),),
-                ),
-              ),
-            ],
-          ),
+        KeyboardVisibilityBuilder(
+            builder: (context, isKeyboardVisible) {
+              if (!isKeyboardVisible || !textIsEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: ActionChip(
+                      onPressed: () {
+                        _controller.text = "@ai ";
+                        _controller.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _controller.text.length));
+                        setState(() {
+                          textIsEmpty = false;
+                        });
+                      },
+                      label: const Text("@ai", style: TextStyle(fontSize: 20),),
+                    ),
+                  ),
+                ],
+              );
+            }
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Form(
             key: _formKey, // 将 GlobalKey 赋值给 Form 组件的 key 属性
             child: RawKeyboardListener(
-              focusNode: focusNode,
+              focusNode: FocusNode(),
               onKey: _handleKeyEvent,
               child: Row(
                 children: [
@@ -148,28 +154,6 @@ class _ChatWindowState extends State<ChatWindow> {
     );
   }
 
-  void _startChat() {
-    final MessageController messageController = Get.find();
-    final ChatRoomController chatRoomController = Get.find();
-    final room = chatRoomController.getCurrentRoom();
-    if (room == null) {
-      return;
-    }
-    final name = fromRoomName(room.name);
-    final String? explanation = chatRoomNames[name];
-    if (explanation != null) {
-      final demoMsg = Message(
-        uuid: uuid.v1(),
-        userName: 'User',
-        createTime: DateTime.now().toUtc(),
-        message: "$name: $explanation",
-        source: MessageSource.sys,
-        ask_ai: false,
-      );
-      messageController.addMessage(room, demoMsg, "");
-    }
-  }
-
   void _sendMessage() {
     var message = _controller.text;
     if (message.isEmpty) {
@@ -206,30 +190,6 @@ class _ChatWindowState extends State<ChatWindow> {
     room.firstMessage = newMessage;
     _formKey.currentState!.reset();
     _controller.text = "";
-  }
-
-  Widget _buildStartRoomButton() {
-    ChatRoomController chatRoomController = Get.find();
-    final room = chatRoomController.getCurrentRoom();
-    if (room == null) {
-      return const SizedBox.shrink();
-    }
-    if (!room.isHost() ||
-        DateTime.now().toUtc().difference(room.createTime).inMinutes >= 1) {
-      return const SizedBox.shrink();
-    }
-    return Center(
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          disabledForegroundColor: Colors.red,
-          side: const BorderSide(
-            color: Colors.red,
-          ),
-        ),
-        onPressed: _startChat,
-        child: const Text("Let's chat!"),
-      ),
-    );
   }
 
   Widget _buildMessageCard(Message message) {

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 
 import 'package:dual_screen/dual_screen.dart';
@@ -8,13 +7,15 @@ import 'package:get/get.dart';
 import 'package:Moyubie/components/chat.dart';
 import 'package:Moyubie/controller/message.dart';
 import 'package:Moyubie/data/color.dart';
-import 'package:Moyubie/data/names.dart';
 import 'package:Moyubie/repository/chat_room.dart' as repo;
 import 'package:Moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/services.dart';
 
+import '../controller/settings.dart';
+import '../data/sample.dart';
+import '../data/tips.dart';
 import '../repository/chat_room.dart';
 
 enum ChatRoomType {
@@ -211,9 +212,9 @@ class DetailsPane extends StatelessWidget {
 }
 
 class _ChatRoomActions extends StatelessWidget {
-  const _ChatRoomActions({
-    super.key,
-  });
+  const _ChatRoomActions();
+
+  final uuid = const Uuid();
 
   @override
   Widget build(BuildContext context) {
@@ -223,14 +224,15 @@ class _ChatRoomActions extends StatelessWidget {
         const Divider(),
         ListTile(
           leading: const Icon(Icons.add),
-          title: Text("New Chat Room"),
+          title: const Text("New Chat Room"),
           onTap: () {
-            _addNewChatRoom(context);
+            _addNewChatRoom();
+            Navigator.pop(context);
           },
         ),
         ListTile(
           leading: const Icon(Icons.group_add),
-          title: Text("Join Chat Room"),
+          title: const Text("Join Chat Room"),
           onTap: () {
             _joinChatRoom(context);
           },
@@ -239,14 +241,15 @@ class _ChatRoomActions extends StatelessWidget {
     );
   }
 
-  _addNewChatRoom(BuildContext context) {
+  _addNewChatRoom() async {
     final comp.ChatRoomController chatRoomController = Get.find();
+    final SettingsController settingsController = Get.find();
     final createTime = DateTime.now().toUtc();
     final name =
-        chatRoomNames.keys.elementAt(Random().nextInt(chatRoomNames.length));
+        chatRoomNames[Random().nextInt(chatRoomNames.length)];
     repo.ChatRoom chatRoom = repo.ChatRoom(
       uuid: const Uuid().v1(),
-      name: toRoomName(name),
+      name: "New Chat Room",
       createTime: createTime,
       connectionToken: repo.ChatRoomRepository.myTiDBConn.toToken(),
       role: repo.Role.host,
@@ -255,8 +258,8 @@ class _ChatRoomActions extends StatelessWidget {
     FirebaseAnalytics.instance.logEvent(name: "chat_room_add");
 
     final MessageController messageController = Get.find();
-    messageController.messageList.value = [];
-    Navigator.pop(context);
+    messageController.messageList.value =
+        sampleMessages(settingsController.nickname.value);
   }
 
   _joinChatRoom(BuildContext context) {

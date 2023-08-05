@@ -65,6 +65,7 @@ dependencies:
   stream_transform: ^2.1.0
   json_annotation: ^4.8.1
   args: ^2.4.2
+  flutter_keyboard_visibility: ^5.4.1
 
 dev_dependencies:
   flutter_test:

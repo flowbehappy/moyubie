@@ -92,5 +92,6 @@ class MessageController extends GetxController {
       completer.complete();
     }
     await completer.future;
+    update();
   }
 }

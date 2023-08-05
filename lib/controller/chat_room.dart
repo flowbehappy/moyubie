@@ -48,7 +48,7 @@ class ChatRoomController extends GetxController {
     update();
   }
 
-  void addChatRoom(ChatRoom chatRoom) async {
+  Future<void> addChatRoom(ChatRoom chatRoom) async {
     await ChatRoomRepository().addChatRoom(chatRoom);
     roomList.value = await ChatRoomRepository().getChatRooms();
     currentRoomIndex.value = IntegerWrapper(roomList.length - 1);
