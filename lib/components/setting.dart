@@ -97,34 +97,28 @@ class _SettingPageState extends State<SettingPage> {
       indent: 0,
       endIndent: 0,
     );
-
-    return GestureDetector(
-      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-      child: Scaffold(
-        primary: false,
-        appBar: Platform.isIOS
-            ? AppBar(
-                systemOverlayStyle: SystemUiOverlayStyle(
-                    statusBarBrightness: Theme.of(context).brightness),
-                backgroundColor: Theme.of(context).colorScheme.background,
-              )
-            : null,
-        body: GetX<SettingsController>(builder: (controller) {
-          return ListView(
+    return GetX<SettingsController>(builder: (controller) {
+      return GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          primary: false,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              controller.saveTmpOption(context: context);
+            },
+            backgroundColor: Theme.of(context).primaryColor,
+            child: const Icon(Icons.save),
+          ),
+          appBar: Platform.isIOS
+              ? AppBar(
+                  systemOverlayStyle: SystemUiOverlayStyle(
+                      statusBarBrightness: Theme.of(context).brightness),
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                )
+              : null,
+          body: ListView(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0),
             children: [
-              sizedBoxSpace,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      controller.saveTmpOption(context: context);
-                    },
-                    child: const Text("Save"),
-                  ),
-                ],
-              ),
               sizedBoxSpace,
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -498,9 +492,9 @@ class _SettingPageState extends State<SettingPage> {
                 ),
               ]
             ],
-          );
-        }),
-      ),
-    );
+          ),
+        ),
+      );
+    });
   }
 }

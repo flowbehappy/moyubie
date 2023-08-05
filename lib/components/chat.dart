@@ -85,7 +85,7 @@ class _ChatWindowState extends State<ChatWindow> {
                       textIsEmpty = false;
                     });
                   },
-                  label: const Text("@AI", style: TextStyle(fontSize: 20),),
+                  label: const Text("@ai", style: TextStyle(fontSize: 20),),
                 ),
               ),
             ],
@@ -205,6 +205,7 @@ class _ChatWindowState extends State<ChatWindow> {
     messageController.addMessage(room, newMessage, ai_question);
     room.firstMessage = newMessage;
     _formKey.currentState!.reset();
+    _controller.text = "";
   }
 
   Widget _buildStartRoomButton() {
