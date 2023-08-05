@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dart_openai/dart_openai.dart';
@@ -139,14 +140,17 @@ class NewsController extends GetxController {
   bool _inited = false;
   bool _loading = false;
 
-  NewsController(this._$aiKey, this._$aiModel);
+  NewsController(this._$aiKey, this._$aiModel) {
+    prefetch();
+  }
 
   AIContext get _ai_ctx =>
       AIContext(api_key: _$aiKey.value, model: _$aiModel.value);
 
   int lastTab = 0;
   final _concurrency = 8;
-  final _limit = 50;
+  final _limit = 32;
+  final _topStoriesId = Queue();
 
   Future<void> init() async {
     if (_inited) {
@@ -174,7 +178,32 @@ class NewsController extends GetxController {
         tags: await Get.find<TagsRepository>().fetchMostPopularTags(5));
   }
 
-  Future<void> refreshTopNews() async {
+  Future<void> prefetch() async {
+    pullTopNewsList(false);
+  }
+
+  Future<List<dynamic>> getTopNewsList(int limit) async {
+    if (_topStoriesId.isEmpty) {
+      await pullTopNewsList(false);
+    }
+
+    var res = <dynamic>[].obs;
+    for (var i = 0; i < limit && _topStoriesId.isNotEmpty; i++) {
+      res.add(_topStoriesId.removeFirst());
+    }
+
+    if (_topStoriesId.length < limit * 3) {
+      pullTopNewsList(false);
+    }
+
+    log("Get top news list: $res", name: "NewsController");
+    return res;
+  }
+
+  Future<void> pullTopNewsList(bool clear) async {
+    if (clear) {
+      _topStoriesId.clear();
+    }
     var topStories = 'https://hacker-news.firebaseio.com/v0/topstories.json';
     var uri = Uri.parse(topStories);
     var response = await http.get(
@@ -183,52 +212,72 @@ class NewsController extends GetxController {
     );
     if (response.statusCode == 200) {
       var topStoriesId = json.decode(response.body) as List<dynamic>;
-      var news = <News>[];
-      var futs = ListQueue();
-      for (var id in topStoriesId) {
-        if (futs.length > _concurrency) {
-          final newsJson = await futs.removeFirst();
-          if (newsJson == null || newsJson['url'] == null) {
-            continue;
-          }
-          news.add(News(
-              _NewsSource.HackerNews,
-              newsJson['id'],
-              newsJson['url'],
-              newsJson['title'],
-              "${newsJson["score"]} scores by ${newsJson["by"]}"));
-        }
-        if (news.length >= _limit) {
-          if (futs.isEmpty) {
-            break;
-          }
-          continue;
-        }
-
-        futs.add(() async {
-          var url = 'https://hacker-news.firebaseio.com/v0/item/$id.json';
-          var uri = Uri.parse(url);
-          var response = await http.get(
-            uri,
-            headers: {"Content-Type": "application/json"},
-          );
-          if (response.statusCode == 200) {
-            var newsJson = json.decode(response.body);
-            return newsJson;
-          }
-        }());
-      }
-      _$cached.value = news;
+      log("Pull top news list: $topStoriesId", name: "NewsController");
+      _topStoriesId.addAll(topStoriesId);
     } else {
-      throw Exception('Failed to load top news');
+      throw Exception('Failed to pull top news list');
     }
   }
 
-  Future<List<News>> cachedOrFetchTopNews() async {
-    if (_$cached.length < _limit && !_loading) {
+  Future<void> refreshTopNewsFirstScreen(int firstScreenLimit) async {
+    await refreshTopNews(firstScreenLimit);
+    refreshTopNews(_limit - firstScreenLimit, append: true);
+  }
+
+  Future<void> refreshTopNews(int limit, {bool append = false}) async {
+    var topStoriesId = await getTopNewsList(limit);
+    var news = <News>[];
+    var futs = ListQueue();
+
+    handleJson(newsJson) {
+      if (newsJson == null || newsJson['url'] == null) {
+        return;
+      }
+      news.add(News(
+          _NewsSource.HackerNews,
+          newsJson['id'],
+          newsJson['url'],
+          newsJson['title'],
+          "${newsJson["score"]} scores by ${newsJson["by"]}"));
+    }
+
+    for (var id in topStoriesId) {
+      if (futs.length > _concurrency) {
+        final newsJson = await futs.removeFirst();
+        handleJson(newsJson);
+      }
+
+      futs.add(() async {
+        var url = 'https://hacker-news.firebaseio.com/v0/item/$id.json';
+        var uri = Uri.parse(url);
+        var response = await http.get(
+          uri,
+          headers: {"Content-Type": "application/json"},
+        );
+        if (response.statusCode == 200) {
+          var newsJson = json.decode(response.body);
+          return newsJson;
+        }
+      }());
+    }
+
+    for (var fut in futs) {
+      final newsJson = await fut;
+      handleJson(newsJson);
+    }
+
+    if (append) {
+      _$cached.value = [..._$cached, ...news];
+    } else {
+      _$cached.value = news;
+    }
+  }
+
+  Future<List<News>> cachedOrFetchTopNews(int firstScreenLimit) async {
+    if (_$cached.length < firstScreenLimit && !_loading) {
       _loading = true;
       try {
-        await refreshTopNews();
+        await refreshTopNewsFirstScreen(firstScreenLimit);
       } finally {
         _loading = false;
       }
@@ -318,6 +367,8 @@ class _NewsWindowState extends State<NewsWindow>
   String? _err;
 
   bool _calledPromote = false;
+  final _firstScreenNewsLimit =
+      8; // TODO: get the limit according to screen height.
 
   _NewsWindowState();
 
@@ -383,7 +434,7 @@ class _NewsWindowState extends State<NewsWindow>
                       onRefresh: () async {
                         FirebaseAnalytics.instance
                             .logEvent(name: "refresh_news");
-                        await refreshNews();
+                        await refreshNews(_firstScreenNewsLimit);
                       },
                       child: Obx(
                         () => ListView(
@@ -428,7 +479,8 @@ class _NewsWindowState extends State<NewsWindow>
                             : ListView(
                                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                                 children: [
-                                  if (_srv._pendingTasks.isNotEmpty && !_calledPromote)
+                                  if (_srv._pendingTasks.isNotEmpty &&
+                                      !_calledPromote)
                                     _PendingCard(_srv.pendingTasks()),
                                   ..._srv.promoted.map((e) => _PromotedGroup(
                                       record: e,
@@ -498,7 +550,7 @@ class _NewsWindowState extends State<NewsWindow>
               onPressed: () async {
                 FirebaseAnalytics.instance.logEvent(
                     name: "search_news", parameters: {"query": _search.text});
-                await refreshNews();
+                await refreshNews(_firstScreenNewsLimit);
               },
               icon: const Icon(
                 Icons.search,
@@ -580,8 +632,9 @@ class _NewsWindowState extends State<NewsWindow>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Text(
-              "WebView not supported in this platform. The URL will be opened in external browser.", style: Theme.of(context).textTheme.titleMedium),
+          Text(
+              "WebView not supported in this platform. The URL will be opened in external browser.",
+              style: Theme.of(context).textTheme.titleMedium),
           Container(
             margin: EdgeInsets.symmetric(vertical: 8),
             child: TextFormField(
@@ -674,8 +727,8 @@ class _NewsWindowState extends State<NewsWindow>
     maybeShowBannerForError();
   }
 
-  Future<void> refreshNews() async {
-    await _srv.refreshTopNews();
+  Future<void> refreshNews(int firstScreenLimit) async {
+    await _srv.refreshTopNewsFirstScreen(firstScreenLimit);
     maybeShowBannerForError();
   }
 
@@ -686,7 +739,7 @@ class _NewsWindowState extends State<NewsWindow>
     _srv.lastTab = _tabctl.index;
     if (_tabctl.index == 0 && !bgTaskRunning) {
       runOneShotTask(() async {
-        await _srv.cachedOrFetchTopNews();
+        await _srv.cachedOrFetchTopNews(_firstScreenNewsLimit);
       }());
       return;
     }
