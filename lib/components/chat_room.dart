@@ -125,13 +125,12 @@ class ListPane extends StatelessWidget {
                                   TextSpan(
                                       text: "${room.firstMessage!.userName}: ",
                                       style: const TextStyle(
-                                          // fontWeight: FontWeight.bold,
-                                          // fontSize: 15,
+                                          fontSize: 18,
                                           )),
                                   TextSpan(
                                       text: room.firstMessage!.message,
                                       style: const TextStyle(
-                                        // fontSize: 15,
+                                         fontSize: 18,
                                         overflow: TextOverflow.ellipsis,
                                       ))
                                 ]),
