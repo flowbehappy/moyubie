@@ -121,13 +121,18 @@ class ListPane extends StatelessWidget {
                               ? Text.rich(
                                   TextSpan(children: [
                                     TextSpan(
-                                        text: "${room.firstMessage!.userName}: ",
+                                        text:
+                                            "${room.firstMessage!.userName}: ",
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
+                                          // fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        )),
                                     TextSpan(
                                         text: room.firstMessage!.message,
                                         style: const TextStyle(
-                                            overflow: TextOverflow.ellipsis))
+                                          fontSize: 12,
+                                          overflow: TextOverflow.ellipsis,
+                                        ))
                                   ]),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -145,6 +150,10 @@ class ListPane extends StatelessWidget {
                           ),
                           title: Text(
                             room.name,
+                            style: const TextStyle(
+                              // fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ));
                   })

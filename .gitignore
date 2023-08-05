@@ -50,5 +50,5 @@ ios/build
 .fvm/flutter_sdk
 
 
-./release
+release
 

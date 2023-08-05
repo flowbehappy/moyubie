@@ -585,17 +585,15 @@ class ChatRoomRepository {
       whereArgs: [chatRoom.uuid],
     );
 
-    if (chatRoom.isHost()) {
-      final remoteDB = await getRemoteDb(myTiDBConn, true);
-      if (remoteDB != null) {
-        await remoteDB.execute('''
+    final remoteDB = await getRemoteDb(myTiDBConn, true);
+    if (remoteDB != null) {
+      await remoteDB.execute('''
         UPDATE moyubie.$_tableChatRoom SET
         $_columnChatRoomName = :name,
         $_columnChatRoomCreateTime = '${chatRoom.createTime.toString()}',
         $_columnChatRoomConnectionToken = :token
         WHERE $_columnChatRoomUuid = '${chatRoom.uuid}'
         ''', {"name": chatRoom.name, "token": chatRoom.connectionToken});
-      }
     }
   }
 
