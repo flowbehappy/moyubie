@@ -109,13 +109,14 @@ class _SettingPageState extends State<SettingPage> {
             backgroundColor: Theme.of(context).primaryColor,
             child: const Icon(Icons.save),
           ),
-          appBar: Platform.isIOS
-              ? AppBar(
-                  systemOverlayStyle: SystemUiOverlayStyle(
-                      statusBarBrightness: Theme.of(context).brightness),
-                  backgroundColor: Theme.of(context).colorScheme.background,
-                )
-              : null,
+          appBar: AppBar(
+            toolbarHeight: 0,
+            primary: false,
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarIconBrightness: Theme.of(context).brightness,
+               ),
+            backgroundColor: Theme.of(context).colorScheme.background,
+          ),
           body: ListView(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0),
             children: [
