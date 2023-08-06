@@ -89,7 +89,9 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    const SizedBox sizedBoxSpace = SizedBox(height: 24);
+    const SizedBox sizedBoxSpace = SizedBox(height: 48);
+    const SizedBox tap = SizedBox(width: 4);
+    const SizedBox space = SizedBox(width: 12);
     return GetX<SettingsController>(builder: (controller) {
       return GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -106,8 +108,8 @@ class _SettingPageState extends State<SettingPage> {
             toolbarHeight: 0,
             primary: false,
             systemOverlayStyle: SystemUiOverlayStyle(
-                statusBarIconBrightness: Theme.of(context).brightness,
-               ),
+              statusBarIconBrightness: Theme.of(context).brightness,
+            ),
             backgroundColor: Theme.of(context).colorScheme.background,
           ),
           body: ListView(
@@ -130,30 +132,38 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              SizedBox(
-                height: 50,
-                child: TextFormField(
-                  initialValue: controller.nickname.value,
-                  decoration: InputDecoration(
-                    hintMaxLines: 100,
-                    hintText: "Set your nickname here",
-                    floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5),
-                      borderSide: BorderSide.none,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  tap,
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: TextFormField(
+                        initialValue: controller.nickname.value,
+                        decoration: InputDecoration(
+                          hintMaxLines: 100,
+                          hintText: "Set your nickname here",
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                        ),
+                        autovalidateMode: AutovalidateMode.always,
+                        maxLines: 1,
+                        minLines: 1,
+                        onEditingComplete: () {},
+                        onChanged: (value) {
+                          controller.setNickname(value);
+                        },
+                      ),
                     ),
-                    filled: true,
                   ),
-                  autovalidateMode: AutovalidateMode.always,
-                  maxLines: 1,
-                  minLines: 1,
-                  onEditingComplete: () {},
-                  onChanged: (value) {
-                    controller.setNickname(value);
-                  },
-                ),
+                ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -175,11 +185,12 @@ class _SettingPageState extends State<SettingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  tap,
                   const SizedBox(
-                    width: 50,
+                    width: 52,
                     child: Text("Service"),
                   ),
-                  const SizedBox(width: 30),
+                  space,
                   Expanded(
                     child: SizedBox(
                       height: 50.0,
@@ -223,11 +234,12 @@ class _SettingPageState extends State<SettingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  tap,
                   const SizedBox(
-                    width: 50,
+                    width: 52,
                     child: Text("Model"),
                   ),
-                  const SizedBox(width: 30),
+                  space,
                   Expanded(
                     child: SizedBox(
                       height: 50.0,
@@ -272,11 +284,12 @@ class _SettingPageState extends State<SettingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  tap,
                   const SizedBox(
-                    width: 50,
+                    width: 52,
                     child: Text("Token"),
                   ),
-                  const SizedBox(width: 30),
+                  space,
                   Expanded(
                     child: SizedBox(
                         height: 50.0,
@@ -333,43 +346,52 @@ class _SettingPageState extends State<SettingPage> {
                   ),
                 ],
               ),
-              SizedBox(
-                child: TextFormField(
-                  initialValue: controller.serverlessCmd.value,
-                  decoration: InputDecoration(
-                    hintMaxLines: controller.isTiDBCmdObscure.value ? 1 : 10,
-                    hintText:
-                        "Go to www.tidbcloud.com, create a TiDB cluster of free Serverless Tier. Copy the connection text of your cluster and paste here. For example: \n\nmysql --connect-timeout 15 -u 'xxxxxx.root' -h gateway01.us-west-2.prod.aws.tidbcloud.com -P 4000 -D test --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/ssl/cert.pem -pxxxxxx",
-                    floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    suffixIcon: IconButton(
-                      splashRadius: 10,
-                      icon: Icon(
-                        Icons.remove_red_eye,
-                        color: controller.isTiDBCmdObscure.value
-                            ? Colors.grey
-                            : Colors.blue,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  tap,
+                  Expanded(
+                    child: SizedBox(
+                      child: TextFormField(
+                        initialValue: controller.serverlessCmd.value,
+                        decoration: InputDecoration(
+                          hintMaxLines:
+                              controller.isTiDBCmdObscure.value ? 1 : 10,
+                          hintText:
+                              "Go to www.tidbcloud.com, create a TiDB cluster of free Serverless Tier. Copy the connection text of your cluster and paste here. For example: \n\nmysql --connect-timeout 15 -u 'xxxxxx.root' -h gateway01.us-west-2.prod.aws.tidbcloud.com -P 4000 -D test --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/ssl/cert.pem -pxxxxxx",
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          suffixIcon: IconButton(
+                            splashRadius: 10,
+                            icon: Icon(
+                              Icons.remove_red_eye,
+                              color: controller.isTiDBCmdObscure.value
+                                  ? Colors.grey
+                                  : Colors.blue,
+                            ),
+                            onPressed: () {
+                              controller.isTiDBCmdObscure.value =
+                                  !controller.isTiDBCmdObscure.value;
+                            },
+                          ),
+                        ),
+                        autovalidateMode: AutovalidateMode.always,
+                        maxLines: controller.isTiDBCmdObscure.value ? 1 : null,
+                        onEditingComplete: () {},
+                        onChanged: (value) {
+                          controller.setServerlessCmd(value);
+                        },
+                        obscureText: controller.isTiDBCmdObscure.value,
                       ),
-                      onPressed: () {
-                        controller.isTiDBCmdObscure.value =
-                            !controller.isTiDBCmdObscure.value;
-                      },
                     ),
                   ),
-                  autovalidateMode: AutovalidateMode.always,
-                  maxLines: controller.isTiDBCmdObscure.value ? 1 : null,
-                  onEditingComplete: () {},
-                  onChanged: (value) {
-                    controller.setServerlessCmd(value);
-                  },
-                  obscureText: controller.isTiDBCmdObscure.value,
-                ),
+                ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
