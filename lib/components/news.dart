@@ -9,6 +9,7 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:Moyubie/components/chat_room.dart';
@@ -450,10 +451,14 @@ class _NewsWindowState extends State<NewsWindow>
 
   @override
   Widget build(BuildContext context) {
-    var panePriority =
-        (_opened_link == null ? TwoPanePriority.start : TwoPanePriority.end);
+    var panePriority = (widget.ty == ChatRoomType.tablet
+        ? TwoPanePriority.both
+        : _opened_link == null
+            ? TwoPanePriority.start
+            : TwoPanePriority.end);
     return TwoPane(
       paneProportion: 0.3,
+      panePriority: panePriority,
       startPane: ScaffoldMessenger(
         key: _scaffoldKey,
         child: Scaffold(
@@ -525,8 +530,7 @@ class _NewsWindowState extends State<NewsWindow>
                       )),
             ])),
       ),
-      endPane: contentForWeb(),
-      panePriority: panePriority,
+      endPane:  Container(decoration: BoxDecoration(border: Border(left: BorderSide(color: Theme.of(context).dividerColor, width: 1))), child: contentForWeb()),
     );
   }
 
@@ -632,22 +636,25 @@ class _NewsWindowState extends State<NewsWindow>
   AppBar appbar() {
     var bottom = TabBar(
       tabs: const <Widget>[
-        Tab(icon: Icon(Icons.newspaper)),
-        Tab(icon: Icon(Icons.recommend)),
+        Tab(
+          icon: Icon(Icons.newspaper),
+          text: "Top News",
+        ),
+        Tab(icon: Icon(Icons.recommend), text: "AI Recommend"),
       ],
       controller: _tabctl,
     );
     return AppBar(
-        flexibleSpace: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            bottom,
-          ],
-        ),
+      flexibleSpace: SafeArea(child: bottom),
+      backgroundColor: Theme.of(context).primaryColor,
+      systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Theme.of(context).primaryColor),
     );
   }
 
   Widget contentForWeb() {
+    if (_opened_link == null) {
+      return Center(child: Text("Select a news to start reading.", style: Theme.of(context).textTheme.labelMedium));
+    }
     if (useInlineWebView) {
       return Scaffold(
           appBar: browserAppBar(), body: WebViewWidget(controller: _webctl!));
@@ -672,11 +679,8 @@ class _NewsWindowState extends State<NewsWindow>
               "WebView not supported in this platform. The URL will be opened in external browser.",
               style: Theme.of(context).textTheme.titleMedium),
           Container(
-            margin: EdgeInsets.symmetric(vertical: 8),
-            child: TextFormField(
-              initialValue: _opened_link ?? "",
-              readOnly: true,
-            ),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: SelectableText(_opened_link!, style: Theme.of(context).textTheme.bodySmall),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -690,7 +694,10 @@ class _NewsWindowState extends State<NewsWindow>
                   },
                   child: Text(
                     "GO BACK",
-                    style: Theme.of(context).textTheme.labelMedium,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.merge(const TextStyle(color: Colors.white)),
                   )),
             ],
           )
@@ -746,10 +753,10 @@ class _NewsWindowState extends State<NewsWindow>
 
   setUrl(String link) async {
     try {
-      openUrl(link);
       setState(() {
         _opened_link = link;
       });
+      openUrl(link);
     } catch (e) {
       setState(() {
         _err = e.toString();
