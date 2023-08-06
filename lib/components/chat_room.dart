@@ -736,13 +736,16 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
     final theme = Theme.of(buildCtx);
     final dialogTextStyle = theme.textTheme.titleMedium!
         .copyWith(color: theme.textTheme.bodySmall!.color);
-    var newName = "";
+    final comp.ChatRoomController chatRoomController = Get.find();
+    final initVal = chatRoomController.getCurrentRoom()?.name;
+    var newName = initVal?? "";
 
     return DialogRoute<String>(
       context: buildCtx,
       builder: (context) {
         return AlertDialog(
           content: TextFormField(
+            initialValue: newName,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter some text';
