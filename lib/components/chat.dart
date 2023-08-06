@@ -71,31 +71,32 @@ class _ChatWindowState extends State<ChatWindow> {
           ),
         ),
         const SizedBox(height: 16),
-        KeyboardVisibilityBuilder(
-            builder: (context, isKeyboardVisible) {
-              if (!isKeyboardVisible || !textIsEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: ActionChip(
-                      onPressed: () {
-                        _controller.text = "@ai ";
-                        _controller.selection = TextSelection.fromPosition(
-                            TextPosition(offset: _controller.text.length));
-                        setState(() {
-                          textIsEmpty = false;
-                        });
-                      },
-                      label: const Text("@ai", style: TextStyle(fontSize: 20),),
-                    ),
+        KeyboardVisibilityBuilder(builder: (context, isKeyboardVisible) {
+          if (!isKeyboardVisible || !textIsEmpty) {
+            return const SizedBox.shrink();
+          }
+          return Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.only(left: 8),
+                child: ActionChip(
+                  onPressed: () {
+                    _controller.text = "@ai ";
+                    _controller.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _controller.text.length));
+                    setState(() {
+                      textIsEmpty = false;
+                    });
+                  },
+                  label: const Text(
+                    "@ai",
+                    style: TextStyle(fontSize: 20),
                   ),
-                ],
-              );
-            }
-        ),
+                ),
+              ),
+            ],
+          );
+        }),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Form(
@@ -196,59 +197,36 @@ class _ChatWindowState extends State<ChatWindow> {
     IconData icon = FontAwesomeIcons.question;
     String name = "?";
     String timeStr = message.createTime.toLocal().toString().substring(0, 19);
-    Color? color;
-    Widget? msg_box;
+    Color? bgColor;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final otherBackgroundColor = isDark
+        ? const Color.fromARGB(255, 92, 89, 89)
+        : const Color.fromARGB(255, 255, 255, 255);
+    final otherFontColor = isDark
+        ? const Color.fromARGB(255, 255, 255, 255)
+        : const Color.fromARGB(255, 0, 0, 0);
+    const myBackgroundColor = Color.fromARGB(255, 156, 225, 111);
+    const myFontColor = Color.fromARGB(255, 0, 0, 0);
+    SettingsController settingsController = Get.find();
+    final isMyMessage = message.source ==
+        MessageSource.user &&
+        message.userName == settingsController.nickname.value;
+    bgColor = isMyMessage ? myBackgroundColor : otherBackgroundColor;
+    final fontColor = isMyMessage ? myFontColor : otherFontColor;
+
     switch (message.source) {
       case MessageSource.user:
         icon = FontAwesomeIcons.fish;
         name = message.userName;
-        SettingsController settingsController = Get.find();
-        if (name == settingsController.nickname.value) {
-          color = const Color.fromARGB(255, 156, 225, 111);
-        } else {
-          color = isDark
-              ? const Color.fromARGB(255, 92, 89, 89)
-              : const Color.fromARGB(255, 255, 255, 255);
-        }
-        msg_box = Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SelectableText(
-            message.message,
-            style: TextStyle(
-              fontSize: 16,
-              color: isDark && name != settingsController.nickname.value
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : const Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-        );
         break;
       case MessageSource.bot:
         icon = FontAwesomeIcons.robot;
         name = "Bot#${message.userName}";
-        color = isDark
-            ? const Color.fromARGB(255, 92, 89, 89)
-            : const Color.fromARGB(255, 255, 255, 255);
-        msg_box = Markdown(text: message.message);
         break;
       case MessageSource.sys:
         icon = FontAwesomeIcons.medal;
         name = "Moyubie";
-        color = isDark
-            ? const Color.fromARGB(255, 92, 89, 89)
-            : const Color.fromARGB(255, 255, 255, 255);
-        msg_box = Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SelectableText(
-            message.message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-        );
         break;
       default:
     }
@@ -285,22 +263,30 @@ class _ChatWindowState extends State<ChatWindow> {
                 margin: EdgeInsets.only(top: 4, bottom: 8),
                 shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(2))),
-                color: color!,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                  child: SelectableText(
-                    message.message,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      textBaseline: TextBaseline.alphabetic,
-                    ),
-                  ),
-                ),
+                color: bgColor,
+                child: wrapMarkDown(message.source, message.message, fontColor)
               )
             ],
           ),
         )
       ],
+    );
+  }
+
+  Widget wrapMarkDown(MessageSource src, String message, Color fontColor) {
+    if (src == MessageSource.bot) {
+      return Markdown(text: message);
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      child: SelectableText(
+        message,
+        style: TextStyle(
+          color: fontColor,
+          fontSize: 16,
+          textBaseline: TextBaseline.alphabetic,
+        ),
+      ),
     );
   }
 
