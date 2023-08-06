@@ -476,12 +476,18 @@ class _NewsWindowState extends State<NewsWindow>
                         await refreshNews(_firstScreenNewsLimit);
                       },
                       child: Obx(
-                        () => ListView(
+                        () => ListView.builder(
+                          itemCount: _srv._$cached.length,
                           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                          children: [
-                            ..._srv._$cached.map((e) => _NewsCard(e,
-                                onEnter: (news) => {setUrl(news.url)}))
-                          ],
+                          itemBuilder: (BuildContext context, int index) {
+                            final e = _srv._$cached[index];
+                            return _NewsCard(
+                              e,
+                              key: Key("news.${e.id}"),
+                              onEnter: (news) => {setUrl(news.url)},
+                              selected: _opened_link == e.url,
+                            );
+                          },
                         ),
                       )),
               bgTaskRunning
@@ -515,22 +521,42 @@ class _NewsWindowState extends State<NewsWindow>
                                     subtitle: Text(
                                         "Drag down to let AI select some news for you.")),
                               ])
-                            : ListView(
+                            : ListView.builder(
                                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                                children: [
+                                itemCount: _srv.promoted.length +
+                                    (_srv._pendingTasks.isNotEmpty &&
+                                            !_calledPromote
+                                        ? 1
+                                        : 0),
+                                itemBuilder: (ctx, index) {
                                   if (_srv._pendingTasks.isNotEmpty &&
-                                      !_calledPromote)
-                                    _PendingCard(_srv.pendingTasks()),
-                                  ..._srv.promoted.map((e) => _PromotedGroup(
+                                      !_calledPromote &&
+                                      index == 0) {
+                                    return _PendingCard(_srv.pendingTasks());
+                                  }
+                                  if (_srv._pendingTasks.isNotEmpty &&
+                                      !_calledPromote) {
+                                    index -= 1;
+                                  }
+                                  final e = _srv.promoted[index];
+                                  return _PromotedGroup(
+                                      selectedUrl: _opened_link,
                                       record: e,
                                       onEnter: (promoted) =>
-                                          {setUrl(promoted.news.url)})),
-                                ],
+                                          {setUrl(promoted.news.url)});
+                                },
                               ),
                       )),
             ])),
       ),
-      endPane:  Container(decoration: BoxDecoration(border: Border(left: BorderSide(color: Theme.of(context).dividerColor, width: 1))), child: contentForWeb()),
+      endPane: Container(
+          decoration: BoxDecoration(
+              border: panePriority == TwoPanePriority.both
+                  ? Border(
+                      left: BorderSide(
+                          color: Theme.of(context).dividerColor, width: 1))
+                  : null),
+          child: contentForWeb()),
     );
   }
 
@@ -628,7 +654,7 @@ class _NewsWindowState extends State<NewsWindow>
         leading: goBack,
         toolbarHeight: 40,
         foregroundColor: Colors.white,
-        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
+        backgroundColor: Theme.of(context).primaryColor,
         actions: actions,
         bottom: bottom);
   }
@@ -647,13 +673,16 @@ class _NewsWindowState extends State<NewsWindow>
     return AppBar(
       flexibleSpace: SafeArea(child: bottom),
       backgroundColor: Theme.of(context).primaryColor,
-      systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Theme.of(context).primaryColor),
+      systemOverlayStyle:
+          SystemUiOverlayStyle(statusBarColor: Theme.of(context).primaryColor),
     );
   }
 
   Widget contentForWeb() {
     if (_opened_link == null) {
-      return Center(child: Text("Select a news to start reading.", style: Theme.of(context).textTheme.labelMedium));
+      return Center(
+          child: Text("Select a news to start reading.",
+              style: Theme.of(context).textTheme.labelMedium));
     }
     if (useInlineWebView) {
       return Scaffold(
@@ -680,7 +709,8 @@ class _NewsWindowState extends State<NewsWindow>
               style: Theme.of(context).textTheme.titleMedium),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
-            child: SelectableText(_opened_link!, style: Theme.of(context).textTheme.bodySmall),
+            child: SelectableText(_opened_link!,
+                style: Theme.of(context).textTheme.bodySmall),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -790,16 +820,16 @@ class _NewsWindowState extends State<NewsWindow>
 }
 
 class _NewsCard extends StatelessWidget {
-  final Key? key;
   final News _news;
+  final bool selected;
   final void Function(News)? onEnter;
 
-  const _NewsCard(this._news, {this.onEnter, this.key});
+  const _NewsCard(this._news, {this.onEnter, super.key, this.selected = false});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-        key: key,
+        elevation: selected ? 5 : 1,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => {},
@@ -816,7 +846,7 @@ class _NewsCard extends StatelessWidget {
 class _PendingCard extends StatelessWidget {
   List<AIFetchingTask> _task;
 
-  _PendingCard(this._task);
+  _PendingCard(this._task, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -846,8 +876,10 @@ class _PendingCard extends StatelessWidget {
 class _PromotedGroup extends StatelessWidget {
   final PromotedRecord record;
   final void Function(Promoted)? onEnter;
+  final String? selectedUrl;
 
-  const _PromotedGroup({required this.record, this.onEnter});
+  const _PromotedGroup(
+      {required this.record, this.onEnter, this.selectedUrl, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -872,24 +904,30 @@ class _PromotedGroup extends StatelessWidget {
               ],
             ),
           )),
-      ...record.records.map((e) => _PromotedCard(e, onEnter: onEnter))
+      ...record.records.map((i) => _PromotedCard(
+            i,
+            onEnter: onEnter,
+            key: Key("promoted_news.${i.news.id}"),
+            selected: selectedUrl == i.news.url,
+          ))
     ]);
   }
 }
 
 class _PromotedCard extends StatelessWidget {
-  final Key? key;
   final Promoted _promoted;
   final void Function(Promoted)? onEnter;
+  final bool selected;
 
-  const _PromotedCard(this._promoted, {this.onEnter, this.key});
+  const _PromotedCard(this._promoted,
+      {this.selected = false, this.onEnter, super.key});
 
   @override
   Widget build(BuildContext context) {
     var th = Theme.of(context);
     return Card(
-        key: key,
         clipBehavior: Clip.antiAlias,
+        elevation: selected ? 5 : 1,
         child: InkWell(
           onTap: () => {},
           onTapUp: (details) => {onEnter?.call(_promoted)},
