@@ -240,7 +240,6 @@ class ChatRoomRepository {
       final String path = join(await getDatabasesPath(), 'moyubie.db');
       _database = await openDatabase(path, version: 1,
           onCreate: (Database db, int version) async {
-        print("on create!");
         final batch = db.batch();
 
         batch.execute('''
@@ -416,7 +415,7 @@ class ChatRoomRepository {
           ask_ai: m[_columnAskAI] == 1);
       messages[roomId] = msg;
     }));
-    return List.generate(maps.length, (i) {
+    var ret = List.generate(maps.length, (i) {
       final msg = messages[maps[i][_columnChatRoomUuid]];
       var ct = maps[i][_columnChatRoomCreateTime];
       return ChatRoom(
@@ -428,6 +427,8 @@ class ChatRoomRepository {
               .firstWhere((e) => e.name == maps[i][_columnChatRoomRole]),
           firstMessage: msg);
     });
+    ret.sort((a, b) => b.createTime.compareTo(a.createTime));
+    return ret;
   }
 
   Future<List<ChatRoom>> getChatRoomsRemote() async {
