@@ -53,8 +53,8 @@ class MyApp extends StatelessWidget {
 
   Widget menu(ChatRoomType type) {
     return GetX<ChatRoomController>(builder: (controller) {
-      if (type == ChatRoomType.phone &&
-          controller.currentRoomIndex.value.value >= 0) {
+      if (controller.currentRoomIndex.value.value >= 0 &&
+          type == ChatRoomType.phone) {
         return const SizedBox();
       }
       return Container(
@@ -97,7 +97,8 @@ class MyApp extends StatelessWidget {
     Get.put(PromptController());
     Get.put(ChatRoomController());
     Get.put(tagsRepo);
-    Get.put(NewsController(settingsCtl.openAiKey, settingsCtl.gptModel, !prefetched));
+    Get.put(NewsController(
+        settingsCtl.openAiKey, settingsCtl.gptModel, !prefetched));
     Get.put(TagCollector.create(repo: tagsRepo, sctl: settingsCtl));
     prefetched = true;
     final newsWinKey = GlobalKey();
