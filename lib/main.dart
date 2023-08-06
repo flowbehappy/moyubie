@@ -1,3 +1,4 @@
+import 'package:Moyubie/data/color.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -10,13 +11,10 @@ import 'package:Moyubie/repository/tags.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:Moyubie/utils/tag_collector.dart';
-import 'package:Moyubie/repository/tags.dart';
-import 'package:Moyubie/utils/log.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
-import 'package:path/path.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -51,21 +49,21 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   static bool prefetched = false;
 
-  Widget menu(ChatRoomType type) {
+  Widget menu(BuildContext context, ChatRoomType type) {
     return GetX<ChatRoomController>(builder: (controller) {
       if (controller.currentRoomIndex.value.value >= 0 &&
           type == ChatRoomType.phone) {
         return const SizedBox();
       }
       return Container(
-        color: const Color.fromARGB(255, 250, 94, 83),
-        child: const TabBar(
+        color: Theme.of(context).primaryColor,
+        child: TabBar(
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorSize: TabBarIndicatorSize.tab,
-          indicatorPadding: EdgeInsets.all(5.0),
-          indicatorColor: Color.fromARGB(255, 250, 94, 83),
-          tabs: [
+          indicatorPadding: const EdgeInsets.all(5.0),
+          indicatorColor: Theme.of(context).primaryColor,
+          tabs: const [
             Tab(
               text: "Chat",
               icon: Icon(Icons.chat),
@@ -87,7 +85,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
-    print(shortestSide);
     final ChatRoomType type =
         shortestSide < 600 ? ChatRoomType.phone : ChatRoomType.tablet;
     final settingsCtl = SettingsController();
@@ -103,8 +100,14 @@ class MyApp extends StatelessWidget {
     prefetched = true;
     final newsWinKey = GlobalKey();
     return MaterialApp(
-      theme: FlexThemeData.light(scheme: FlexScheme.ebonyClay),
-      darkTheme: FlexThemeData.dark(scheme: FlexScheme.ebonyClay),
+      theme: FlexThemeData.light(
+        colors: moyubieSchemeData.light,
+        scheme: FlexScheme.ebonyClay,
+      ),
+      darkTheme: FlexThemeData.dark(
+        colors: moyubieSchemeData.dark,
+        scheme: FlexScheme.ebonyClay,
+      ),
       themeMode: ThemeMode.system,
       // locale: const Locale('zh'),
       // translations: MyTranslations(),
@@ -112,20 +115,22 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: DefaultTabController(
         length: 3,
-        child: Scaffold(
-          bottomNavigationBar: menu(type),
-          body: TabBarView(
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              ChatRoom(restorationId: "chat_room", type: type),
-              NewsWindow(
-                ty: type,
-                key: newsWinKey,
-              ),
-              const SettingPage(),
-            ],
-          ),
-        ),
+        child: Builder(builder: (context) {
+          return Scaffold(
+            bottomNavigationBar: menu(context, type),
+            body: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                ChatRoom(restorationId: "chat_room", type: type),
+                NewsWindow(
+                  ty: type,
+                  key: newsWinKey,
+                ),
+                const SettingPage(),
+              ],
+            ),
+          );
+        }),
       ),
     );
   }

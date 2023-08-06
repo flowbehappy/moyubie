@@ -208,6 +208,7 @@ class DetailsPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String tip = tips[Random().nextInt(tips.length)];
     return GetX<comp.ChatRoomController>(builder: (controller) {
       return GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -226,10 +227,9 @@ class DetailsPane extends StatelessWidget {
             actions: [if (selectedIndex != -1) const ChatDetailButton()],
           ),
           body: selectedIndex == -1
-              ? const Center(
-                  child: Text("Create or select a chatroom", style: TextStyle(
+              ? Center(
+                  child: Text("Moyu tips: $tip", style: const TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
                   ),),
                 )
               : const ChatWindow(),
@@ -281,7 +281,6 @@ class _ChatRoomActions extends StatelessWidget {
     final comp.ChatRoomController chatRoomController = Get.find();
     final SettingsController settingsController = Get.find();
     final createTime = DateTime.now().toUtc();
-    final name = chatRoomNames[Random().nextInt(chatRoomNames.length)];
     repo.ChatRoom chatRoom = repo.ChatRoom(
       uuid: const Uuid().v1(),
       name: "New Chat Room",
