@@ -46,23 +46,23 @@ class _ChatRoomState extends State<ChatRoom> {
   @override
   Widget build(BuildContext context) {
     return GetX<comp.ChatRoomController>(builder: (controller) {
-      var panePriority = controller.currentRoomIndex.value.value == -1
-          ? TwoPanePriority.start
-          : TwoPanePriority.end;
+      final selectedIndex = controller.currentRoomIndex.value.value;
+      var panePriority = TwoPanePriority.both;
+      if (widget.type == ChatRoomType.phone) {
+        panePriority =
+            selectedIndex == -1 ? TwoPanePriority.start : TwoPanePriority.end;
+      }
       return TwoPane(
         paneProportion: 0.3,
         panePriority: panePriority,
         startPane: ListPane(
-          selectedIndex: controller.currentRoomIndex.value.value,
+          selectedIndex: selectedIndex,
           onSelect: _selectRoom,
+          type: widget.type,
         ),
         endPane: DetailsPane(
-          selectedIndex: controller.currentRoomIndex.value.value,
-          onClose: widget.type == ChatRoomType.phone
-              ? () {
-                  _selectRoom(-1);
-                }
-              : null,
+          selectedIndex: selectedIndex,
+          onClose: selectedIndex == -1 ? null : () => _selectRoom(-1),
         ),
       );
     });
@@ -85,27 +85,56 @@ class ListPane extends StatelessWidget {
   final int selectedIndex;
   final _scrollController = ScrollController();
   Rx<PersistentBottomSheetController?> pctl = Rx(null);
+  final ChatRoomType type;
 
   ListPane({
     super.key,
     required this.onSelect,
     required this.selectedIndex,
+    required this.type,
   });
+
+  AppBar buildListPaneAppBar(BuildContext context) {
+    if (type == ChatRoomType.tablet) {
+      return AppBar(
+        foregroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
+        toolbarHeight: 64,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          "Moyubie",
+        ),
+        actions: const [ChatListButton()],
+      );
+    }
+    return AppBar(
+      systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarBrightness: Theme.of(context).brightness),
+      backgroundColor: Theme.of(context).colorScheme.background,
+      toolbarHeight: 0,
+    );
+  }
+
+  Widget wrapSaveArea(Scaffold scaffold) {
+    if (type != ChatRoomType.tablet) {
+      return SafeArea(
+        child: scaffold,
+      );
+    }
+    return scaffold;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          systemOverlayStyle: SystemUiOverlayStyle(
-              statusBarBrightness: Theme.of(context).brightness),
-          backgroundColor: Theme.of(context).colorScheme.background,
-          toolbarHeight: 0,
-        ),
+    return wrapSaveArea(
+      Scaffold(
+        appBar: buildListPaneAppBar(context),
         primary: false,
-        floatingActionButton: Obx(() => NewChatButton(
-              pctl: pctl,
-            )),
+        floatingActionButton: type == ChatRoomType.tablet
+            ? null
+            : Obx(() => NewChatButton(
+                  pctl: pctl,
+                )),
         body: GetX<comp.ChatRoomController>(builder: (roomCtrl) {
           return EasyRefresh(
             refreshOnStart: true,
@@ -194,9 +223,16 @@ class DetailsPane extends StatelessWidget {
             title: Text(
               _currentRoomName(controller),
             ),
-            actions: const [ChatDetailButton()],
+            actions: [if (selectedIndex != -1) const ChatDetailButton()],
           ),
-          body: const ChatWindow(),
+          body: selectedIndex == -1
+              ? const Center(
+                  child: Text("Create or select a chatroom", style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),),
+                )
+              : const ChatWindow(),
         ),
       );
     });
@@ -241,12 +277,11 @@ class _ChatRoomActions extends StatelessWidget {
     );
   }
 
-  _addNewChatRoom() async {
+  static _addNewChatRoom() async {
     final comp.ChatRoomController chatRoomController = Get.find();
     final SettingsController settingsController = Get.find();
     final createTime = DateTime.now().toUtc();
-    final name =
-        chatRoomNames[Random().nextInt(chatRoomNames.length)];
+    final name = chatRoomNames[Random().nextInt(chatRoomNames.length)];
     repo.ChatRoom chatRoom = repo.ChatRoom(
       uuid: const Uuid().v1(),
       name: "New Chat Room",
@@ -262,7 +297,7 @@ class _ChatRoomActions extends StatelessWidget {
         sampleMessages(settingsController.nickname.value);
   }
 
-  _joinChatRoom(BuildContext context) {
+  static _joinChatRoom(BuildContext context) {
     final theme = Theme.of(context);
     final dialogTextStyle = theme.textTheme.titleMedium!
         .copyWith(color: theme.textTheme.bodySmall!.color);
@@ -308,7 +343,7 @@ class _ChatRoomActions extends StatelessWidget {
         });
   }
 
-  _handleConnToken(BuildContext context, String token) {
+  static _handleConnToken(BuildContext context, String token) {
     final comp.ChatRoomController chatRoomController = Get.find();
     chatRoomController.joinChatRoom(context, token);
   }
@@ -335,6 +370,53 @@ class NewChatButton extends StatelessWidget {
               pctl.value!.closed.then((value) => pctl.value = null);
             },
       child: _opened ? const Icon(Icons.close) : const Icon(Icons.add),
+    );
+  }
+}
+
+class ChatListButton extends StatefulWidget {
+  const ChatListButton({super.key});
+
+  @override
+  State<ChatListButton> createState() => _ChatListButtonState();
+}
+
+class _ChatListButtonState extends State<ChatListButton> {
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<Text>(
+      padding: const EdgeInsets.only(right: 32),
+      icon: const Icon(Icons.more_horiz),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.add),
+              title: const Align(
+                alignment: Alignment(-1.2, 0),
+                child: Text("New Chat Room"),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _ChatRoomActions._addNewChatRoom();
+              },
+            ),
+          ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.group_add),
+              title: const Align(
+                alignment: Alignment(-1.2, 0),
+                child: Text("Join Chat Room"),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _ChatRoomActions._joinChatRoom(context);
+              },
+            ),
+          ),
+        ];
+      },
     );
   }
 }

@@ -51,9 +51,10 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   static bool prefetched = false;
 
-  Widget menu() {
+  Widget menu(ChatRoomType type) {
     return GetX<ChatRoomController>(builder: (controller) {
-      if (controller.currentRoomIndex.value.value >= 0) {
+      if (type == ChatRoomType.phone &&
+          controller.currentRoomIndex.value.value >= 0) {
         return const SizedBox();
       }
       return Container(
@@ -86,6 +87,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var shortestSide = MediaQuery.of(context).size.shortestSide;
+    print(shortestSide);
     final ChatRoomType type =
         shortestSide < 600 ? ChatRoomType.phone : ChatRoomType.tablet;
     final settingsCtl = SettingsController();
@@ -110,7 +112,7 @@ class MyApp extends StatelessWidget {
       home: DefaultTabController(
         length: 3,
         child: Scaffold(
-          bottomNavigationBar: menu(),
+          bottomNavigationBar: menu(type),
           body: TabBarView(
             physics: const NeverScrollableScrollPhysics(),
             children: [
