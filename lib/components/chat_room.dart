@@ -14,7 +14,6 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/services.dart';
 
 import '../controller/settings.dart';
-import '../data/sample.dart';
 import '../data/tips.dart';
 import '../repository/chat_room.dart';
 
@@ -63,6 +62,7 @@ class _ChatRoomState extends State<ChatRoom> {
         endPane: DetailsPane(
           selectedIndex: selectedIndex,
           onClose: selectedIndex == -1 ? null : () => _selectRoom(-1),
+          type: widget.type,
         ),
       );
     });
@@ -94,27 +94,6 @@ class ListPane extends StatelessWidget {
     required this.type,
   });
 
-  AppBar buildListPaneAppBar(BuildContext context) {
-    if (type == ChatRoomType.tablet) {
-      return AppBar(
-        foregroundColor: Colors.white,
-        backgroundColor: const Color.fromARGB(255, 70, 70, 70),
-        toolbarHeight: 64,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          "Moyubie",
-        ),
-        actions: const [ChatListButton()],
-      );
-    }
-    return AppBar(
-      systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarBrightness: Theme.of(context).brightness),
-      backgroundColor: Theme.of(context).colorScheme.background,
-      toolbarHeight: 0,
-    );
-  }
-
   Widget wrapSaveArea(Scaffold scaffold) {
     if (type != ChatRoomType.tablet) {
       return SafeArea(
@@ -128,7 +107,14 @@ class ListPane extends StatelessWidget {
   Widget build(BuildContext context) {
     return wrapSaveArea(
       Scaffold(
-        appBar: buildListPaneAppBar(context),
+        appBar: type == ChatRoomType.tablet
+            ? null
+            : AppBar(
+                systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarBrightness: Theme.of(context).brightness),
+                backgroundColor: Theme.of(context).colorScheme.background,
+                toolbarHeight: 0,
+              ),
         primary: false,
         floatingActionButton: type == ChatRoomType.tablet
             ? null
@@ -199,43 +185,57 @@ class ListPane extends StatelessWidget {
 class DetailsPane extends StatelessWidget {
   final VoidCallback? onClose;
   final int selectedIndex;
+  final ChatRoomType type;
 
   const DetailsPane({
     super.key,
     required this.selectedIndex,
     this.onClose,
+    required this.type,
   });
 
   @override
   Widget build(BuildContext context) {
     final String tip = tips[Random().nextInt(tips.length)];
-    return GetX<comp.ChatRoomController>(builder: (controller) {
-      return GestureDetector(
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: Scaffold(
-          appBar: AppBar(
-            foregroundColor: Colors.white,
-            backgroundColor: const Color.fromARGB(255, 70, 70, 70),
-            toolbarHeight: 40,
-            automaticallyImplyLeading: false,
-            leading: onClose == null
-                ? null
-                : IconButton(icon: const Icon(Icons.close), onPressed: onClose),
-            title: Text(
-              _currentRoomName(controller),
-            ),
-            actions: [if (selectedIndex != -1) const ChatDetailButton()],
-          ),
-          body: selectedIndex == -1
-              ? Center(
-                  child: Text("Moyu tips: $tip", style: const TextStyle(
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        appBar: type == ChatRoomType.tablet
+            ? null
+            : AppBar(
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                toolbarHeight: 40,
+                automaticallyImplyLeading: false,
+                leading: onClose == null
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close), onPressed: onClose),
+                title: GetX<comp.ChatRoomController>(builder: (controller) {
+                  return Text(
+                    _currentRoomName(controller),
+                  );
+                }),
+                actions: [
+                  if (selectedIndex != -1)
+                    ChatDetailButton(
+                      type: type,
+                      selectedIndex: selectedIndex,
+                    )
+                ],
+              ),
+        body: selectedIndex == -1
+            ? Center(
+                child: Text(
+                  "Moyu tips: $tip",
+                  style: const TextStyle(
                     fontSize: 24,
-                  ),),
-                )
-              : const ChatWindow(),
-        ),
-      );
-    });
+                  ),
+                ),
+              )
+            : const ChatWindow(),
+      ),
+    );
   }
 
   String _currentRoomName(comp.ChatRoomController controller) {
@@ -292,8 +292,7 @@ class _ChatRoomActions extends StatelessWidget {
     FirebaseAnalytics.instance.logEvent(name: "chat_room_add");
 
     final MessageController messageController = Get.find();
-    messageController.messageList.value =
-        sampleMessages(settingsController.nickname.value);
+    messageController.messageList.value = [];
   }
 
   static _joinChatRoom(BuildContext context) {
@@ -373,55 +372,11 @@ class NewChatButton extends StatelessWidget {
   }
 }
 
-class ChatListButton extends StatefulWidget {
-  const ChatListButton({super.key});
-
-  @override
-  State<ChatListButton> createState() => _ChatListButtonState();
-}
-
-class _ChatListButtonState extends State<ChatListButton> {
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<Text>(
-      padding: const EdgeInsets.only(right: 32),
-      icon: const Icon(Icons.more_horiz),
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.add),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("New Chat Room"),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _ChatRoomActions._addNewChatRoom();
-              },
-            ),
-          ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.group_add),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("Join Chat Room"),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _ChatRoomActions._joinChatRoom(context);
-              },
-            ),
-          ),
-        ];
-      },
-    );
-  }
-}
-
 class ChatDetailButton extends StatefulWidget {
-  const ChatDetailButton({super.key});
+  const ChatDetailButton(
+      {super.key, required this.type, required this.selectedIndex});
+  final ChatRoomType type;
+  final int selectedIndex;
 
   @override
   State<ChatDetailButton> createState() => _ChatDetailButtonState();
@@ -429,6 +384,8 @@ class ChatDetailButton extends StatefulWidget {
 
 class _ChatDetailButtonState extends State<ChatDetailButton>
     with RestorationMixin {
+  late RestorableRouteFuture<String> _alertCreateDialogRoute;
+  late RestorableRouteFuture<String> _alertJoinDialogRoute;
   late RestorableRouteFuture<String> _alertDismissDialogRoute;
   late RestorableRouteFuture<String> _alertRenameDialogRoute;
   late RestorableRouteFuture<String> _alertShareDialogRoute;
@@ -439,6 +396,16 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
   @override
   void initState() {
     super.initState();
+    _alertCreateDialogRoute = RestorableRouteFuture<String>(
+      onPresent: (navigator, arguments) {
+        return navigator.restorablePush(_alertCreateRoute);
+      },
+    );
+    _alertJoinDialogRoute = RestorableRouteFuture<String>(
+      onPresent: (navigator, arguments) {
+        return navigator.restorablePush(_alertJoinRoute);
+      },
+    );
     _alertDismissDialogRoute = RestorableRouteFuture<String>(
       onPresent: (navigator, arguments) {
         return navigator.restorablePush(_alertDismissRoute);
@@ -459,6 +426,14 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
   @override
   void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
     registerForRestoration(
+      _alertCreateDialogRoute,
+      'alert_create_dialog_route',
+    );
+    registerForRestoration(
+      _alertJoinDialogRoute,
+      'alert_join_dialog_route',
+    );
+    registerForRestoration(
       _alertDismissDialogRoute,
       'alert_dismiss_dialog_route',
     );
@@ -474,54 +449,118 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
 
   @override
   Widget build(BuildContext context) {
+    final showAddJoin =
+        widget.type == ChatRoomType.tablet;
+    final showRoomActions = widget.selectedIndex != -1;
+    List<PopupMenuEntry<Text>> popMenuItems = [];
+    if (showAddJoin) {
+      popMenuItems = [
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.add),
+            title: const Align(
+              alignment: Alignment(-1.2, 0),
+              child: Text("Create Room"),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _alertCreateDialogRoute.present();
+            },
+          ),
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.group_add),
+            title: const Align(
+              alignment: Alignment(-1.2, 0),
+              child: Text("Join Room"),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _alertJoinDialogRoute.present();
+            },
+          ),
+        ),
+      ];
+    }
+    if (showRoomActions) {
+      popMenuItems.addAll([
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.delete),
+            title: const Align(
+              alignment: Alignment(-1.2, 0),
+              child: Text("Dismiss Room",
+                  style: TextStyle(color: Colors.redAccent)),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _alertDismissDialogRoute.present();
+            },
+          ),
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.drive_file_rename_outline),
+            title: const Align(
+              alignment: Alignment(-1.2, 0),
+              child: Text("Rename Room"),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _alertRenameDialogRoute.present();
+            },
+          ),
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.share),
+            title: const Align(
+              alignment: Alignment(-1.2, 0),
+              child: Text("Share Room"),
+            ),
+            onTap: () async {
+              Navigator.pop(context);
+              _alertShareDialogRoute.present();
+            },
+          ),
+        ),
+      ]);
+    }
+
     return PopupMenuButton<Text>(
       padding: const EdgeInsets.only(right: 32),
       icon: const Icon(Icons.more_horiz),
       itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("Dismiss Room",
-                    style: TextStyle(color: Colors.redAccent)),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _alertDismissDialogRoute.present();
-              },
-            ),
-          ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.drive_file_rename_outline),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("Rename Room"),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _alertRenameDialogRoute.present();
-              },
-            ),
-          ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.share),
-              title: const Align(
-                alignment: Alignment(-1.2, 0),
-                child: Text("Share Room"),
-              ),
-              onTap: () async {
-                Navigator.pop(context);
-                _alertShareDialogRoute.present();
-              },
-            ),
-          ),
-        ];
+        return popMenuItems;
       },
     );
+  }
+
+  static _addNewChatRoom(BuildContext context, String roomName) async {
+    if (roomName.isEmpty) {
+      _showInSnackBar(context, "Room name cannot be empty");
+      return;
+    }
+    final comp.ChatRoomController chatRoomController = Get.find();
+    final createTime = DateTime.now().toUtc();
+    repo.ChatRoom chatRoom = repo.ChatRoom(
+      uuid: const Uuid().v1(),
+      name: roomName,
+      createTime: createTime,
+      connectionToken: repo.ChatRoomRepository.myTiDBConn.toToken(),
+      role: repo.Role.host,
+    );
+    chatRoomController.addChatRoom(chatRoom);
+    FirebaseAnalytics.instance.logEvent(name: "chat_room_add");
+
+    final MessageController messageController = Get.find();
+    messageController.messageList.value = [];
+  }
+
+  static _joinChatRoom(BuildContext context, String token) {
+    final comp.ChatRoomController chatRoomController = Get.find();
+    chatRoomController.joinChatRoom(context, token);
   }
 
   static _deleteChatRoom() {
@@ -562,6 +601,101 @@ class _ChatDetailButtonState extends State<ChatDetailButton>
           value,
         ),
       ),
+    );
+  }
+
+  static Route<String> _alertCreateRoute(
+    BuildContext buildCtx,
+    Object? arguments,
+  ) {
+    final theme = Theme.of(buildCtx);
+    final dialogTextStyle = theme.textTheme.titleMedium!
+        .copyWith(color: theme.textTheme.bodySmall!.color);
+    final editCtrl = TextEditingController();
+    editCtrl.text = "New Chat Room";
+    editCtrl.selection =
+        TextSelection(baseOffset: 0, extentOffset: editCtrl.text.length);
+    var roomName = editCtrl.text;
+
+    return DialogRoute<String>(
+      context: buildCtx,
+      builder: (context) {
+        return AlertDialog(
+          content: TextFormField(
+            controller: editCtrl,
+            style: dialogTextStyle,
+            decoration: InputDecoration(
+              labelText: "Chat Room Name",
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+              filled: true,
+            ),
+            maxLines: 1,
+            onChanged: (value) {
+              roomName = value;
+            },
+          ),
+          actions: [
+            _DialogButton(
+              text: "Create",
+              onPressed: () => _addNewChatRoom(context, roomName),
+            ),
+            _DialogButton(
+              text: "Cancel",
+              onPressed: () {},
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static Route<String> _alertJoinRoute(
+    BuildContext buildCtx,
+    Object? arguments,
+  ) {
+    final theme = Theme.of(buildCtx);
+    final dialogTextStyle = theme.textTheme.titleMedium!
+        .copyWith(color: theme.textTheme.bodySmall!.color);
+    var connToken = "";
+
+    return DialogRoute<String>(
+      context: buildCtx,
+      builder: (context) {
+        return AlertDialog(
+          content: TextFormField(
+            style: dialogTextStyle,
+            decoration: InputDecoration(
+              labelText: "Connection Token",
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+              filled: true,
+            ),
+            maxLines: 1,
+            onChanged: (value) {
+              connToken = value;
+            },
+          ),
+          actions: [
+            _DialogButton(
+              text: "Join",
+              onPressed: () => _joinChatRoom(context, connToken),
+            ),
+            _DialogButton(
+              text: "Cancel",
+              onPressed: () {},
+            ),
+          ],
+        );
+      },
     );
   }
 

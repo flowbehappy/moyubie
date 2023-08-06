@@ -55,10 +55,6 @@ class _ChatWindowState extends State<ChatWindow> {
                 _scrollToNewMessage();
               });
               List<Message> list = controller.messageList;
-              if (list.isEmpty) {
-                SettingsController settingsController = Get.find();
-                list = sampleMessages(settingsController.nickname.value);
-              }
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                 controller: _scrollController,

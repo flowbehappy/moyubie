@@ -16,6 +16,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:path/path.dart';
 import 'firebase_options.dart';
 
 import 'components/chat_room.dart';
@@ -117,6 +118,15 @@ class MyApp extends StatelessWidget {
         length: 3,
         child: Builder(builder: (context) {
           return Scaffold(
+            appBar: type == ChatRoomType.phone ? null : AppBar(
+              title: const Text("Moyubie"),
+              actions: [
+                GetX<ChatRoomController>(builder: (controller) {
+                  return ChatDetailButton(type: type,
+                      selectedIndex: controller.currentRoomIndex.value.value);
+                }),
+              ],
+            ),
             bottomNavigationBar: menu(context, type),
             body: TabBarView(
               physics: const NeverScrollableScrollPhysics(),

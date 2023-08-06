@@ -37,6 +37,7 @@ class ChatRoomController extends GetxController {
   Future<void> deleteChatRoom(ChatRoom room) async {
     await ChatRoomRepository().deleteChatRoom(room);
     roomList.value = await ChatRoomRepository().getChatRooms();
+    update();
     // Please call update() after calling this function.
   }
 
@@ -51,7 +52,7 @@ class ChatRoomController extends GetxController {
   Future<void> addChatRoom(ChatRoom chatRoom) async {
     await ChatRoomRepository().addChatRoom(chatRoom);
     roomList.value = await ChatRoomRepository().getChatRooms();
-    currentRoomIndex.value = IntegerWrapper(roomList.length - 1);
+    currentRoomIndex.value = IntegerWrapper(0);
     currentChatRoomUuid.value = chatRoom.uuid;
     update();
   }
