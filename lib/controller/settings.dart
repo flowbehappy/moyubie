@@ -40,7 +40,7 @@ class SettingsController extends GetxController {
   final llm = "Echo".obs;
   final llmTmp = "Echo".obs;
 
-  final version = "1.0.0".obs;
+  final version = "1.1.0".obs;
 
   static SettingsController get to => Get.find();
 
