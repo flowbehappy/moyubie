@@ -5,7 +5,7 @@ import 'package:Moyubie/components/markdown.dart';
 import 'package:Moyubie/controller/chat_room.dart';
 import 'package:Moyubie/controller/message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:Moyubie/firebase_hack.dart';
 import 'package:get/get.dart';
 import 'package:Moyubie/controller/settings.dart';
 import 'dart:async';

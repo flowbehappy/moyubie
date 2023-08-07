@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:dart_openai/dart_openai.dart';
 import 'package:dual_screen/dual_screen.dart';
 import 'package:easy_refresh/easy_refresh.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:Moyubie/firebase_hack.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

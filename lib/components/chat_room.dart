@@ -10,7 +10,7 @@ import 'package:Moyubie/data/color.dart';
 import 'package:Moyubie/repository/chat_room.dart' as repo;
 import 'package:Moyubie/controller/chat_room.dart' as comp;
 import 'package:uuid/uuid.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:Moyubie/firebase_hack.dart';
 import 'package:flutter/services.dart';
 
 import '../controller/settings.dart';
